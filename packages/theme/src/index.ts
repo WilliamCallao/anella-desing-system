@@ -1,6 +1,7 @@
 import { darkPalette, palette } from "./colors";
 
 export * from "./colors";
+export * from "./shellTokens";
 export * from "./spacing";
 export * from "./typography";
 
