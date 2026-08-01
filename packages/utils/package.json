@@ -1,0 +1,17 @@
+{
+  "name": "@antonella/utils",
+  "version": "0.0.0",
+  "description": "Utilidades puras compartidas de Antonella.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "sideEffects": false,
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src"
+  ]
+}

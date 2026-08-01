@@ -1,0 +1,12 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# React Native + Expo en monorepo: el linker hoisted evita dependencias
+# nativas duplicadas y problemas clásicos de resolución con pnpm.
+nodeLinker: hoisted
+
+# Resolver siempre a los paquetes del workspace aunque se declaren por rango
+# (^0.0.0) para que npm/apps externas puedan instalarlos por file:.
+linkWorkspacePackages: true
+preferWorkspacePackages: true

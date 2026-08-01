@@ -1,0 +1,22 @@
+{
+  "name": "@antonella/animations",
+  "version": "0.0.0",
+  "description": "Animaciones compartidas de Antonella (React Native Reanimated).",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "sideEffects": false,
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src"
+  ],
+  "peerDependencies": {
+    "react": ">=19.0.0",
+    "react-native": ">=0.81.0",
+    "react-native-reanimated": ">=4.0.0"
+  }
+}

@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# build
+dist/
+.turbo/
+*.tsbuildinfo
+
+# Expo
+.expo/
+web-build/
+
+# env
+.env
+.env.*
+!.env.example
+
+# misc
+.DS_Store
+*.log

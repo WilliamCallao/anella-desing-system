@@ -1,0 +1,20 @@
+{
+  "name": "@antonella/hooks",
+  "version": "0.0.0",
+  "description": "Hooks compartidos de Antonella.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "sideEffects": false,
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src"
+  ],
+  "peerDependencies": {
+    "react": ">=19.0.0"
+  }
+}
