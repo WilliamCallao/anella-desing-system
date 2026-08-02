@@ -6,14 +6,18 @@ import { Skeleton } from "./Skeleton";
 export interface CardProps extends ViewProps {
   background?: string;
   loading?: boolean;
+  skeletonHeight?: number;
 }
 
-export function Card({ background, loading, style, children, ...rest }: CardProps) {
+export function Card({ background, loading, skeletonHeight = 80, style, children, ...rest }: CardProps) {
   if (loading) {
     return (
-      <View style={[styles.card, background ? { backgroundColor: background } : undefined, style]} {...rest}>
-        <Skeleton width="100%" height={64} borderRadius={10} />
-      </View>
+      <Skeleton
+        width="100%"
+        height={skeletonHeight}
+        borderRadius={16}
+        style={style}
+      />
     );
   }
 
