@@ -1,44 +1,37 @@
-# DashboardShell — Contrato de scroll
+# DashboardShell — Scroll Contract
 
-Reglas de comportamiento de scroll del `DashboardShell`. Importante para que las
-pantallas consumidoras no dupliquen scroll ni rompan la jerarquía visual.
+Rules for scroll behavior within the shell. Prevents nested-scroll issues and
+keeps the visual hierarchy clean.
 
-## Tablet y desktop (width ≥ 600)
+## Tablet / Desktop (width >= 600)
 
-- El layout del shell es **fijo**: sidebar completa el alto, `topBar` fija, y la página
-  **nunca scrollea**.
-- El **único** área scrolleable es el `ScrollView` que el propio shell renderiza dentro de
-  la content card (sobre el contenido `children`).
-- Las pantallas NO deben envolver su contenido en su propio `ScrollView`/`FlatList` con
-  flex: en tablet el shell ya provee el scroll. Envolver de nuevo produce scroll anidado.
-- `topBar` queda fijo arriba de la content card; el contenido scrollea por debajo.
+- The shell layout is **fixed**: sidebar spans full height, `topBar` is fixed.
+- The content card is a **plain `<View>`** (`flex: 1`), NOT a ScrollView.
+- Scrolling is handled by **layout primitives** (`LayoutColumn`, `LayoutRow`)
+  via their `scroll` prop. A child with `scroll` + `EXPAND` renders a
+  `<ScrollView style={{ flex: 1 }}>`; a child with `scroll` + `FIT` renders a
+  plain `<View>` (content height, no scroll).
+- Screens should NOT wrap their entire content in a top-level `ScrollView`.
+  Use `LayoutColumn.Second ... scroll` for scrollable regions instead.
 
-## Móvil (width < 600)
+## Mobile (width < 600)
 
-- El shell renderiza el header sticky (`sidebarHeader` de móvil + título) y luego los
-  `children` **directamente, sin envolverlos en ScrollView**.
-- La pantalla es la responsable de hacer su propio scroll (`ScrollView`/`FlatList` propio).
-  El shell no scrollea.
-- No hay doble scroll: si la pantalla usa un `FlatList` con `header`/`ListHeaderComponent`,
-  ese es el scroll de la página.
+- Header is sticky (sidebar header + title).
+- Children render directly, no ScrollView wrapper.
+- The screen is responsible for its own scroll (`ScrollView` / `FlatList`).
+- LayoutColumn children on mobile: both are `FIT` (content height). If a child
+  has `scroll` but is `FIT`, it renders a plain `View` — no individual scroll.
+  Overflow scrolls via the page-level scroll that the screen provides.
 
-## Regla práctica para las pantallas
+## General Rules
 
-Usar el mismo contenido scrolleable en ambas resoluciones es seguro si se escribe **una
-sola vez**:
+| Scenario | Scroll mechanism |
+|---|---|
+| Long content in EXPAND region | `LayoutColumn.Second scroll` → inner ScrollView |
+| Content fits screen | No scroll, plain View |
+| Mobile page scroll | Screen provides its own ScrollView/FlatList |
 
-- Tablet: el `ScrollView` del shell envuelve el contenido.
-- Móvil: la pantalla provee el scroll.
-
-Para una pantalla que funciona en ambas sin duplicar scroll, envolver el contenido en un
-`ScrollView` propio: en tablet queda anidado dentro del del shell (inofensivo si no fuerza
-flex en contenedores), y en móvil es el scroll de la página. La alternativa correcta a nivel
-producto es usar un `FlatList`/`ScrollView` único por pantalla y dejar que el shell solo
-aporte el layout.
-
-## Reglas generales
-
-- No fijar `contentContainerStyle={{ flexGrow: 1 }}` en el contenido salvo que la pantalla
-  lo necesite explícitamente para centrar verticalmente.
-- No usar `ScrollView` anidados con `nestedScrollEnabled` salvo casos puntuales.
-- El cierre del drawer en móvil se maneja dentro del shell; no interfiere con el scroll.
+- Do NOT nest `ScrollView` inside `ScrollView` with `flex` unless absolutely
+  necessary — causes gesture conflicts.
+- `flex: 0` on a ScrollView collapses to 0 height — use `flex: 1` on scrollable
+  ScrollViews only when the parent provides a defined height.

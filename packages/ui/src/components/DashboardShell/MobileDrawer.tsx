@@ -93,7 +93,7 @@ export function MobileDrawer({ visible, onClose, sections, header, footer, selec
           accessibilityViewIsModal
           style={[
             styles.panel,
-            { width, backgroundColor: tokens.background, transform: [{ translateX }] },
+            { width, backgroundColor: tokens.sidebarBackground, transform: [{ translateX }] },
           ]}
         >
           {header ? <View style={styles.header}>{header}</View> : null}

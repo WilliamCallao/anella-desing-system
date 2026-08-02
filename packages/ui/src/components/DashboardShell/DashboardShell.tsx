@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { ScrollView, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { resolveShellTokens } from "@antonella/theme";
 import type { DashboardShellTokens } from "@antonella/theme";
@@ -31,8 +31,6 @@ export default function DashboardShell({
   const isMobile = width < 600;
   const compact = !isMobile && (type === "icon" || (type === "responsive" && width < 1024));
   const outerMargin = width >= 1440 ? t.outerMargin + 8 : t.outerMargin;
-  const contentPadding = width >= 1280 ? 32 : width >= 1024 ? 28 : t.contentPadding;
-
   const hasLogout = logoutLabel !== undefined || onLogout !== undefined;
   const sidebarHeaderNode = sidebarHeader ?? <SidebarBrand name={title} brand={brand} compact={compact} tokens={t} />;
   const sidebarFooterNode = sidebarFooter ?? (
@@ -64,13 +62,17 @@ export default function DashboardShell({
           <MobileHeader
             title={title}
             onMenuPress={openDrawer}
-            backgroundColor={t.background}
+            backgroundColor={t.sidebarBackground}
             textColor={t.sidebarText}
             titleColor={t.sidebarTitle}
           />
-          <View style={[styles.mobileContent, { backgroundColor: t.contentBackground, padding: contentPadding }]}>
+          <ScrollView
+            style={[styles.mobileContent, { backgroundColor: t.contentBackground }]}
+            contentContainerStyle={styles.mobileContentInner}
+            showsVerticalScrollIndicator={false}
+          >
             {children}
-          </View>
+          </ScrollView>
           <MobileDrawer
             visible={drawerOpen}
             onClose={closeDrawer}
@@ -83,7 +85,7 @@ export default function DashboardShell({
           />
         </>
       ) : (
-        <View style={styles.row}>
+        <View style={[styles.row, { backgroundColor: t.sidebarBackground }]}>
           <Sidebar
             sections={sections}
             header={sidebarHeaderNode}
@@ -100,13 +102,7 @@ export default function DashboardShell({
             ]}
           >
             {topBar}
-            <ScrollView
-              style={styles.cardScroll}
-              contentContainerStyle={{ padding: contentPadding }}
-              showsVerticalScrollIndicator={false}
-            >
-              {children}
-            </ScrollView>
+            <View style={[styles.cardContent]}>{children}</View>
           </View>
         </View>
       )}
@@ -126,11 +122,15 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: "hidden",
   },
-  cardScroll: {
+  cardContent: {
     flex: 1,
+    overflow: "hidden",
   },
   mobileContent: {
     flex: 1,
+  },
+  mobileContentInner: {
+    flexGrow: 1,
   },
 });
 

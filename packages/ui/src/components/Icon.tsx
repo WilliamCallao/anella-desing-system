@@ -17,12 +17,16 @@ export type IconName =
   | "user"
   | "user-filled"
   | "search"
+  | "clipboard"
+  | "clipboard-filled"
   | "menu"
   | "close"
   | "chevron-down"
   | "chevron-forward"
   | "arrow-back"
   | "arrow-forward"
+  | "arrow-up"
+  | "arrow-up-filled"
   | "add"
   | "checkmark"
   | "alert-circle"
@@ -35,7 +39,9 @@ export type IconName =
   | "log-in"
   | "log-out"
   | "git-network"
-  | "construct";
+  | "construct"
+  | "chatbubble"
+  | "camera";
 
 const iconMap: Record<IconName, LibraryIconName> = {
   home: "home-outline",
@@ -51,12 +57,16 @@ const iconMap: Record<IconName, LibraryIconName> = {
   user: "person-outline",
   "user-filled": "person",
   search: "search",
+  clipboard: "clipboard",
+  "clipboard-filled": "clipboard",
   menu: "menu",
   close: "close",
   "chevron-down": "chevron-down",
   "chevron-forward": "chevron-forward",
   "arrow-back": "arrow-back",
   "arrow-forward": "arrow-forward",
+  "arrow-up": "arrow-up",
+  "arrow-up-filled": "arrow-up",
   add: "add",
   checkmark: "checkmark",
   "alert-circle": "alert-circle-outline",
@@ -70,6 +80,8 @@ const iconMap: Record<IconName, LibraryIconName> = {
   "log-out": "log-out-outline",
   "git-network": "git-network-outline",
   construct: "construct-outline",
+  chatbubble: "chatbubble-outline",
+  camera: "camera-outline",
 };
 
 export type IconProps = Omit<ComponentProps<typeof Ionicons>, "name"> & {

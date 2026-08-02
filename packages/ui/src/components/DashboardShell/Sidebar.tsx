@@ -13,7 +13,7 @@ type SidebarContentProps = {
 
 export function SidebarContent({ sections, selectedItemId, tokens, compact, onSelect }: SidebarContentProps) {
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.scroll, { backgroundColor: tokens.sidebarBackground }]} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       {sections.map((section) => (
         <View key={section.id} style={styles.section}>
           {!compact && section.title ? (
@@ -53,7 +53,7 @@ export function Sidebar({ sections, header, footer, selectedItemId, tokens, comp
       style={[
         styles.sidebar,
         compact && styles.sidebarCompact,
-        { width: compact ? tokens.sidebarCompactWidth : tokens.sidebarWidth, backgroundColor: tokens.background },
+        { width: compact ? tokens.sidebarCompactWidth : tokens.sidebarWidth, backgroundColor: tokens.sidebarBackground },
       ]}
     >
       {header ? <View style={styles.header}>{header}</View> : null}
@@ -121,7 +121,8 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     paddingTop: 24,
     paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
+    paddingRight: 0,
   },
   sidebarCompact: {
     paddingLeft: 16,
