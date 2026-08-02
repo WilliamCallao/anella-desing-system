@@ -15,5 +15,11 @@ export const AppIcon = {
   ConfiguracionFilled: "settings-filled" as IconName,
   Inspeccion: "clipboard" as IconName,
   InspeccionFilled: "clipboard-filled" as IconName,
+  Farm: "farm-filled" as IconName,
+  Barn: "barn-filled" as IconName,
+  Users: "people" as IconName,
+  UsersFilled: "people-filled" as IconName,
+  Templates: "document-text" as IconName,
+  TemplatesFilled: "document-text-filled" as IconName,
   Logout: "log-out" as IconName,
 } as const;

@@ -42,8 +42,16 @@ export type IconName =
   | "construct"
   | "chatbubble"
   | "camera"
-  | "time"
-  | "analytics";
+   | "time"
+  | "analytics"
+  | "barn"
+  | "barn-filled"
+  | "farm"
+  | "farm-filled"
+  | "people"
+  | "people-filled"
+  | "document-text"
+  | "document-text-filled";
 
 const iconMap: Record<IconName, LibraryIconName> = {
   home: "home-outline",
@@ -85,7 +93,15 @@ const iconMap: Record<IconName, LibraryIconName> = {
   chatbubble: "chatbubble-outline",
   camera: "camera-outline",
   time: "time-outline",
-  analytics: "analytics-outline",
+   analytics: "analytics-outline",
+  barn: "cube-outline",
+  "barn-filled": "cube",
+  farm: "leaf-outline",
+  "farm-filled": "leaf",
+  people: "people-outline",
+  "people-filled": "people",
+  "document-text": "document-text-outline",
+  "document-text-filled": "document-text",
 };
 
 export type IconProps = Omit<ComponentProps<typeof Ionicons>, "name"> & {
