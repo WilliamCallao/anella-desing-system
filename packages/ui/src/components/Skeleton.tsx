@@ -18,17 +18,17 @@ export interface SkeletonProps {
 
 export function Skeleton({
   width = "100%",
-  height = 20,
-  borderRadius = 8,
+  height = 56,
+  borderRadius = 12,
   style,
 }: SkeletonProps) {
-  const opacity = useSharedValue(0.4);
+  const opacity = useSharedValue(0.35);
 
   useEffect(() => {
     opacity.value = withRepeat(
       withSequence(
-        withTiming(0.85, { duration: 750 }),
-        withTiming(0.4, { duration: 750 })
+        withTiming(0.8, { duration: 450 }),
+        withTiming(0.35, { duration: 450 })
       ),
       -1,
       true
