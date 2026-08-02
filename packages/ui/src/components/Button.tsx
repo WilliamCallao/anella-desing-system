@@ -25,12 +25,18 @@ export function Button({
   size = "md",
   style,
   disabled,
+  android_ripple,
   ...rest
 }: ButtonProps) {
+  const defaultRipple = android_ripple ?? {
+    color: variant === "primary" || variant === "danger" ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.08)",
+  };
+
   return (
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
+      android_ripple={disabled ? undefined : defaultRipple}
       style={({ pressed }) => [
         styles.base,
         sizeStyles[size],

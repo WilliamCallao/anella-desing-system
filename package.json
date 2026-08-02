@@ -12,6 +12,8 @@
     "lint": "turbo lint"
   },
   "devDependencies": {
+    "react-native-reanimated": "^4.1.7",
+    "react-native-worklets": "^0.5.1",
     "turbo": "^2.5.0",
     "typescript": "~6.0.3"
   }

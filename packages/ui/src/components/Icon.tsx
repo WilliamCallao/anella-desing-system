@@ -41,7 +41,9 @@ export type IconName =
   | "git-network"
   | "construct"
   | "chatbubble"
-  | "camera";
+  | "camera"
+  | "time"
+  | "analytics";
 
 const iconMap: Record<IconName, LibraryIconName> = {
   home: "home-outline",
@@ -82,6 +84,8 @@ const iconMap: Record<IconName, LibraryIconName> = {
   construct: "construct-outline",
   chatbubble: "chatbubble-outline",
   camera: "camera-outline",
+  time: "time-outline",
+  analytics: "analytics-outline",
 };
 
 export type IconProps = Omit<ComponentProps<typeof Ionicons>, "name"> & {

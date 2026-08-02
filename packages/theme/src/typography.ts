@@ -1,6 +1,11 @@
 export const typography = {
-  title: { fontSize: 28, fontWeight: "700", lineHeight: 34 },
-  heading: { fontSize: 20, fontWeight: "600", lineHeight: 26 },
-  body: { fontSize: 16, fontWeight: "400", lineHeight: 22 },
-  caption: { fontSize: 13, fontWeight: "400", lineHeight: 18 },
+  title: { fontSize: 22, fontWeight: "700" as const, lineHeight: 28 },
+  subtitle: { fontSize: 18, fontWeight: "600" as const, lineHeight: 24 },
+  heading: { fontSize: 16, fontWeight: "600" as const, lineHeight: 22 },
+  body: { fontSize: 14, fontWeight: "400" as const, lineHeight: 20 },
+  bodyMedium: { fontSize: 14, fontWeight: "500" as const, lineHeight: 20 },
+  bodyBold: { fontSize: 14, fontWeight: "600" as const, lineHeight: 20 },
+  caption: { fontSize: 12, fontWeight: "400" as const, lineHeight: 16 },
+  captionMedium: { fontSize: 12, fontWeight: "500" as const, lineHeight: 16 },
+  overline: { fontSize: 11, fontWeight: "600" as const, lineHeight: 14, letterSpacing: 0.5, textTransform: "uppercase" as const },
 } as const;

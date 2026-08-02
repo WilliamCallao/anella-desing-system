@@ -1,37 +1,31 @@
 import React from "react";
-import { StyleSheet, Text as RNText, type TextProps as RNTextProps } from "react-native";
-import { neutrals } from "@antonella/theme";
+import { StyleSheet, View, type ViewStyle } from "react-native";
+import { neutrals, space } from "@antonella/theme";
+import { Text } from "./Text";
 
-export interface CardTitleProps extends RNTextProps {
+export interface CardTitleProps {
   title: string;
   subtitle?: string;
+  style?: ViewStyle;
 }
 
 export function CardTitle({ title, subtitle, style }: CardTitleProps) {
   return (
-    <>
-      <RNText style={[styles.title, style]} numberOfLines={1}>
+    <View style={[styles.container, style]}>
+      <Text variant="heading" color={neutrals.N800} numberOfLines={1}>
         {title}
-      </RNText>
+      </Text>
       {subtitle ? (
-        <RNText style={styles.subtitle} numberOfLines={1}>
+        <Text variant="caption" color={neutrals.N500} numberOfLines={1}>
           {subtitle}
-        </RNText>
+        </Text>
       ) : null}
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: neutrals.N800,
-  },
-  subtitle: {
-    fontSize: 13,
-    fontWeight: "400",
-    color: neutrals.N500,
-    marginTop: 2,
+  container: {
+    gap: 2,
   },
 });
