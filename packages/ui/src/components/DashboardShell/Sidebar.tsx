@@ -11,13 +11,32 @@ type SidebarContentProps = {
   onSelect: (item: SidebarItem) => void;
 };
 
-export function SidebarContent({ sections, selectedItemId, tokens, compact, onSelect }: SidebarContentProps) {
+export function SidebarContent({
+  sections,
+  selectedItemId,
+  tokens,
+  compact,
+  onSelect,
+}: SidebarContentProps) {
   return (
-    <ScrollView style={[styles.scroll, { backgroundColor: tokens.sidebarBackground }]} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={[
+        styles.scroll,
+        { backgroundColor: tokens.sidebarBackground },
+      ]}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       {sections.map((section) => (
         <View key={section.id} style={styles.section}>
           {!compact && section.title ? (
-            <Text style={[styles.sectionTitle, { color: tokens.sidebarSectionTitle }]} numberOfLines={1}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                { color: tokens.sidebarSectionTitle },
+              ]}
+              numberOfLines={1}
+            >
               {section.title}
             </Text>
           ) : null}
@@ -47,17 +66,34 @@ export type SidebarProps = {
   onSelect: (item: SidebarItem) => void;
 };
 
-export function Sidebar({ sections, header, footer, selectedItemId, tokens, compact, onSelect }: SidebarProps) {
+export function Sidebar({
+  sections,
+  header,
+  footer,
+  selectedItemId,
+  tokens,
+  compact,
+  onSelect,
+}: SidebarProps) {
   return (
     <View
       style={[
         styles.sidebar,
         compact && styles.sidebarCompact,
-        { width: compact ? tokens.sidebarCompactWidth : tokens.sidebarWidth, backgroundColor: tokens.sidebarBackground },
+        {
+          width: compact ? tokens.sidebarCompactWidth : tokens.sidebarWidth,
+          backgroundColor: tokens.sidebarBackground,
+        },
       ]}
     >
       {header ? <View style={styles.header}>{header}</View> : null}
-      <SidebarContent sections={sections} selectedItemId={selectedItemId} tokens={tokens} compact={compact} onSelect={onSelect} />
+      <SidebarContent
+        sections={sections}
+        selectedItemId={selectedItemId}
+        tokens={tokens}
+        compact={compact}
+        onSelect={onSelect}
+      />
       {footer ? <View style={styles.footer}>{footer}</View> : null}
     </View>
   );
@@ -71,10 +107,18 @@ type SidebarItemRowProps = {
   onPress: () => void;
 };
 
-function SidebarItemRow({ item, selected, compact, tokens, onPress }: SidebarItemRowProps) {
+function SidebarItemRow({
+  item,
+  selected,
+  compact,
+  tokens,
+  onPress,
+}: SidebarItemRowProps) {
   const color = selected ? tokens.sidebarActiveText : tokens.sidebarText;
-  const badgeBackground = selected ? tokens.sidebarActiveText : "rgba(255, 255, 255, 0.1)";
-  const badgeTextColor = selected ? tokens.sidebarActiveBackground : tokens.sidebarText;
+  const badgeBackground = selected
+    ? tokens.sidebarActiveBackground
+    : "rgba(255, 255, 255, 0.1)";
+  const badgeTextColor = selected ? tokens.sidebarActiveText : tokens.sidebarText;
 
   return (
     <Pressable
@@ -91,26 +135,44 @@ function SidebarItemRow({ item, selected, compact, tokens, onPress }: SidebarIte
           styles.item,
           compact ? styles.itemCompact : styles.itemFull,
           { borderRadius: tokens.itemRadius },
-          selected && { backgroundColor: tokens.sidebarActiveBackground },
-          !selected && (pressed || hovered) && { backgroundColor: tokens.sidebarHover },
+          selected && styles.itemSelected,
+          selected && {
+            backgroundColor: tokens.sidebarActiveBackground,
+          },
+          !selected && (pressed || hovered) && {
+            backgroundColor: tokens.sidebarHover,
+          },
           item.disabled && styles.disabled,
         ];
       }}
     >
       {item.icon ? (
-        <View style={styles.icon}>
-          <Icon name={item.icon} size={20} color={color} />
+        <View style={[styles.icon, compact && styles.iconCompact]}>
+          <Icon name={item.icon} size={22} color={color} />
         </View>
       ) : null}
       {!compact ? (
-        <Text style={[styles.itemLabel, { color }]} numberOfLines={1}>
-          {item.label}
-        </Text>
-      ) : null}
-      {!compact && item.badge !== undefined ? (
-        <View style={[styles.badge, { backgroundColor: badgeBackground }]}>
-          <Text style={[styles.badgeText, { color: badgeTextColor }]}>{item.badge}</Text>
-        </View>
+        <>
+          <Text
+            style={[styles.itemLabel, { color }]}
+            numberOfLines={1}
+          >
+            {item.label}
+          </Text>
+          {!selected && item.badge !== undefined ? (
+            <View style={[styles.badge, { backgroundColor: badgeBackground }]}>
+              <Text style={[styles.badgeText, { color: badgeTextColor }]}>
+                {item.badge}
+              </Text>
+            </View>
+          ) : selected && item.badge !== undefined ? (
+            <View style={[styles.badge, styles.badgeSelected, { backgroundColor: badgeBackground }]}>
+              <Text style={[styles.badgeText, { color: badgeTextColor }]}>
+                {item.badge}
+              </Text>
+            </View>
+          ) : null}
+        </>
       ) : null}
     </Pressable>
   );
@@ -121,7 +183,7 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     paddingTop: 24,
     paddingBottom: 20,
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     paddingRight: 0,
   },
   sidebarCompact: {
@@ -141,45 +203,50 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 28,
   },
   sectionTitle: {
     fontSize: 11,
     fontWeight: "600",
-    letterSpacing: 1.3,
+    letterSpacing: 1.2,
     textTransform: "uppercase",
-    paddingHorizontal: 12,
-    marginBottom: 6,
+    paddingHorizontal: 14,
+    marginBottom: 8,
   },
   item: {
-    minHeight: 44,
+    minHeight: 48,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    marginBottom: 6,
+    gap: 14,
+    marginBottom: 4,
   },
   itemFull: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
   itemCompact: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignSelf: "center",
     justifyContent: "center",
   },
+  itemSelected: {
+    shadowColor: "transparent",
+  },
   disabled: {
-    opacity: 0.4,
+    opacity: 0.35,
   },
   icon: {
-    width: 22,
+    width: 26,
     alignItems: "center",
     justifyContent: "center",
+  },
+  iconCompact: {
+    width: "auto",
   },
   itemLabel: {
     flex: 1,
     fontSize: 14,
     fontWeight: "500",
-    textAlign: "center",
   },
   badge: {
     minWidth: 20,
@@ -188,6 +255,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
+  },
+  badgeSelected: {
+    alignSelf: "flex-end",
   },
   badgeText: {
     fontSize: 11,

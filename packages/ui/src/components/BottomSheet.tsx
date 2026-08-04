@@ -19,7 +19,7 @@ import Animated, {
   SlideOutDown,
   SlideOutRight,
 } from "react-native-reanimated";
-import { neutrals, space } from "@antonella/theme";
+import { background, card, space } from "@antonella/theme";
 
 export type BottomSheetProps = {
   visible: boolean;
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bottomSheetPanel: {
-    backgroundColor: neutrals.N0,
+    backgroundColor: card.background,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: space.space4,
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: 420,
     maxWidth: "100%",
-    backgroundColor: neutrals.N0,
+    backgroundColor: card.background,
     borderTopLeftRadius: 20,
     borderBottomLeftRadius: 20,
     padding: space.space4,
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: neutrals.N300,
+    backgroundColor: background.default,
     alignSelf: "center",
     marginVertical: space.space2,
   },

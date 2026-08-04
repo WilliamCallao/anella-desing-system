@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, type ViewProps } from "react-native";
-import { palette, space } from "@antonella/theme";
+import { background, card, palette, space } from "@antonella/theme";
 import { Text } from "./Text";
 
 const MONTHS = [
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 16,
     fontWeight: "600",
-    color: palette.text,
+    color: card.text.primary,
   },
   weekRow: {
     flexDirection: "row",
@@ -121,14 +121,14 @@ const styles = StyleSheet.create({
   weekdayText: {
     fontSize: 12,
     fontWeight: "500",
-    color: palette.textMuted,
+    color: card.text.secondary,
   },
   dayText: {
     fontSize: 14,
-    color: palette.text,
+    color: card.text.primary,
   },
   dayMuted: {
-    color: palette.border,
+    color: background.default,
   },
   todayCircle: {
     width: 24,

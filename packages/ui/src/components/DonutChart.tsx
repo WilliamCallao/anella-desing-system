@@ -4,6 +4,7 @@ import Svg, { Circle } from "react-native-svg";
 import { neutrals } from "@antonella/theme";
 
 export type DonutSegment = {
+  /** Fracción del anillo (0-1) que ocupa el segmento. */
   value: number;
   color: string;
 };
@@ -30,7 +31,6 @@ export function DonutChart({
   const radius = (size - thickness) / 2;
   const center = size / 2;
   const circumference = 2 * Math.PI * radius;
-  const total = segments.reduce((sum, s) => sum + Math.max(0, s.value), 0) || 1;
 
   let cumulative = 0;
 
@@ -46,7 +46,7 @@ export function DonutChart({
           fill="none"
         />
         {segments.map((segment, index) => {
-          const fraction = Math.max(0, segment.value) / total;
+          const fraction = Math.min(1, Math.max(0, segment.value));
           const arcLength = fraction * circumference;
           const rotation = startAngle + cumulative * 360;
           cumulative += fraction;

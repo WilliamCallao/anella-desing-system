@@ -7,7 +7,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { neutrals } from "@antonella/theme";
+import { background } from "@antonella/theme";
 
 export interface SkeletonProps {
   width?: number | string;
@@ -57,6 +57,6 @@ export function Skeleton({
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: neutrals.N200,
+    backgroundColor: background.skeleton,
   },
 });

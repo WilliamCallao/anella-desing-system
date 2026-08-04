@@ -1,15 +1,28 @@
 import React from "react";
 import { StyleSheet, View, type ViewProps } from "react-native";
-import { palette, spacing } from "@antonella/theme";
+import { background, card, palette, spacing } from "@antonella/theme";
 import { Skeleton } from "./Skeleton";
 
+export type CardVariant = "default" | "line";
+
 export interface CardProps extends ViewProps {
+  /** Fondo custom que tiene prioridad sobre la variante. */
   background?: string;
+  /** `default` pinta `card.background`; `line` deja el fondo transparente y dibuja el borde gris. */
+  variant?: CardVariant;
   loading?: boolean;
   skeletonHeight?: number;
 }
 
-export function Card({ background, loading, skeletonHeight = 80, style, children, ...rest }: CardProps) {
+export function Card({
+  background: bgOverride,
+  loading,
+  skeletonHeight = 80,
+  variant = "default",
+  style,
+  children,
+  ...rest
+}: CardProps) {
   if (loading) {
     return (
       <Skeleton
@@ -22,7 +35,15 @@ export function Card({ background, loading, skeletonHeight = 80, style, children
   }
 
   return (
-    <View style={[styles.card, background ? { backgroundColor: background } : undefined, style]} {...rest}>
+    <View
+      style={[
+        styles.card,
+        variant === "line" ? styles.line : styles.default,
+        bgOverride ? { backgroundColor: bgOverride } : undefined,
+        style,
+      ]}
+      {...rest}
+    >
       {children}
     </View>
   );
@@ -32,8 +53,15 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: palette.border,
     padding: spacing.lg,
     overflow: "hidden",
+  },
+  default: {
+    backgroundColor: card.background,
+    borderColor: background.default,
+  },
+  line: {
+    backgroundColor: "transparent",
+    borderColor: palette.border,
   },
 });

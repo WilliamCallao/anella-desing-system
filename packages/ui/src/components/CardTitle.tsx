@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, type ViewStyle } from "react-native";
-import { neutrals, space } from "@antonella/theme";
+import { card, space } from "@antonella/theme";
 import { Text } from "./Text";
 
 export interface CardTitleProps {
@@ -12,11 +12,11 @@ export interface CardTitleProps {
 export function CardTitle({ title, subtitle, style }: CardTitleProps) {
   return (
     <View style={[styles.container, style]}>
-      <Text variant="heading" color={neutrals.N800} numberOfLines={1}>
+      <Text variant="heading" color={card.text.primary} numberOfLines={1}>
         {title}
       </Text>
       {subtitle ? (
-        <Text variant="caption" color={neutrals.N500} numberOfLines={1}>
+        <Text variant="caption" color={card.text.secondary} numberOfLines={1}>
           {subtitle}
         </Text>
       ) : null}

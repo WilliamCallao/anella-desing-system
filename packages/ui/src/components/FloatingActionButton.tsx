@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { AppIcon } from "../AppIcons";
 import { Icon } from "./Icon";
-import { palette } from "@antonella/theme";
+import { cta1, cta1Contrast } from "@antonella/theme";
 import type { IconName } from "./Icon";
 
 export interface FloatingActionButtonProps {
@@ -24,7 +24,7 @@ export function FloatingActionButton({
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         accessibilityRole="button"
       >
-        <Icon name={icon} size={22} color={palette.background} />
+        <Icon name={icon} size={22} color={cta1Contrast} />
       </Pressable>
     </View>
   );
@@ -40,11 +40,11 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: palette.primary,
+    backgroundColor: cta1,
     alignItems: "center",
     justifyContent: "center",
     elevation: 6,
-    shadowColor: palette.primary,
+    shadowColor: cta1,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 12,

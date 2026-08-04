@@ -1,4 +1,5 @@
 import { neutrals, brand, success, warning, danger } from "../basePalette";
+import { accent, background, card, cta1, cta1Contrast } from "../colors";
 import type { SemanticColors } from "../semanticColors";
 
 export const lightColors: SemanticColors = {
@@ -59,11 +60,13 @@ export const lightColors: SemanticColors = {
     danger: danger.D500,
   },
   surface: {
-    pageDefault: neutrals.N0,
+    // Fondo de pantalla = background.default (beige de marca).
+    pageDefault: background.default,
     pageSubtlest: neutrals.N50,
     pageSubtle: neutrals.N100,
-    card: neutrals.N0,
-    cardBorder: neutrals.N100,
+    // Tarjetas sobre background.default = card.background.
+    card: card.background,
+    cardBorder: background.default,
     brand: brand.M500,
     brandSubtle: brand.M100,
     brandSubtler: brand.M50,
@@ -78,14 +81,16 @@ export const lightColors: SemanticColors = {
     modal: neutrals.N0,
   },
   components: {
+    // Sidebar = superficie oscura de marca (accent). Íconos/textos solo accent.*.
+    // Item activo = CTA1 con texto `cta1Contrast` encima.
     sidebar: {
-      background: neutrals.N900,
+      background: accent.background,
       hover: "rgba(255, 255, 255, 0.05)",
-      activeBackground: neutrals.N0,
-      activeText: neutrals.N900,
-      text: neutrals.N400,
-      sectionTitle: neutrals.N500,
-      title: neutrals.N0,
+      activeBackground: cta1,
+      activeText: cta1Contrast,
+      text: accent.text.secondary,
+      sectionTitle: accent.text.secondary,
+      title: accent.text.primary,
     },
     button: {
       primaryBg: brand.M500,

@@ -19,16 +19,23 @@ export type IconName =
   | "search"
   | "clipboard"
   | "clipboard-filled"
+  | "checklist"
+  | "checklist-filled"
   | "menu"
   | "close"
   | "chevron-down"
   | "chevron-forward"
+  | "chevron-back"
   | "arrow-back"
   | "arrow-forward"
+  | "arrow-down"
   | "arrow-up"
   | "arrow-up-filled"
   | "add"
   | "checkmark"
+  | "pencil"
+  | "trash"
+  | "chevron-up"
   | "alert-circle"
   | "checkmark-circle"
   | "information-circle"
@@ -69,16 +76,23 @@ const iconMap: Record<IconName, LibraryIconName> = {
   search: "search",
   clipboard: "clipboard",
   "clipboard-filled": "clipboard",
+  checklist: "list-outline",
+  "checklist-filled": "list",
   menu: "menu",
   close: "close",
   "chevron-down": "chevron-down",
   "chevron-forward": "chevron-forward",
+  "chevron-back": "chevron-back",
   "arrow-back": "arrow-back",
   "arrow-forward": "arrow-forward",
+  "arrow-down": "arrow-down",
   "arrow-up": "arrow-up",
   "arrow-up-filled": "arrow-up",
   add: "add",
   checkmark: "checkmark",
+  pencil: "create-outline",
+  trash: "trash-outline",
+  "chevron-up": "chevron-up",
   "alert-circle": "alert-circle-outline",
   "checkmark-circle": "checkmark-circle-outline",
   "information-circle": "information-circle-outline",

@@ -1,4 +1,5 @@
 import { neutrals, brand, success, warning, danger } from "../basePalette";
+import { accent, cta1, cta1Contrast } from "../colors";
 import type { SemanticColors } from "../semanticColors";
 
 export const darkColors: SemanticColors = {
@@ -78,14 +79,15 @@ export const darkColors: SemanticColors = {
     modal: neutrals.N900,
   },
   components: {
+    // Sidebar = misma superficie de marca en ambos modos (accent). Item activo = CTA1.
     sidebar: {
-      background: neutrals.N900,
+      background: accent.background,
       hover: "rgba(255, 255, 255, 0.06)",
-      activeBackground: neutrals.N700,
-      activeText: neutrals.N50,
-      text: neutrals.N400,
-      sectionTitle: neutrals.N500,
-      title: neutrals.N50,
+      activeBackground: cta1,
+      activeText: cta1Contrast,
+      text: accent.text.secondary,
+      sectionTitle: accent.text.secondary,
+      title: accent.text.primary,
     },
     button: {
       primaryBg: brand.M500,

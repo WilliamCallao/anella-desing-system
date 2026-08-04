@@ -6,14 +6,17 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
+  useWindowDimensions,
+  type ViewStyle,
 } from "react-native";
 import { Icon, Text, type IconName } from "../";
-import { palette, spacing } from "@antonella/theme";
+import { background, card, cta1, cta1Contrast, spacing } from "@antonella/theme";
 
 export type DropdownOption = {
   label: string;
   value: string;
   icon?: IconName;
+  disabled?: boolean;
 };
 
 export type DropdownState = {
@@ -26,8 +29,13 @@ export type DropdownProps = {
   placeholder?: string;
   options: DropdownOption[];
   onChange: (option: DropdownOption) => void;
-  style?: object;
+  style?: ViewStyle;
+  maxHeight?: number;
+  disabled?: boolean;
 };
+
+const DROPDOWN_HEIGHT = 320;
+const TRIGGER_OFFSET = 8;
 
 export function Dropdown({
   value,
@@ -35,10 +43,19 @@ export function Dropdown({
   options,
   onChange,
   style,
+  maxHeight = DROPDOWN_HEIGHT,
+  disabled = false,
 }: DropdownProps) {
   const [state, setState] = useState<DropdownState>({ value: value ?? "", open: false });
   const triggerRef = useRef<View>(null);
-  const [triggerBounds, setTriggerBounds] = useState<{ pageY: number } | null>(null);
+  const [triggerBounds, setTriggerBounds] = useState<{
+    pageX: number;
+    pageY: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const [isBelow, setIsBelow] = useState(true);
+  const { height: screenHeight, width: screenWidth } = useWindowDimensions();
 
   const selectedLabel = state.value
     ? options.find((o) => o.value === state.value)?.label ?? ""
@@ -46,14 +63,19 @@ export function Dropdown({
 
   const handleOpen = () => {
     if (triggerRef.current) {
-      triggerRef.current.measureLayout(View.prototype, (x, y) => {
-        setTriggerBounds({ pageY: y });
+      triggerRef.current.measureInWindow((pageX, pageY, width, height) => {
+        const spaceBelow = screenHeight - pageY - height;
+        const spaceAbove = pageY;
+        const showBelow = spaceBelow >= Math.min(spaceAbove, DROPDOWN_HEIGHT);
+        setIsBelow(showBelow);
+        setTriggerBounds({ pageX, pageY, width, height });
       });
     }
     setState((s) => ({ ...s, open: true }));
   };
 
   const handleSelect = (option: DropdownOption) => {
+    if (option.disabled) return;
     setState({ value: option.value, open: false });
     setTriggerBounds(null);
     onChange(option);
@@ -64,17 +86,45 @@ export function Dropdown({
     setTriggerBounds(null);
   };
 
+  const dropdownTop = triggerBounds
+    ? isBelow
+      ? triggerBounds.pageY + triggerBounds.height + TRIGGER_OFFSET
+      : triggerBounds.pageY - maxHeight - TRIGGER_OFFSET
+    : screenHeight / 2 - maxHeight / 2;
+
+  const dropdownLeft = triggerBounds ? triggerBounds.pageX : 24;
+  const dropdownRight = triggerBounds
+    ? screenWidth - triggerBounds.pageX - triggerBounds.width
+    : 24;
+
+  const dropdownStyle: ViewStyle = triggerBounds
+    ? {
+        top: dropdownTop,
+        left: dropdownLeft,
+        right: dropdownRight,
+        maxHeight,
+      }
+    : {
+        top: dropdownTop,
+        left: 24,
+        right: 24,
+        maxHeight,
+      };
+
   return (
     <View style={[styles.container, style]}>
       <TouchableOpacity
         ref={triggerRef}
         onPress={handleOpen}
-        style={styles.trigger}
+        style={[styles.trigger, disabled && styles.triggerDisabled]}
         activeOpacity={0.7}
         accessibilityRole="button"
+        disabled={disabled}
       >
-        <Text style={[styles.triggerText, !state.value && styles.placeholder]}>{selectedLabel}</Text>
-        <Icon name="chevron-down" size={16} color={palette.textMuted} style={styles.icon} />
+        <Text style={[styles.triggerText, !state.value && styles.placeholder]} numberOfLines={1}>
+          {selectedLabel}
+        </Text>
+        <Icon name="chevron-down" size={16} color={card.text.secondary} style={styles.icon} />
       </TouchableOpacity>
 
       <Modal
@@ -85,7 +135,7 @@ export function Dropdown({
         onRequestClose={handleClose}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
-        <View style={[styles.modalBox, triggerBounds ? { top: triggerBounds.pageY + 48 } : styles.modalCenter]}>
+        <View style={[styles.modalBox, dropdownStyle]}>
           <FlatList
             data={options}
             keyExtractor={(item) => item.value}
@@ -95,12 +145,19 @@ export function Dropdown({
               const selected = item.value === state.value;
               return (
                 <TouchableOpacity
-                  style={[styles.option, selected && styles.optionSelected]}
+                  style={[
+                    styles.option,
+                    selected && styles.optionSelected,
+                    item.disabled && styles.optionDisabled,
+                  ]}
                   onPress={() => handleSelect(item)}
                   activeOpacity={0.7}
+                  disabled={item.disabled}
                 >
-                  {item.icon ? <Icon name={item.icon} size={16} color={palette.text} style={styles.optionIcon} /> : null}
-                  <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{item.label}</Text>
+                  {item.icon ? <Icon name={item.icon} size={16} color={card.text.primary} style={styles.optionIcon} /> : null}
+                  <Text style={[styles.optionText, selected && styles.optionTextSelected, item.disabled && styles.optionTextDisabled]}>
+                    {item.label}
+                  </Text>
                 </TouchableOpacity>
               );
             }}
@@ -118,46 +175,39 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: palette.border,
-    borderRadius: 10,
+    borderColor: background.default,
+    borderRadius: 12,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: palette.background,
-    minHeight: 44,
+    backgroundColor: card.background,
+    minHeight: 48,
+  },
+  triggerDisabled: {
+    opacity: 0.5,
   },
   triggerText: {
     fontSize: 16,
-    color: palette.text,
+    color: card.text.primary,
     flex: 1,
   },
   placeholder: {
-    color: palette.textMuted,
+    color: card.text.secondary,
   },
   icon: {
     marginLeft: spacing.sm,
   },
-  modalCenter: {
-    position: "absolute",
-    top: 120,
-    left: 24,
-    right: 24,
-    backgroundColor: palette.background,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: palette.border,
-    maxHeight: 320,
-    overflow: "hidden",
-  },
   modalBox: {
     position: "absolute",
-    left: 24,
-    right: 24,
-    backgroundColor: palette.background,
+    backgroundColor: card.background,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: palette.border,
-    maxHeight: 320,
+    borderColor: background.default,
     overflow: "hidden",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
   },
   list: {
     flexGrow: 0,
@@ -166,20 +216,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
   },
   optionSelected: {
-    backgroundColor: palette.primary + "10",
+    backgroundColor: cta1,
+  },
+  optionDisabled: {
+    opacity: 0.5,
   },
   optionIcon: {
     marginRight: spacing.sm,
   },
   optionText: {
     fontSize: 15,
-    color: palette.text,
+    color: card.text.primary,
   },
   optionTextSelected: {
     fontWeight: "600",
-    color: palette.primary,
+    color: cta1Contrast,
+  },
+  optionTextDisabled: {
+    color: card.text.secondary,
   },
 });

@@ -15,5 +15,6 @@ export * from "./components/LayoutRow";
 export * from "./components/LayoutColumn";
 export * from "./components/Skeleton";
 export * from "./components/Text";
+export * from "./components/card-form";
 export { AppIcon } from "./AppIcons";
 export { LayoutColumnSize, LayoutRowSize } from "@antonella/theme";

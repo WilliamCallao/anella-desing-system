@@ -1,3 +1,5 @@
+import { accent, background, cta1, cta1Contrast } from "./colors";
+
 export type DashboardShellTokens = {
   background: string;
   sidebarBackground: string;
@@ -17,38 +19,42 @@ export type DashboardShellTokens = {
   sidebarCompactWidth: number;
 };
 
+// Defaults en modo light. La app consume `resolveShellTokens(themeMode)`,
+// que además varía por ancho de pantalla; estos defaults se usan como fallback.
 export const shellTokens: DashboardShellTokens = {
-  background: "#0F172A",
-  sidebarBackground: "#0F172A",
-  sidebarText: "#9CA3AF",
+  background: background.default,
+  sidebarBackground: accent.background,
+  sidebarText: accent.text.secondary,
   sidebarHover: "rgba(255, 255, 255, 0.05)",
-  sidebarActiveBackground: "#FFFFFF",
-  sidebarActiveText: "#111827",
-  sidebarSectionTitle: "#6B7280",
-  sidebarTitle: "#F8FAFC",
-  contentBackground: "#FFFFFF",
-  contentBorder: "#0F172A",
+  sidebarActiveBackground: cta1,
+  sidebarActiveText: cta1Contrast,
+  sidebarSectionTitle: accent.text.secondary,
+  sidebarTitle: accent.text.primary,
+  contentBackground: background.default,
+  contentBorder: accent.background,
   borderRadius: 20,
-  itemRadius: 10,
+  itemRadius: 12,
   outerMargin: 16,
   contentPadding: 24,
   sidebarWidth: 256,
   sidebarCompactWidth: 76,
 };
 
+// Defaults en modo dark. La app consume `resolveShellTokens(themeMode)`;
+// estos defaults se usan como fallback.
 export const darkShellTokens: DashboardShellTokens = {
   background: "#020617",
-  sidebarBackground: "#020617",
-  sidebarText: "#94A3B8",
+  sidebarBackground: accent.background,
+  sidebarText: accent.text.secondary,
   sidebarHover: "rgba(255, 255, 255, 0.06)",
-  sidebarActiveBackground: "#334155",
-  sidebarActiveText: "#F8FAFC",
-  sidebarSectionTitle: "#64748B",
-  sidebarTitle: "#F8FAFC",
-  contentBackground: "#0F172A",
-  contentBorder: "#020617",
+  sidebarActiveBackground: cta1,
+  sidebarActiveText: cta1Contrast,
+  sidebarSectionTitle: accent.text.secondary,
+  sidebarTitle: accent.text.primary,
+  contentBackground: "#020617",
+  contentBorder: accent.background,
   borderRadius: 20,
-  itemRadius: 10,
+  itemRadius: 12,
   outerMargin: 16,
   contentPadding: 24,
   sidebarWidth: 256,

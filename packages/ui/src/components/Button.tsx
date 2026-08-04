@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
-import { palette } from "@antonella/theme";
+import { background, card, palette } from "@antonella/theme";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -14,7 +14,7 @@ export interface ButtonProps extends Omit<PressableProps, "style"> {
 
 const labelColors: Record<ButtonVariant, string> = {
   primary: "#FFFFFF",
-  secondary: palette.text,
+  secondary: card.text.primary,
   ghost: palette.primary,
   danger: "#FFFFFF",
 };
@@ -82,7 +82,7 @@ const sizeStyles = StyleSheet.create({
 
 const variantStyles = StyleSheet.create({
   primary: { backgroundColor: palette.primary },
-  secondary: { backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.border },
+  secondary: { backgroundColor: card.background, borderWidth: 1, borderColor: background.default },
   ghost: { backgroundColor: "transparent" },
   danger: { backgroundColor: palette.danger },
 });
