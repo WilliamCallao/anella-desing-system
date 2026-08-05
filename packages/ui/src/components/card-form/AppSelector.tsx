@@ -92,15 +92,14 @@ export function AppSelector({
         accessibilityState={{ expanded: open, disabled }}
       >
         <Text
-          variant="body"
+          variant="label"
           numberOfLines={1}
           style={[styles.label, labelWidth != null && { width: labelWidth }]}
         >
           {label}
         </Text>
         <Text
-          variant="body"
-          color={selected ? appInputCard.text.value : appInputCard.text.placeholder}
+          variant={selected ? "content" : "secondary"}
           numberOfLines={1}
           style={styles.value}
         >
@@ -162,15 +161,11 @@ const styles = StyleSheet.create({
   },
   label: {
     flexShrink: 0,
-    fontSize: 15,
-    fontWeight: "600",
-    color: appInputCard.text.label,
   },
   value: {
     flex: 1,
-    fontSize: 14,
-    textAlign: "right",
     paddingRight: 2,
+    textAlign: "right",
     overflow: "hidden",
   },
   option: {

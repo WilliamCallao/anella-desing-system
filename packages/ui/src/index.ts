@@ -4,6 +4,8 @@ export * from "./components/Card";
 export * from "./components/CardTitle";
 export * from "./components/Chip";
 export * from "./components/BottomSheet";
+export * from "./components/Modal";
+export * from "./components/ResponsiveDialog";
 export * from "./components/DonutChart";
 export { default as DashboardShell } from "./components/DashboardShell/DashboardShell";
 export * from "./components/DashboardShell/types";

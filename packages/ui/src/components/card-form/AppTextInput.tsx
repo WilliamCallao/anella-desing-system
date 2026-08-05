@@ -1,8 +1,17 @@
-import React, { useRef } from "react";
-import { StyleSheet, TextInput, TouchableOpacity, type KeyboardTypeOptions } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  type KeyboardTypeOptions,
+  type NativeSyntheticEvent,
+  type TextInputContentSizeChangeEventData,
+} from "react-native";
 import { appInputCard, spacing } from "@antonella/theme";
 import { Text } from "../Text";
 import type { AppInputProps } from "./AppInput";
+
+const SINGLE_LINE_HEIGHT = 20;
 
 export type AppTextInputProps = AppInputProps & {
   type?: "text";
@@ -27,20 +36,35 @@ export function AppTextInput({
   editable = true,
 }: AppTextInputProps) {
   const inputRef = useRef<TextInput>(null);
+  const [inputHeight, setInputHeight] = useState<number | undefined>(undefined);
 
   const focus = () => {
     if (editable) inputRef.current?.focus();
   };
 
+  const handleContentSizeChange = (
+    event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>
+  ) => {
+    setInputHeight(event.nativeEvent.contentSize.height);
+  };
+
+  const handleSubmitEditing = () => {
+    inputRef.current?.blur();
+  };
+
   return (
     <TouchableOpacity
-      style={[styles.row, !editable && styles.rowDisabled]}
+      style={[
+        styles.row,
+        inputHeight != null && inputHeight > SINGLE_LINE_HEIGHT && styles.rowGrown,
+        !editable && styles.rowDisabled,
+      ]}
       onPress={focus}
       disabled={!editable}
       activeOpacity={1}
     >
       <Text
-        variant="body"
+        variant="label"
         numberOfLines={1}
         style={[styles.label, labelWidth != null && { width: labelWidth }]}
       >
@@ -48,9 +72,16 @@ export function AppTextInput({
       </Text>
       <TextInput
         ref={inputRef}
-        style={styles.value}
+        style={[
+          styles.value,
+          inputHeight != null && {
+            height: Math.max(inputHeight, SINGLE_LINE_HEIGHT),
+          },
+        ]}
         value={value}
         onChangeText={onChangeText}
+        onContentSizeChange={handleContentSizeChange}
+        onSubmitEditing={handleSubmitEditing}
         placeholder={placeholder}
         placeholderTextColor={appInputCard.text.placeholder}
         autoCapitalize={autoCapitalize}
@@ -58,6 +89,12 @@ export function AppTextInput({
         maxLength={maxLength}
         editable={editable}
         selectionColor={appInputCard.text.label}
+        underlineColorAndroid="transparent"
+        multiline
+        scrollEnabled={false}
+        textAlignVertical="top"
+        blurOnSubmit
+        submitBehavior="blurAndSubmit"
       />
     </TouchableOpacity>
   );
@@ -72,21 +109,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
   },
+  rowGrown: {
+    alignItems: "flex-start",
+  },
   rowDisabled: {
     opacity: 0.5,
   },
   label: {
     flexShrink: 0,
-    fontSize: 15,
-    fontWeight: "600",
-    color: appInputCard.text.label,
   },
   value: {
     flex: 1,
+    minHeight: SINGLE_LINE_HEIGHT,
     padding: 0,
     paddingRight: 2,
     fontSize: 14,
+    lineHeight: SINGLE_LINE_HEIGHT,
     textAlign: "right",
     color: appInputCard.text.value,
+    outlineWidth: 0,
   },
 });

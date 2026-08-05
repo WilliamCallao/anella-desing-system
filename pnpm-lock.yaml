@@ -8,6 +8,21 @@ importers:
 
   .:
     devDependencies:
+      '@gorhom/bottom-sheet':
+        specifier: ^5.2.14
+        version: 5.2.14(@types/react@19.1.17)(react-native-gesture-handler@2.28.0(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native-reanimated@4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      react-native-keyboard-controller:
+        specifier: ^1.18.5
+        version: 1.22.2(react-native-reanimated@4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      react-native-modal:
+        specifier: ^13.0.1
+        version: 13.0.2(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      react-native-reanimated:
+        specifier: ^4.1.7
+        version: 4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      react-native-worklets:
+        specifier: ^0.5.1
+        version: 0.5.1(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       turbo:
         specifier: ^2.5.0
         version: 2.10.8
@@ -793,6 +808,27 @@ packages:
   '@expo/xcpretty@4.4.4':
     resolution: {integrity: sha512-4aQzz9vgxcNXFfo/iyNgDDYfsU5XGKKxWxZopw0cVotHiW+U8IJbIxMaxsINs6bHhtkG3StKNPcOrn3eBuxKPw==}
     hasBin: true
+
+  '@gorhom/bottom-sheet@5.2.14':
+    resolution: {integrity: sha512-uLQFlDjp9z+jrOFcMSEldPqL5JdaXL3vXOh+juhwoNvXgTsEorJLjHTugXu+YccAG/0KJnShzKCrb71MHBsvJg==}
+    peerDependencies:
+      '@types/react': '*'
+      '@types/react-native': '*'
+      react: '*'
+      react-native: '*'
+      react-native-gesture-handler: '>=2.16.1'
+      react-native-reanimated: '>=3.16.0 || >=4.0.0-'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-native':
+        optional: true
+
+  '@gorhom/portal@1.0.14':
+    resolution: {integrity: sha512-MXyL4xvCjmgaORr/rtryDNFy3kU4qUbKlwtQqqsygd0xX3mhKjOLn6mQK8wfu0RkoE0pBE0nAasRoHua+/QZ7A==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
 
   '@isaacs/fs-minipass@4.0.1':
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
@@ -2719,6 +2755,9 @@ packages:
     resolution: {integrity: sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q==}
     engines: {node: '>= 6'}
 
+  prop-types@15.8.1:
+    resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
+
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
@@ -2768,6 +2807,9 @@ packages:
   react-is@19.2.8:
     resolution: {integrity: sha512-s5un28nYxKJw5gvUHyW5PCC28CvBqLu9r3cWgzHT4Vo/5fqqkFcdRYsGcKf50WMPpjjFZS5d76fn3YCo2njKwQ==}
 
+  react-native-animatable@1.4.0:
+    resolution: {integrity: sha512-DZwaDVWm2NBvBxf7I0wXKXLKb/TxDnkV53sWhCvei1pRyTX3MVFpkvdYBknNBqPrxYuAIlPxEp7gJOidIauUkw==}
+
   react-native-gesture-handler@2.28.0:
     resolution: {integrity: sha512-0msfJ1vRxXKVgTgvL+1ZOoYw3/0z1R+Ked0+udoJhyplC2jbVKIJ8Z1bzWdpQRCV3QcQ87Op0zJVE5DhKK2A0A==}
     peerDependencies:
@@ -2779,6 +2821,20 @@ packages:
     peerDependencies:
       react: '*'
       react-native: '*'
+
+  react-native-keyboard-controller@1.22.2:
+    resolution: {integrity: sha512-O5NfkDCzNFJPkcyCNKdaRV9ouEeUNml/x5PMpKt3m5zkER0HM/qPCgg6ajpFieZSOUhZRrdUWd+966Abs2oERw==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+      react-native-reanimated: '>=3.0.0'
+
+  react-native-modal@13.0.2:
+    resolution: {integrity: sha512-jCUR2DAskuZtVIbnt2ZssX70DCbTLydkL1Glv1Fc/fqVIhq1LpwBK2hKgSf9VIINXFnDjjGIMIC9HhDXnW7Enw==}
+    deprecated: this version introduce potentially breaking changes, use with caution. It has been mistakenly released.
+    peerDependencies:
+      react: '*'
+      react-native: '>=0.70.0'
 
   react-native-reanimated@4.1.7:
     resolution: {integrity: sha512-Q4H6xA3Tn7QL0/E/KjI86I1KK4tcf+ErRE04LH34Etka2oVQhW6oXQ+Q8ZcDCVxiWp5vgbBH6XcH8BOo4w/Rhg==}
@@ -4349,6 +4405,23 @@ snapshots:
       '@babel/code-frame': 7.29.7
       chalk: 4.1.2
       js-yaml: 4.3.1
+
+  '@gorhom/bottom-sheet@5.2.14(@types/react@19.1.17)(react-native-gesture-handler@2.28.0(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native-reanimated@4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      '@gorhom/portal': 1.0.14(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      invariant: 2.2.4
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0)
+      react-native-gesture-handler: 2.28.0(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      react-native-reanimated: 4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+    optionalDependencies:
+      '@types/react': 19.1.17
+
+  '@gorhom/portal@1.0.14(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      nanoid: 3.3.16
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0)
 
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
@@ -6578,6 +6651,12 @@ snapshots:
       kleur: 3.0.3
       sisteransi: 1.0.5
 
+  prop-types@15.8.1:
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
+      react-is: 16.13.1
+
   punycode@2.3.1: {}
 
   qrcode-terminal@0.11.0: {}
@@ -6627,6 +6706,10 @@ snapshots:
 
   react-is@19.2.8: {}
 
+  react-native-animatable@1.4.0:
+    dependencies:
+      prop-types: 15.8.1
+
   react-native-gesture-handler@2.28.0(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
     dependencies:
       '@egjs/hammerjs': 2.0.17
@@ -6639,6 +6722,19 @@ snapshots:
     dependencies:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0)
+
+  react-native-keyboard-controller@1.22.2(react-native-reanimated@4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0)
+      react-native-is-edge-to-edge: 1.3.1(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      react-native-reanimated: 4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+
+  react-native-modal@13.0.2(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0)
+      react-native-animatable: 1.4.0
 
   react-native-reanimated@4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
     dependencies:

@@ -100,3 +100,19 @@ export const appInputCard = {
     placeholder: "#C7C7CC",
   },
 } as const;
+
+/**
+ * AppButton — botón estilo AppFormCard (inset grouped).
+ * REGLA: fondo oscuro (casi negro) por defecto con texto claro; en estado
+ * disabled se pinta un gris claro con el texto en gris placeholder.
+ */
+export const appButton = {
+  background: {
+    default: "#111827",
+    disabled: "#F2F2F7",
+  },
+  text: {
+    default: "#FFFFFF",
+    disabled: "#C7C7CC",
+  },
+} as const;

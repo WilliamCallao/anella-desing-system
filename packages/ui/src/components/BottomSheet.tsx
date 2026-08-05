@@ -1,9 +1,5 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -11,15 +7,11 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import Animated, {
-  FadeIn,
-  FadeOut,
-  SlideInDown,
-  SlideInRight,
-  SlideOutDown,
-  SlideOutRight,
-} from "react-native-reanimated";
-import { background, card, space } from "@antonella/theme";
+import RNModal from "react-native-modal";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { background, card, radius, space } from "@antonella/theme";
+import { useModalKeyboardHeight } from "./useModalKeyboard";
 
 export type BottomSheetProps = {
   visible: boolean;
@@ -27,6 +19,7 @@ export type BottomSheetProps = {
   dismissible?: boolean;
   children: React.ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
+  snapPoints?: Array<string | number>;
 };
 
 export function BottomSheet({
@@ -35,121 +28,99 @@ export function BottomSheet({
   dismissible = true,
   children,
   contentStyle,
+  snapPoints,
 }: BottomSheetProps) {
-  const { width, height } = useWindowDimensions();
-  const isMobile = width < 600;
+  const { height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const keyboardHeight = useModalKeyboardHeight();
 
-  if (!visible) return null;
-
-  const handleBackdropPress = () => {
-    if (dismissible) {
-      onClose();
+  const maxHeightRatio = useMemo(() => {
+    let ratio = 0.9;
+    for (const value of snapPoints ?? []) {
+      if (typeof value === "string" && value.endsWith("%")) {
+        const n = Number(value.slice(0, -1));
+        if (!Number.isNaN(n) && n / 100 > ratio) ratio = n / 100;
+      }
     }
-  };
+    return ratio;
+  }, [snapPoints]);
+
+  const containerAnimatedStyle = useAnimatedStyle(
+    () => ({
+      paddingBottom: Math.max(0, -keyboardHeight.value),
+    }),
+    [],
+  );
+
+  const panelAnimatedStyle = useAnimatedStyle(
+    () => {
+      const kb = Math.max(0, -keyboardHeight.value);
+      const available = screenHeight - kb - insets.top - insets.bottom;
+      return {
+        maxHeight: Math.max(space.space16, available * maxHeightRatio),
+      };
+    },
+    [screenHeight, insets.top, insets.bottom, maxHeightRatio],
+  );
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      onRequestClose={handleBackdropPress}
-      animationType="none"
+    <RNModal
+      isVisible={visible}
+      onBackdropPress={dismissible ? onClose : undefined}
+      onBackButtonPress={dismissible ? onClose : undefined}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      animationInTiming={260}
+      animationOutTiming={240}
+      backdropColor="#0F172A"
+      backdropOpacity={0.45}
+      backdropTransitionInTiming={240}
+      backdropTransitionOutTiming={200}
       statusBarTranslucent
+      style={styles.modal}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.overlayContainer}
-      >
-        {/* Backdrop Overlay */}
-        <Animated.View
-          entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(150)}
-          style={styles.backdrop}
-        >
-          <Pressable
-            style={styles.backdropPressable}
-            onPress={handleBackdropPress}
-            disabled={!dismissible}
-          />
+      <Animated.View style={[styles.container, containerAnimatedStyle]}>
+        <Animated.View style={[styles.panel, panelAnimatedStyle]}>
+          <View style={styles.handleBar} />
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={[styles.content, contentStyle]}
+          >
+            {children}
+          </ScrollView>
         </Animated.View>
-
-        {/* Animated Panel */}
-        {isMobile ? (
-          <Animated.View
-            entering={SlideInDown.duration(280)}
-            exiting={SlideOutDown.duration(220)}
-            style={[styles.bottomSheetPanel, { maxHeight: height * 0.85 }, contentStyle]}
-          >
-            <View style={styles.handleBar} />
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.scrollContent}
-              keyboardShouldPersistTaps="handled"
-            >
-              {children}
-            </ScrollView>
-          </Animated.View>
-        ) : (
-          <Animated.View
-            entering={SlideInRight.duration(260)}
-            exiting={SlideOutRight.duration(200)}
-            style={[styles.sideDialogPanel, contentStyle]}
-          >
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.scrollContent}
-              keyboardShouldPersistTaps="handled"
-            >
-              {children}
-            </ScrollView>
-          </Animated.View>
-        )}
-      </KeyboardAvoidingView>
-    </Modal>
+      </Animated.View>
+    </RNModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlayContainer: {
+  modal: {
+    margin: 0,
+  },
+  container: {
     flex: 1,
     justifyContent: "flex-end",
   },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(15, 23, 42, 0.45)",
-  },
-  backdropPressable: {
-    flex: 1,
-  },
-  bottomSheetPanel: {
+  panel: {
+    width: "100%",
     backgroundColor: card.background,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: space.space4,
-    paddingBottom: space.space4,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
     paddingTop: space.space2,
-  },
-  sideDialogPanel: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 420,
-    maxWidth: "100%",
-    backgroundColor: card.background,
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
-    padding: space.space4,
+    paddingHorizontal: space.space4,
   },
   handleBar: {
+    alignSelf: "center",
     width: 36,
     height: 5,
     borderRadius: 2.5,
     backgroundColor: background.default,
-    alignSelf: "center",
-    marginVertical: space.space2,
+    marginBottom: space.space2,
   },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: space.space3,
+  content: {
+    paddingTop: space.space2,
+    paddingBottom: Math.max(space.space3, 24),
   },
 });

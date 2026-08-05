@@ -12,6 +12,9 @@
     "lint": "turbo lint"
   },
   "devDependencies": {
+    "@gorhom/bottom-sheet": "^5.2.14",
+    "react-native-keyboard-controller": "^1.18.5",
+    "react-native-modal": "^13.0.1",
     "react-native-reanimated": "^4.1.7",
     "react-native-worklets": "^0.5.1",
     "turbo": "^2.5.0",

@@ -11,6 +11,7 @@ export * from "./semanticColors";
 export * from "./themes/light";
 export * from "./themes/dark";
 export * from "./layout";
+export * from "./radius";
 
 export type ThemeMode = "light" | "dark";
 export type ThemeColors = Record<keyof typeof palette, string>;
