@@ -5,7 +5,7 @@ import type { DashboardShellTokens } from "./shellTokens";
 export * from "./colors";
 export * from "./shellTokens";
 export * from "./spacing";
-export * from "./typography";
+export * from "./texts";
 export * from "./basePalette";
 export * from "./semanticColors";
 export * from "./themes/light";

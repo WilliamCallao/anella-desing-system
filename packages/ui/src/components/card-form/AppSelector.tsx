@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, TouchableOpacity, View } from "react-native";
-import { appInputCard, cta1, spacing } from "@antonella/theme";
+import { appInputCard, cta1, space, spacing, text, TextType } from "@antonella/theme";
 import { Icon } from "../Icon";
-import { Text } from "../Text";
+import { Text } from "../text/Text";
 import type { AppInputProps } from "./AppInput";
 
 export type AppSelectorOption = {
@@ -20,6 +20,7 @@ export type AppSelectorProps = AppInputProps & {
 };
 
 const OPTION_ROW_HEIGHT = 48;
+const OPTION_INDENT = space.space12;
 const ANIM_DURATION = 220;
 
 export function AppSelector({
@@ -80,33 +81,32 @@ export function AppSelector({
     setOpen(false);
   };
 
-  const optionIndent = 14 + (labelWidth ?? 0) + spacing.md;
-
   return (
     <View style={styles.wrapper}>
       <TouchableOpacity
-        style={[styles.row, disabled && styles.rowDisabled]}
+        style={styles.row}
         onPress={toggle}
         activeOpacity={0.6}
         accessibilityRole="button"
         accessibilityState={{ expanded: open, disabled }}
       >
         <Text
-          variant="label"
+          variant={TextType.Label}
+          color={disabled ? text.placeholder : undefined}
           numberOfLines={1}
           style={[styles.label, labelWidth != null && { width: labelWidth }]}
         >
           {label}
         </Text>
         <Text
-          variant={selected ? "content" : "secondary"}
+          variant={selected ? TextType.Body : TextType.Placeholder}
           numberOfLines={1}
           style={styles.value}
         >
           {selected?.label ?? placeholder}
         </Text>
         <Animated.View style={{ transform: [{ rotate: chevronRotate }] }}>
-          <Icon name="chevron-down" size={16} color={appInputCard.text.label} />
+          <Icon name="chevron-down" size={16} color={disabled ? text.placeholder : text.default} />
         </Animated.View>
       </TouchableOpacity>
 
@@ -120,14 +120,14 @@ export function AppSelector({
             return (
               <TouchableOpacity
                 key={option.value}
-                style={[styles.option, { paddingLeft: optionIndent }, index > 0 && styles.optionSeparated]}
+                style={[styles.option, index > 0 && styles.optionSeparated]}
                 onPress={() => handleSelect(option)}
                 activeOpacity={0.7}
                 accessibilityRole="button"
               >
                 <Text
-                  variant="body"
-                  color={isSelected ? cta1 : appInputCard.text.label}
+                  variant={TextType.Body}
+                  color={isSelected ? cta1 : text.default}
                   numberOfLines={1}
                   style={styles.optionText}
                 >
@@ -152,12 +152,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md,
     minHeight: 52,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingHorizontal: space.space4,
+    paddingVertical: space.space4,
     overflow: "hidden",
-  },
-  rowDisabled: {
-    opacity: 0.5,
   },
   label: {
     flexShrink: 0,
@@ -173,6 +170,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md,
     minHeight: 48,
+    paddingLeft: OPTION_INDENT,
     paddingVertical: spacing.sm,
     paddingRight: spacing.lg,
   },

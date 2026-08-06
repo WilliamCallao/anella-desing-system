@@ -61,12 +61,26 @@ export const accent = {
  * más oscuro que `default` para que combine y se distinga sobre el shell.
  */
 export const background = {
-  default: "#F2F2F7",
+  default: "#EAE9EE",
+  surface: "#F6F6F6",
   content: {
     primary: "#F2F2F7",
     secondary: "#8E8E93",
   },
   skeleton: "#E5E5EA",
+} as const;
+
+/**
+ * Texto — colores centralizados de texto del sistema de textos (`texts.ts`).
+ * REGLA: todo texto se pinta con un color de `text`; sobre superficies oscuras
+ * usar `text.inverse`.
+ */
+export const text = {
+  default: "#1C1C1E",
+  secondary: "#6E6E73",
+  subtle: "#8E8E93",
+  placeholder: "#C7C7CC",
+  inverse: "#FFFFFF",
 } as const;
 
 /**
@@ -76,9 +90,21 @@ export const background = {
 export const card = {
   background: "#FCFCFE",
   text: {
-    primary: "#1C1C1E",
-    secondary: "#6E6E73",
+    primary: text.default,
+    secondary: text.secondary,
   },
+} as const;
+
+export const border = {
+  divider:{
+    secondary: "#EEEEEE" // usadp spbre backgrouf surface
+  } ,
+  surface: "#FFFFFF", //
+  content: {
+    primary: "#F2F2F7",
+    secondary: "#8E8E93",
+  },
+  skeleton: "#E5E5EA",
 } as const;
 
 /**
@@ -95,9 +121,9 @@ export const appInputCard = {
   border: "#D1D1D6",
   separator: "#E5E5EA",
   text: {
-    label: "#1C1C1E",
+    label: text.default,
     value: "#3A3A3C",
-    placeholder: "#C7C7CC",
+    placeholder: text.placeholder,
   },
 } as const;
 

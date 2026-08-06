@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, type ViewStyle } from "react-native";
-import { appInputCard, radius } from "@antonella/theme";
+import { appInputCard, radius, background, border } from "@antonella/theme";
 import type { AppInputElement, AppInputProps } from "./AppInput";
 
 export type AppFormCardProps = {
@@ -30,7 +30,7 @@ export function AppFormCard({ children, labelWidth, style }: AppFormCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: appInputCard.background.default,
+    backgroundColor: background.surface,
     borderRadius: radius.md,
     overflow: "hidden",
   },
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 14,
     right: 14,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: appInputCard.separator,
+    height: 1,
+    backgroundColor: border.divider.secondary,
   },
 });

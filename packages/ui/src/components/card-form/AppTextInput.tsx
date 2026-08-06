@@ -7,8 +7,8 @@ import {
   type NativeSyntheticEvent,
   type TextInputContentSizeChangeEventData,
 } from "react-native";
-import { appInputCard, spacing } from "@antonella/theme";
-import { Text } from "../Text";
+import { spacing, text, texts, TextType, space } from "@antonella/theme";
+import { Text } from "../text/Text";
 import type { AppInputProps } from "./AppInput";
 
 const SINGLE_LINE_HEIGHT = 20;
@@ -64,7 +64,7 @@ export function AppTextInput({
       activeOpacity={1}
     >
       <Text
-        variant="label"
+        variant={TextType.Label}
         numberOfLines={1}
         style={[styles.label, labelWidth != null && { width: labelWidth }]}
       >
@@ -74,6 +74,7 @@ export function AppTextInput({
         ref={inputRef}
         style={[
           styles.value,
+          texts.body,
           inputHeight != null && {
             height: Math.max(inputHeight, SINGLE_LINE_HEIGHT),
           },
@@ -83,12 +84,12 @@ export function AppTextInput({
         onContentSizeChange={handleContentSizeChange}
         onSubmitEditing={handleSubmitEditing}
         placeholder={placeholder}
-        placeholderTextColor={appInputCard.text.placeholder}
+        placeholderTextColor={texts.placeholder.color}
         autoCapitalize={autoCapitalize}
         keyboardType={keyboardType}
         maxLength={maxLength}
         editable={editable}
-        selectionColor={appInputCard.text.label}
+        selectionColor={text.default}
         underlineColorAndroid="transparent"
         multiline
         scrollEnabled={false}
@@ -106,8 +107,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md,
     minHeight: 52,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingHorizontal: space.space4,
+    paddingVertical: space.space4,
   },
   rowGrown: {
     alignItems: "flex-start",
@@ -123,10 +124,7 @@ const styles = StyleSheet.create({
     minHeight: SINGLE_LINE_HEIGHT,
     padding: 0,
     paddingRight: 2,
-    fontSize: 14,
-    lineHeight: SINGLE_LINE_HEIGHT,
     textAlign: "right",
-    color: appInputCard.text.value,
     outlineWidth: 0,
   },
 });

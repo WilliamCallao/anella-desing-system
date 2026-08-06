@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
 | Paquete           | Exports principales                                             |
 | ----------------- | --------------------------------------------------------------- |
 | `@antonella/ui`   | `Button`, `Card`, `Input`, `Text`                               |
-| `@antonella/theme`| `palette`, `darkPalette`, `resolveColors(mode)`, `spacing`, `typography` |
+| `@antonella/theme`| `palette`, `darkPalette`, `resolveColors(mode)`, `spacing`, `texts`, `text` |
 | `@antonella/animations` | `entering` (`fade`, `slideRight`, `zoom`), `exiting` (`fade`, `slideRight`) |
 | `@antonella/hooks`| `useDebouncedValue`, `usePrevious`                              |
 | `@antonella/utils`| `cn`, `isDefined`, `noop`, `isWeb`                              |

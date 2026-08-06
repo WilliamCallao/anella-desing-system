@@ -10,13 +10,19 @@ import {
 import RNModal from "react-native-modal";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { background, card, radius, space } from "@antonella/theme";
+import { background, radius, space } from "@antonella/theme";
+import { DialogHeader } from "./DialogHeader";
+import type { IconName } from "./Icon";
 import { useModalKeyboardHeight } from "./useModalKeyboard";
 
 export type BottomSheetProps = {
   visible: boolean;
   onClose: () => void;
   dismissible?: boolean;
+  showCloseButton?: boolean;
+  icon?: IconName;
+  title?: string;
+  caption?: string;
   children: React.ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
   snapPoints?: Array<string | number>;
@@ -26,6 +32,10 @@ export function BottomSheet({
   visible,
   onClose,
   dismissible = true,
+  showCloseButton = false,
+  icon,
+  title,
+  caption,
   children,
   contentStyle,
   snapPoints,
@@ -82,6 +92,15 @@ export function BottomSheet({
       <Animated.View style={[styles.container, containerAnimatedStyle]}>
         <Animated.View style={[styles.panel, panelAnimatedStyle]}>
           <View style={styles.handleBar} />
+          {title || icon || caption || showCloseButton ? (
+            <DialogHeader
+              icon={icon}
+              title={title}
+              caption={caption}
+              onClose={onClose}
+              showCloseButton={showCloseButton}
+            />
+          ) : null}
           <ScrollView
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
@@ -105,7 +124,7 @@ const styles = StyleSheet.create({
   },
   panel: {
     width: "100%",
-    backgroundColor: card.background,
+    backgroundColor: background.default,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     paddingTop: space.space2,

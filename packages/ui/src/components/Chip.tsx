@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import { neutrals, space } from "@antonella/theme";
 import { Icon, type IconName } from "./Icon";
-import { Text } from "./Text";
+import { Text } from "./text/Text";
 
 export type ChipVariant = "subtle" | "solid" | "outlined";
 export type ChipSize = "sm" | "md";

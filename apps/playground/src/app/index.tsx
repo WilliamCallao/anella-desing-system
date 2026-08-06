@@ -1,5 +1,5 @@
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
-import { Button, Card, DashboardShell, Input, Text } from "@antonella/ui";
+import { Button, Card, DashboardShell, Input, Text, ToolsCard } from "@antonella/ui";
 import type { SidebarSection } from "@antonella/ui";
 import { palette, shellTokens, spacing } from "@antonella/theme";
 
@@ -78,6 +78,22 @@ export default function Index() {
           <Text variant="heading">Heading</Text>
           <Text variant="body">Body</Text>
           <Text variant="caption">Caption</Text>
+        </Card>
+
+        <Card>
+          <Text variant="heading">ToolsCard</Text>
+          <Text variant="caption" color={palette.textMuted}>
+            Card de herramientas agrupadas: icono arriba, nombre debajo, separadores verticales.
+          </Text>
+          <View style={styles.row}>
+            <ToolsCard
+              tools={[
+                { id: "t1", icon: "clipboard-filled", label: "Checklists", onPress: () => Alert.alert("Checklists") },
+                { id: "t2", icon: "checklist-filled", label: "Inspección", onPress: () => Alert.alert("Inspección") },
+                { id: "t3", icon: "bar-chart-filled", label: "Reportes", onPress: () => Alert.alert("Reportes") },
+              ]}
+            />
+          </View>
         </Card>
 
         <Card>

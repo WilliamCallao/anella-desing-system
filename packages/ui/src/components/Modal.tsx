@@ -9,13 +9,19 @@ import {
 import RNModal from "react-native-modal";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { card, radius, space } from "@antonella/theme";
+import { background, radius, space } from "@antonella/theme";
+import { DialogHeader } from "./DialogHeader";
+import type { IconName } from "./Icon";
 import { useModalKeyboardHeight } from "./useModalKeyboard";
 
 export type ModalProps = {
   visible: boolean;
   onClose: () => void;
   dismissible?: boolean;
+  showCloseButton?: boolean;
+  icon?: IconName;
+  title?: string;
+  caption?: string;
   children: React.ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
 };
@@ -24,6 +30,10 @@ export function Modal({
   visible,
   onClose,
   dismissible = true,
+  showCloseButton = false,
+  icon,
+  title,
+  caption,
   children,
   contentStyle,
 }: ModalProps) {
@@ -69,6 +79,15 @@ export function Modal({
     >
       <Animated.View style={[styles.centered, containerAnimatedStyle]}>
         <Animated.View style={[styles.panel, panelAnimatedStyle, contentStyle]}>
+          {title || icon || caption || showCloseButton ? (
+            <DialogHeader
+              icon={icon}
+              title={title}
+              caption={caption}
+              onClose={onClose}
+              showCloseButton={showCloseButton}
+            />
+          ) : null}
           <ScrollView
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
@@ -94,7 +113,7 @@ const styles = StyleSheet.create({
   panel: {
     width: 420,
     maxWidth: "100%",
-    backgroundColor: card.background,
+    backgroundColor: background.default,
     borderRadius: radius.lg,
     padding: space.space4,
   },

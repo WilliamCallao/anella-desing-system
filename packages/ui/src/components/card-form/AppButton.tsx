@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, type ViewStyle } from "react-native";
 import { appButton, radius } from "@antonella/theme";
-import { Text } from "../Text";
+import { Text } from "../text/Text";
 
 export type AppButtonProps = {
   label: string;
