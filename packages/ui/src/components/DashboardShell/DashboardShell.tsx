@@ -30,6 +30,7 @@ export default function DashboardShell({
   const t = { ...resolveShellTokens(themeMode), ...tokens };
   const isMobile = width < 600;
   const compact = !isMobile && (type === "icon" || (type === "responsive" && width < 1024));
+  const safeEdges: ("top" | "bottom")[] = isMobile ? ["top"] : ["top", "bottom"];
   const outerMargin = width >= 1440 ? t.outerMargin + 8 : t.outerMargin;
   const hasLogout = logoutLabel !== undefined || onLogout !== undefined;
   const sidebarHeaderNode = sidebarHeader ?? <SidebarBrand name={title} brand={brand} compact={compact} tokens={t} />;
@@ -56,7 +57,7 @@ export default function DashboardShell({
   };
 
   return (
-    <SafeAreaView edges={["top"]} style={[styles.root, { backgroundColor: t.background }]}>
+    <SafeAreaView edges={safeEdges} style={[styles.root, { backgroundColor: t.background }]}>
       {isMobile ? (
         <>
           <MobileHeader

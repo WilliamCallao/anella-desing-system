@@ -70,7 +70,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tool: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: space.space2,

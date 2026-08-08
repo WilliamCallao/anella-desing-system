@@ -22,7 +22,7 @@ export type DashboardShellTokens = {
 // Defaults en modo light. La app consume `resolveShellTokens(themeMode)`,
 // que además varía por ancho de pantalla; estos defaults se usan como fallback.
 export const shellTokens: DashboardShellTokens = {
-  background: background.default,
+  background: accent.background,
   sidebarBackground: accent.background,
   sidebarText: accent.text.secondary,
   sidebarHover: "rgba(255, 255, 255, 0.05)",
@@ -43,7 +43,7 @@ export const shellTokens: DashboardShellTokens = {
 // Defaults en modo dark. La app consume `resolveShellTokens(themeMode)`;
 // estos defaults se usan como fallback.
 export const darkShellTokens: DashboardShellTokens = {
-  background: "#020617",
+  background: accent.background,
   sidebarBackground: accent.background,
   sidebarText: accent.text.secondary,
   sidebarHover: "rgba(255, 255, 255, 0.06)",

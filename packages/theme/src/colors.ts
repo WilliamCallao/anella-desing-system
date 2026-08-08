@@ -62,7 +62,8 @@ export const accent = {
  */
 export const background = {
   default: "#EAE9EE",
-  surface: "#F6F6F6",
+  subtle: "#dadadaff",
+  surface: "#ffffffff",
   content: {
     primary: "#F2F2F7",
     secondary: "#8E8E93",
@@ -129,16 +130,16 @@ export const appInputCard = {
 
 /**
  * AppButton — botón estilo AppFormCard (inset grouped).
- * REGLA: fondo oscuro (casi negro) por defecto con texto claro; en estado
- * disabled se pinta un gris claro con el texto en gris placeholder.
+ * REGLA: fondo CTA azul (cta1) por defecto con texto en contraste; en estado
+ * disabled se pinta un gris sólido legible con el texto en gris medio.
  */
 export const appButton = {
   background: {
-    default: "#111827",
-    disabled: "#F2F2F7",
+    default: cta1,
+    disabled: "#E5E5EA",
   },
   text: {
-    default: "#FFFFFF",
-    disabled: "#C7C7CC",
+    default: cta1Contrast,
+    disabled: "#98989F",
   },
 } as const;

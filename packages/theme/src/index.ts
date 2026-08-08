@@ -28,7 +28,7 @@ export function resolveShellTokens(mode: "light" | "dark"): DashboardShellTokens
   const sc = resolveSemanticColors(mode);
   if (mode === "light") {
     return {
-      background: sc.surface.pageDefault,
+      background: sc.components.sidebar.background,
       sidebarBackground: sc.components.sidebar.background,
       sidebarText: sc.components.sidebar.text,
       sidebarHover: sc.components.sidebar.hover,
@@ -47,7 +47,7 @@ export function resolveShellTokens(mode: "light" | "dark"): DashboardShellTokens
     };
   }
   return {
-    background: sc.surface.pageDefault,
+    background: sc.components.sidebar.background,
     sidebarBackground: sc.components.sidebar.background,
     sidebarText: sc.components.sidebar.text,
     sidebarHover: sc.components.sidebar.hover,
