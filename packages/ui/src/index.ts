@@ -6,6 +6,8 @@ export * from "./components/Chip";
 export * from "./components/BottomSheet";
 export * from "./components/Modal";
 export * from "./components/AppResponsiveDialog";
+export * from "./components/AppFilterChips";
+export * from "./components/AppCheckItem";
 export * from "./components/DonutChart";
 export { default as DashboardShell } from "./components/DashboardShell/DashboardShell";
 export * from "./components/DashboardShell/types";

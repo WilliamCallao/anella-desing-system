@@ -1,13 +1,18 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, type ViewStyle } from "react-native";
-import { appButton, radius } from "@antonella/theme";
+import { appButton, border, radius, text } from "@antonella/theme";
 import { Text } from "../text/Text";
+
+export type AppButtonVariant = "solid" | "outline" | "ghost";
 
 export type AppButtonProps = {
   label: string;
   onPress?: () => void;
   disabled?: boolean;
+  variant?: AppButtonVariant;
   backgroundColor?: string;
+  textColor?: string;
+  borderColor?: string;
   style?: ViewStyle;
 };
 
@@ -15,14 +20,33 @@ export function AppButton({
   label,
   onPress,
   disabled = false,
-  backgroundColor = appButton.background.default,
+  variant = "solid",
+  backgroundColor,
+  textColor,
+  borderColor,
   style,
 }: AppButtonProps) {
+  const background = disabled
+    ? appButton.background.disabled
+    : backgroundColor ??
+      (variant === "solid" ? appButton.background.default : "transparent");
+  const foreground = disabled
+    ? appButton.text.disabled
+    : textColor ?? (variant === "solid" ? appButton.text.default : text.default);
+
   return (
     <TouchableOpacity
       style={[
         styles.button,
-        { backgroundColor: disabled ? appButton.background.disabled : backgroundColor },
+        { backgroundColor: background },
+        variant === "outline" && {
+          borderWidth: 1,
+          borderColor: borderColor ?? border.divider.secondary,
+        },
+        variant === "ghost" && {
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: borderColor ?? border.divider.secondary,
+        },
         style,
       ]}
       onPress={onPress}
@@ -33,7 +57,7 @@ export function AppButton({
     >
       <Text
         variant="label"
-        color={disabled ? appButton.text.disabled : appButton.text.default}
+        color={foreground}
         style={styles.label}
       >
         {label}
