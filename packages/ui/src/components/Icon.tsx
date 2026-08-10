@@ -57,8 +57,9 @@ export type IconName =
   | "farm-filled"
   | "people"
   | "people-filled"
-  | "document-text"
-  | "document-text-filled";
+   | "document-text"
+   | "document-text-filled"
+   | "backspace";
 
 const iconMap: Record<IconName, LibraryIconName> = {
   home: "home-outline",
@@ -114,8 +115,9 @@ const iconMap: Record<IconName, LibraryIconName> = {
   "farm-filled": "leaf",
   people: "people-outline",
   "people-filled": "people",
-  "document-text": "document-text-outline",
+   "document-text": "document-text-outline",
   "document-text-filled": "document-text",
+  backspace: "backspace-outline",
 };
 
 export type IconProps = Omit<ComponentProps<typeof Ionicons>, "name"> & {
