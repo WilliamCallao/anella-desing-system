@@ -23,6 +23,7 @@ export type AppCheckItemProps = {
   comment?: string;
   hasMessages?: boolean;
   noActions?: boolean;
+  readOnly?: boolean;
   onOpenMessages?: () => void;
   onPress?: () => void;
   onChange?: (status: AppCheckItemStatus) => void;
@@ -37,6 +38,7 @@ export function AppCheckItem({
   comment,
   hasMessages,
   noActions,
+  readOnly,
   onOpenMessages,
   onPress,
   onChange,
@@ -54,7 +56,13 @@ export function AppCheckItem({
     onChange?.(next);
   };
 
-  const handleRowPress = noActions ? onPress : () => setOpen((o) => !o);
+  const handleRowPress = readOnly
+    ? undefined
+    : noActions
+      ? onPress
+      : () => setOpen((o) => !o);
+
+  const disabled = readOnly || (noActions && onPress == null);
 
   const rowContent = (
     <>
@@ -91,7 +99,7 @@ export function AppCheckItem({
         ) : null}
       </View>
 
-      {hasMessages && !noActions ? (
+      {hasMessages && !noActions && !readOnly ? (
         <Pressable
           onPress={onOpenMessages}
           hitSlop={8}
@@ -110,19 +118,23 @@ export function AppCheckItem({
     <View style={[styles.card, style]}>
       <Pressable
         onPress={handleRowPress}
-        disabled={noActions && onPress == null}
+        disabled={disabled}
         android_ripple={{ color: "rgba(15,23,42,0.06)" }}
         style={({ pressed }) => [styles.row, pressed && styles.pressed]}
         accessibilityRole="button"
         accessibilityState={
-          noActions ? undefined : { selected: resolved, expanded: open }
+          readOnly
+            ? { disabled: true }
+            : noActions
+              ? undefined
+              : { selected: resolved, expanded: open }
         }
         accessibilityLabel={label}
       >
         {rowContent}
       </Pressable>
 
-      {open ? (
+      {!readOnly && open ? (
         <View style={styles.options}>
           <Pressable
             onPress={() => select("ok")}
