@@ -92,6 +92,7 @@ La aplicación **no cambia sus imports** ni se entera de la diferencia (mecanism
 
 ## Docs
 
+- [Índice de componentes](INDEX.md) — qué aporta cada componente/export con su función en una oración.
 - [Integración en una app React Native (Expo)](docs/integracion-react-native.md) — steps to consume Antonella from an SDK 54 app (`file:` + `metro.config.js`, troubleshooting).
 - [Component Implementation Guide](docs/COMPONENT_IMPLEMENTATION.md) — conventions for building typed, reusable, responsive DS components.
 - [DashboardShell Scroll Contract](packages/ui/src/components/DashboardShell/SCROLL_CONTRACT.md) — scroll behavior rules across tablet/mobile.
