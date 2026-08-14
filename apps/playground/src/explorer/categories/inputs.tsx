@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { TextField } from "@antonella/ui";
+import { Input, TextField } from "@antonella/ui";
 import type { ComponentCategory } from "../types";
 
 function BasicDemo() {
@@ -89,6 +89,20 @@ function SecureDemo() {
   );
 }
 
+function InputBasicDemo() {
+  const [value, setValue] = useState("");
+  return (
+    <Input placeholder="Buscar…" value={value} onChangeText={setValue} />
+  );
+}
+
+function InputIconDemo() {
+  const [value, setValue] = useState("");
+  return (
+    <Input icon="search" placeholder="Buscar…" value={value} onChangeText={setValue} />
+  );
+}
+
 export const inputs: ComponentCategory = {
   id: "inputs",
   title: "Inputs",
@@ -106,6 +120,15 @@ export const inputs: ComponentCategory = {
         { id: "deshabilitado", label: "Deshabilitado", render: () => <DisabledDemo /> },
         { id: "error", label: "Con error", render: () => <ErrorDemo /> },
         { id: "seguro", label: "Seguro", render: () => <SecureDemo /> },
+      ],
+    },
+    {
+      id: "input",
+      name: "Input",
+      description: "Campo de texto estilo iOS con relleno gris redondeado y soporte de ícono opcional.",
+      variants: [
+        { id: "basico", label: "Básico", render: () => <InputBasicDemo /> },
+        { id: "icono", label: "Con ícono", render: () => <InputIconDemo /> },
       ],
     },
   ],
