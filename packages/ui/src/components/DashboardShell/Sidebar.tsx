@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { DashboardShellTokens } from "@antonella/theme";
+import { texts } from "@antonella/theme";
 import { Icon } from "../Icon";
 import type { SidebarItem, SidebarSection } from "./types";
 
@@ -206,10 +207,10 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   sectionTitle: {
-    fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
+    fontSize: texts.overline.fontSize,
+    fontWeight: texts.overline.fontWeight,
+    letterSpacing: texts.overline.letterSpacing,
+    textTransform: texts.overline.textTransform,
     paddingHorizontal: 14,
     marginBottom: 8,
   },
@@ -245,8 +246,8 @@ const styles = StyleSheet.create({
   },
   itemLabel: {
     flex: 1,
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: texts.bodyMedium.fontSize,
+    fontWeight: texts.bodyMedium.fontWeight,
   },
   badge: {
     minWidth: 20,
@@ -260,7 +261,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
   },
   badgeText: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: texts.caption.fontSize,
+    fontWeight: texts.caption.fontWeight,
   },
 });

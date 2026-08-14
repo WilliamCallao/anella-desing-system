@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { background, border, card, cta1, space, text, TextType } from "@antonella/theme";
+import { background, border, card, cta1, space, text, texts, TextType } from "@antonella/theme";
 import { Icon } from "./Icon";
 import { Text } from "./text/Text";
 
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     height: 72,
   },
   keyText: {
-    fontSize: 24,
-    fontWeight: "600",
+    fontSize: texts.title.fontSize,
+    fontWeight: texts.title.fontWeight,
   },
 });
