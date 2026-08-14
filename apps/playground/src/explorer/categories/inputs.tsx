@@ -1,107 +1,140 @@
 import React, { useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { Input, TextField } from "@antonella/ui";
+import { card, radius, spacing } from "@antonella/theme";
 import type { ComponentCategory } from "../types";
+
+function DemoSurface({ children }: { children: React.ReactNode }) {
+  return <View style={styles.surface}>{children}</View>;
+}
 
 function BasicDemo() {
   const [value, setValue] = useState("");
   return (
-    <TextField
-      label="Nombre"
-      value={value}
-      onChangeText={setValue}
-      placeholder="Nombre y apellido"
-    />
+    <DemoSurface>
+      <TextField
+        label="Nombre"
+        value={value}
+        onChangeText={setValue}
+        placeholder="Nombre y apellido"
+      />
+    </DemoSurface>
   );
 }
 
 function PlaceholderDemo() {
   const [value, setValue] = useState("");
   return (
-    <TextField
-      label="Campo"
-      value={value}
-      onChangeText={setValue}
-      placeholder="Ingresá un valor…"
-    />
+    <DemoSurface>
+      <TextField
+        label="Campo"
+        value={value}
+        onChangeText={setValue}
+        placeholder="Ingresá un valor…"
+      />
+    </DemoSurface>
   );
 }
 
 function WithValueDemo() {
   const [value, setValue] = useState("María Antonella");
   return (
-    <TextField
-      label="Nombre"
-      value={value}
-      onChangeText={setValue}
-      placeholder="Nombre y apellido"
-    />
+    <DemoSurface>
+      <TextField
+        label="Nombre"
+        value={value}
+        onChangeText={setValue}
+        placeholder="Nombre y apellido"
+      />
+    </DemoSurface>
   );
 }
 
 function MultilineDemo() {
   const [notes, setNotes] = useState("");
   return (
-    <TextField
-      label="Notas"
-      value={notes}
-      onChangeText={setNotes}
-      placeholder="Algo que tengamos en cuenta…"
-      multiline
-    />
+    <DemoSurface>
+      <TextField
+        label="Notas"
+        value={notes}
+        onChangeText={setNotes}
+        placeholder="Algo que tengamos en cuenta…"
+        multiline
+      />
+    </DemoSurface>
   );
 }
 
 function DisabledDemo() {
   return (
-    <TextField
-      label="Nombre"
-      value="María Antonella"
-      onChangeText={() => {}}
-      editable={false}
-    />
+    <DemoSurface>
+      <TextField
+        label="Nombre"
+        value="María Antonella"
+        onChangeText={() => {}}
+        editable={false}
+      />
+    </DemoSurface>
   );
 }
 
 function ErrorDemo() {
   const [value, setValue] = useState("");
   return (
-    <TextField
-      label="Email"
-      value={value}
-      onChangeText={setValue}
-      placeholder="nombre@empresa.com"
-      keyboardType="email-address"
-      error="Este campo es obligatorio"
-    />
+    <DemoSurface>
+      <TextField
+        label="Email"
+        value={value}
+        onChangeText={setValue}
+        placeholder="nombre@empresa.com"
+        keyboardType="email-address"
+        error="Este campo es obligatorio"
+      />
+    </DemoSurface>
   );
 }
 
 function SecureDemo() {
   const [value, setValue] = useState("");
   return (
-    <TextField
-      label="Contraseña"
-      value={value}
-      onChangeText={setValue}
-      placeholder="••••••••"
-      secureTextEntry
-    />
+    <DemoSurface>
+      <TextField
+        label="Contraseña"
+        value={value}
+        onChangeText={setValue}
+        placeholder="••••••••"
+        secureTextEntry
+      />
+    </DemoSurface>
   );
 }
 
 function InputBasicDemo() {
   const [value, setValue] = useState("");
   return (
-    <Input placeholder="Buscar…" value={value} onChangeText={setValue} />
+    <DemoSurface>
+      <Input placeholder="Buscar…" value={value} onChangeText={setValue} />
+    </DemoSurface>
   );
 }
 
 function InputIconDemo() {
   const [value, setValue] = useState("");
   return (
-    <Input icon="search" placeholder="Buscar…" value={value} onChangeText={setValue} />
+    <DemoSurface>
+      <Input icon="search" placeholder="Buscar…" value={value} onChangeText={setValue} />
+    </DemoSurface>
   );
 }
+
+const styles = StyleSheet.create({
+  surface: {
+    backgroundColor: card.background,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+});
 
 export const inputs: ComponentCategory = {
   id: "inputs",
