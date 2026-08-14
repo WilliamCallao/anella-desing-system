@@ -52,6 +52,8 @@ import { Button } from "@antonella/ui";
 
 Cada componente tiene su propia pantalla de documentación con variantes, estados, casos de uso, animaciones, responsive y tema claro/oscuro.
 
+> ⚠️ El Metro dev server se corre **siempre desde `apps/playground`** (o vía `pnpm dev` en la raíz, que delega a Turbo con el cwd correcto). Correr `npx expo start` desde la raíz del monorepo produce el error `Unable to resolve "../../App" from "node_modules/expo/AppEntry.js"` porque ahí no existe un entry `App.js`.
+
 ## Cómo consumen Antonella las aplicaciones
 
 Las aplicaciones viven en repositorios independientes (`inventario-app`, `ventas-app`, `crm-app`) y consumen Antonella publicada:
@@ -92,6 +94,7 @@ La aplicación **no cambia sus imports** ni se entera de la diferencia (mecanism
 
 ## Docs
 
+- [Índice de componentes](INDEX.md) — qué aporta cada componente/export con su función en una oración.
 - [Integración en una app React Native (Expo)](docs/integracion-react-native.md) — steps to consume Antonella from an SDK 54 app (`file:` + `metro.config.js`, troubleshooting).
 - [Component Implementation Guide](docs/COMPONENT_IMPLEMENTATION.md) — conventions for building typed, reusable, responsive DS components.
 - [DashboardShell Scroll Contract](packages/ui/src/components/DashboardShell/SCROLL_CONTRACT.md) — scroll behavior rules across tablet/mobile.

@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from "react-native";
-import { background, card, spacing } from "@antonella/theme";
+import { appInput, spacing, text, texts } from "@antonella/theme";
 import { Icon, type IconName } from "./Icon";
 
 export interface InputProps extends TextInputProps {
@@ -11,9 +11,9 @@ export function Input({ style, placeholderTextColor, icon, ...rest }: InputProps
   if (icon) {
     return (
       <View style={[styles.inputContainer, style as StyleProp<ViewStyle>]}>
-        <Icon name={icon} size={18} color={card.text.secondary} style={styles.icon} />
+        <Icon name={icon} size={18} color={text.secondary} style={styles.icon} />
         <TextInput
-          placeholderTextColor={placeholderTextColor ?? card.text.secondary}
+          placeholderTextColor={placeholderTextColor ?? appInput.placeholder}
           style={styles.inputFlex}
           {...rest}
         />
@@ -23,7 +23,7 @@ export function Input({ style, placeholderTextColor, icon, ...rest }: InputProps
 
   return (
     <TextInput
-      placeholderTextColor={placeholderTextColor ?? card.text.secondary}
+      placeholderTextColor={placeholderTextColor ?? appInput.placeholder}
       style={[styles.input, style]}
       {...rest}
     />
@@ -32,23 +32,19 @@ export function Input({ style, placeholderTextColor, icon, ...rest }: InputProps
 
 const styles = StyleSheet.create({
   input: {
-    borderWidth: 1,
-    borderColor: background.default,
     borderRadius: 10,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    fontSize: 16,
-    color: card.text.primary,
-    backgroundColor: card.background,
+    fontSize: texts.body.fontSize,
+    color: appInput.text,
+    backgroundColor: appInput.background,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: background.default,
     borderRadius: 10,
     paddingHorizontal: spacing.md,
-    backgroundColor: card.background,
+    backgroundColor: appInput.background,
   },
   icon: {
     marginRight: spacing.sm,
@@ -56,7 +52,7 @@ const styles = StyleSheet.create({
   inputFlex: {
     flex: 1,
     paddingVertical: spacing.sm,
-    fontSize: 16,
-    color: card.text.primary,
+    fontSize: texts.body.fontSize,
+    color: appInput.text,
   },
 });

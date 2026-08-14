@@ -27,22 +27,35 @@ export type TextType = (typeof TextType)[keyof typeof TextType];
  * (fontSize, fontWeight, lineHeight; opcional letterSpacing/textTransform)
  * más el color por defecto tomado del token `text` de colors.ts.
  *
- * Los tamaños respetan la escala histórica de la app (appInputCard):
- * label 15 / value 14 / placeholder 14.
+ * ESCALA: alineada a la escala tipográfica oficial de iOS (HIG).
+ * fuente del sistema: SF Pro en iOS / Roboto en Android.
+ *
+ * CASO DE USO (documentado por rol):
+ * - title       : título de pantalla (headers de pantalla/categoría).
+ * - subtitle    : subtítulo de pantalla / secciones grandes.
+ * - heading     : encabezado de card / sección.
+ * - bodyBold    : texto destacado en cards/listas, labels de botones.
+ * - body        : texto base, valor de inputs.
+ * - bodyMedium  : énfasis medio (chips, títulos de card).
+ * - label       : labels de formularios (peso 600 por legibilidad).
+ * - caption     : descripciones secundarias.
+ * - captionMedium: caption con énfasis.
+ * - overline    : micro-etiquetas (uppercase + letterSpacing 0.5).
+ * - placeholder : placeholder de inputs (color `text.placeholder`).
  *
  * Uso: la app envía el tipo al componente `Text` (`<Text type={TextType.Title}>`)
  * y puede sobreescribir el color con la prop `color`.
  */
 export const texts = {
-  title: { fontSize: 18, fontWeight: "700", lineHeight: 24, color: text.default },
-  subtitle: { fontSize: 18, fontWeight: "600", lineHeight: 24, color: text.default },
-  heading: { fontSize: 16, fontWeight: "600", lineHeight: 22, color: text.default },
-  body: { fontSize: 14, fontWeight: "400", lineHeight: 20, color: text.default },
-  bodyMedium: { fontSize: 14, fontWeight: "500", lineHeight: 20, color: text.default },
-  bodyBold: { fontSize: 14, fontWeight: "600", lineHeight: 20, color: text.default },
+  title: { fontSize: 28, fontWeight: "700", lineHeight: 34, color: text.default },
+  subtitle: { fontSize: 22, fontWeight: "700", lineHeight: 28, color: text.default },
+  heading: { fontSize: 20, fontWeight: "600", lineHeight: 25, color: text.default },
+  bodyBold: { fontSize: 17, fontWeight: "600", lineHeight: 22, color: text.default },
+  body: { fontSize: 17, fontWeight: "400", lineHeight: 22, color: text.default },
+  bodyMedium: { fontSize: 16, fontWeight: "500", lineHeight: 21, color: text.default },
   label: { fontSize: 15, fontWeight: "600", lineHeight: 20, color: text.default },
-  caption: { fontSize: 12, fontWeight: "400", lineHeight: 16, color: text.secondary },
-  captionMedium: { fontSize: 12, fontWeight: "500", lineHeight: 16, color: text.secondary },
+  caption: { fontSize: 13, fontWeight: "400", lineHeight: 18, color: text.secondary },
+  captionMedium: { fontSize: 13, fontWeight: "500", lineHeight: 18, color: text.secondary },
   overline: {
     fontSize: 11,
     fontWeight: "600",
@@ -51,5 +64,5 @@ export const texts = {
     textTransform: "uppercase",
     color: text.secondary,
   },
-  placeholder: { fontSize: 14, fontWeight: "400", lineHeight: 20, color: text.placeholder },
+  placeholder: { fontSize: 17, fontWeight: "400", lineHeight: 22, color: text.placeholder },
 } as const;

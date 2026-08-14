@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ScrollView, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { resolveShellTokens } from "@antonella/theme";
+import { resolveShellTokens, texts } from "@antonella/theme";
 import type { DashboardShellTokens } from "@antonella/theme";
 import { Icon } from "../Icon";
 import { Sidebar } from "./Sidebar";
@@ -222,13 +222,13 @@ const brandStyles = StyleSheet.create({
     justifyContent: "center",
   },
   brandMarkText: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: texts.heading.fontSize,
+    fontWeight: texts.heading.fontWeight,
   },
   brandName: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: texts.bodyBold.fontSize,
+    fontWeight: texts.bodyBold.fontWeight,
   },
   logout: {
     flexDirection: "row",
@@ -246,7 +246,7 @@ const brandStyles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   logoutLabel: {
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: texts.bodyMedium.fontSize,
+    fontWeight: texts.bodyMedium.fontWeight,
   },
 });

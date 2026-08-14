@@ -1,10 +1,10 @@
 export const palette = {
   primary: "#007AFF",
-  primaryDark: "#0062E6",
+  primaryDark: "#0A84FF",
   background: "#F2F2F7",
-  surface: "#FAFAFC",
+  surface: "#FFFFFF",
   border: "#E5E5EA",
-  text: "#1C1C1E",
+  text: "#000000",
   textMuted: "#8E8E93",
   danger: "#FF3B30",
   success: "#34C759",
@@ -12,16 +12,16 @@ export const palette = {
 } as const;
 
 export const darkPalette = {
-  primary: "#4DA3FF",
+  primary: "#0A84FF",
   primaryDark: "#007AFF",
   background: "#000000",
   surface: "#1C1C1E",
   border: "#2C2C2E",
-  text: "#F5F5F7",
+  text: "#FFFFFF",
   textMuted: "#98989F",
-  danger: "#FF6369",
-  success: "#46C88C",
-  warning: "#FFC043",
+  danger: "#FF453A",
+  success: "#30D158",
+  warning: "#FF9F0A",
 } as const;
 
 // ============================================================
@@ -61,9 +61,9 @@ export const accent = {
  * más oscuro que `default` para que combine y se distinga sobre el shell.
  */
 export const background = {
-  default: "#EAE9EE",
+  default: "#F2F2F7",
   subtle: "#dadadaff",
-  surface: "#ffffffff",
+  surface: "#FFFFFFFF",
   content: {
     primary: "#F2F2F7",
     secondary: "#8E8E93",
@@ -77,8 +77,8 @@ export const background = {
  * usar `text.inverse`.
  */
 export const text = {
-  default: "#1C1C1E",
-  secondary: "#6E6E73",
+  default: "#000000",
+  secondary: "#8E8E93",
   subtle: "#8E8E93",
   placeholder: "#C7C7CC",
   inverse: "#FFFFFF",
@@ -89,7 +89,7 @@ export const text = {
  * REGLA: una card se pinta con fondo `card.background` y su texto con `card.text.*`.
  */
 export const card = {
-  background: "#FCFCFE",
+  background: "#FFFFFF",
   text: {
     primary: text.default,
     secondary: text.secondary,
@@ -98,7 +98,7 @@ export const card = {
 
 export const border = {
   divider:{
-    secondary: "#EEEEEE" // usadp spbre backgrouf surface
+    secondary: "#E5E5EA" // usadp spbre backgrouf surface
   } ,
   surface: "#FFFFFF", //
   content: {
@@ -106,6 +106,19 @@ export const border = {
     secondary: "#8E8E93",
   },
   skeleton: "#E5E5EA",
+} as const;
+
+/**
+ * AppInput — campos de texto estilo iOS (relleno gris redondeado, sin borde).
+ * Usado por `Input` y `TextField`.
+ * REGLA: sobre `appInput.background` se pinta texto `appInput.text`; el placeholder
+ * `appInput.placeholder`; el mensaje de error `appInput.error`.
+ */
+export const appInput = {
+  background: background.content.primary, // #F2F2F7 (systemGray6)
+  text: text.default,                     // #000000 (label)
+  placeholder: text.placeholder,          // #C7C7CC (systemGray3)
+  error: palette.danger,                  // #FF3B30 (systemRed)
 } as const;
 
 /**
@@ -123,7 +136,7 @@ export const appInputCard = {
   separator: "#E5E5EA",
   text: {
     label: text.default,
-    value: "#3A3A3C",
+    value: text.secondary,
     placeholder: text.placeholder,
   },
 } as const;

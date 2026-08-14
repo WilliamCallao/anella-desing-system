@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { texts } from "@antonella/theme";
 import { Icon } from "../Icon";
 
 export type MobileHeaderProps = {
@@ -46,8 +47,8 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: texts.bodyBold.fontSize,
+    fontWeight: texts.bodyBold.fontWeight,
     marginLeft: 8,
   },
   pressed: {

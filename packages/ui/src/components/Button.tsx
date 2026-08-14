@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
-import { background, card, palette } from "@antonella/theme";
+import { background, card, palette, texts } from "@antonella/theme";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -69,8 +69,8 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.8 },
   disabled: { opacity: 0.5 },
-  label: { fontSize: 16, fontWeight: "600" },
-  labelSm: { fontSize: 14 },
+  label: { fontSize: texts.bodyBold.fontSize, fontWeight: texts.bodyBold.fontWeight },
+  labelSm: { fontSize: texts.label.fontSize },
   labelDisabled: { opacity: 0.6 },
 });
 

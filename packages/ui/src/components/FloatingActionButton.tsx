@@ -5,19 +5,31 @@ import { Icon } from "./Icon";
 import { cta1, cta1Contrast } from "@antonella/theme";
 import type { IconName } from "./Icon";
 
+export type FloatingActionButtonPosition = "bottom-right" | "bottom-left";
+
 export interface FloatingActionButtonProps {
   icon?: IconName;
   onPress: () => void;
+  /** Esquina donde se ancla el FAB. Default `bottom-right`. */
+  position?: FloatingActionButtonPosition;
   style?: StyleProp<ViewStyle>;
 };
 
 export function FloatingActionButton({
   icon = AppIcon.Ot,
   onPress,
+  position = "bottom-right",
   style,
 }: FloatingActionButtonProps) {
   return (
-    <View style={[styles.wrap, style]} pointerEvents="box-none">
+    <View
+      style={[
+        styles.wrap,
+        position === "bottom-left" ? styles.wrapLeft : styles.wrapRight,
+        style,
+      ]}
+      pointerEvents="box-none"
+    >
       <Pressable
         onPress={onPress}
         android_ripple={{ color: "rgba(255,255,255,0.3)", borderless: true }}
@@ -34,7 +46,12 @@ const styles = StyleSheet.create({
   wrap: {
     position: "absolute",
     bottom: 24,
+  },
+  wrapRight: {
     right: 24,
+  },
+  wrapLeft: {
+    left: 24,
   },
   fab: {
     width: 60,
