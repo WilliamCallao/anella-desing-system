@@ -27,7 +27,7 @@
 - **KeyboardSafeScreen** — Pantalla scrollable que empuja el contenido con la altura del teclado para que nunca quede detrás (usa el mismo mecanismo que Modal/BottomSheet).
 - **LayoutRow** — Fila responsiva (horizontal en ancho ≥ 600, vertical en menor) con hijos `First`/`Second` que pueden expandirse o scrollear.
 - **LayoutColumn** — Columna con hijos `First`/`Second` expandibles o con scroll.
-- **FloatingActionButton** — Botón de acción flotante (FAB) fijo abajo a la derecha.
+- **FloatingActionButton** — Botón de acción flotante (FAB) con posición configurable (`bottom-right` / `bottom-left`).
 
 ### Datos y formularios
 - **Calendar** — Calendario mensual estático que resalta el día actual.
@@ -65,7 +65,7 @@
 - **shellTokens** — Tokens de medidas/colores del `DashboardShell`.
 
 ## @antonella/animations — Animaciones de Reanimated
-- **AutoHeight** — Envuelve contenido de altura variable y anima su altura cuando cambia (crece/encoge) para que lo de arriba/abajo no salte.
+- **TransitionView** — Envuelve contenido de altura variable: al cambiar anima la altura (sin saltos) y hace fade in del contenido nuevo (`contentKey` para disparar el fade); sin parpadeos, todo en el UI thread.
 - **entering / exiting** — Presets de animaciones de entrada/salida (`fade`, `fadeInDown`, `slideRight`, `zoom`, …).
 - **staggeredFadeInDown** — Helper para animar listas en cascada (retardo incremental).
 

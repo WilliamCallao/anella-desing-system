@@ -52,6 +52,8 @@ import { Button } from "@antonella/ui";
 
 Cada componente tiene su propia pantalla de documentación con variantes, estados, casos de uso, animaciones, responsive y tema claro/oscuro.
 
+> ⚠️ El Metro dev server se corre **siempre desde `apps/playground`** (o vía `pnpm dev` en la raíz, que delega a Turbo con el cwd correcto). Correr `npx expo start` desde la raíz del monorepo produce el error `Unable to resolve "../../App" from "node_modules/expo/AppEntry.js"` porque ahí no existe un entry `App.js`.
+
 ## Cómo consumen Antonella las aplicaciones
 
 Las aplicaciones viven en repositorios independientes (`inventario-app`, `ventas-app`, `crm-app`) y consumen Antonella publicada:

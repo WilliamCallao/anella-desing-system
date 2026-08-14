@@ -8,24 +8,40 @@ import {
 } from "react-native";
 import Animated, {
   Easing,
+  FadeIn,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 
-export type AutoHeightProps = {
+export type TransitionViewProps = {
   children: React.ReactNode;
-  /** Duración de la animación en ms. */
+  /**
+   * Cambia cuando el contenido cambia estructuralmente (p. ej. `contentKey={step}`).
+   * Al cambiar, el contenido se remonta y entra con fade in desde opacity 0 (sin parpadeos).
+   */
+  contentKey?: string | number;
+  /** Duración (ms) de la animación de altura. */
   duration?: number;
+  /** Duración (ms) del fade in del contenido nuevo. */
+  fadeDuration?: number;
   style?: StyleProp<ViewStyle>;
 };
 
 /**
- * Envuelve contenido de altura variable y anima su altura cuando cambia
- * (p. ej. al pasar de un botón a un formulario), creciendo/encogiéndose de
- * forma suave para que los elementos de arriba/abajo no salten.
+ * Envuelve contenido de altura variable: al cambiar, anima la altura del
+ * contenedor (crece/encoge sin que lo de arriba/abajo salte) y hace fade in
+ * del contenido nuevo. La altura se mide con onLayout y se anima en el UI
+ * thread; el fade in lo maneja Reanimated (entering) desde el primer frame,
+ * por lo que no hay parpadeos.
  */
-export function AutoHeight({ children, duration = 240, style }: AutoHeightProps) {
+export function TransitionView({
+  children,
+  contentKey,
+  duration = 200,
+  fadeDuration = 200,
+  style,
+}: TransitionViewProps) {
   const animatedHeight = useSharedValue(0);
 
   const onContentLayout = useCallback(
@@ -47,7 +63,9 @@ export function AutoHeight({ children, duration = 240, style }: AutoHeightProps)
   return (
     <Animated.View style={[styles.container, containerStyle, style]}>
       <View style={styles.content} onLayout={onContentLayout}>
-        {children}
+        <Animated.View key={contentKey} entering={FadeIn.duration(fadeDuration)}>
+          {children}
+        </Animated.View>
       </View>
     </Animated.View>
   );
