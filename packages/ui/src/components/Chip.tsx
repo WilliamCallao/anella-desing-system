@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
-import { neutrals, space } from "@antonella/theme";
+import { neutrals, space, texts } from "@antonella/theme";
 import { Icon, type IconName } from "./Icon";
 import { Text } from "./text/Text";
 
@@ -115,12 +115,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   textSm: {
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: texts.overline.fontSize,
+    lineHeight: texts.overline.lineHeight,
   },
   textMd: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: texts.caption.fontSize,
+    lineHeight: texts.caption.lineHeight,
   },
   uppercase: {
     textTransform: "uppercase",
