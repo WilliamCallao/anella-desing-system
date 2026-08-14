@@ -7,7 +7,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { background, palette, spacing, text, texts, TextType } from "@antonella/theme";
+import { appInput, spacing, TextType } from "@antonella/theme";
 import { Text } from "../text/Text";
 
 export interface TextFieldProps {
@@ -62,18 +62,18 @@ export function TextField({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={texts.placeholder.color}
+        placeholderTextColor={appInput.placeholder}
         editable={editable}
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
         maxLength={maxLength}
         multiline={multiline}
-        selectionColor={text.default}
+        selectionColor={appInput.text}
         underlineColorAndroid="transparent"
       />
       {error ? (
-        <Text variant={TextType.Caption} color={palette.danger}>
+        <Text variant={TextType.Caption} color={appInput.error}>
           {error}
         </Text>
       ) : null}
@@ -90,8 +90,8 @@ const styles = StyleSheet.create({
     borderRadius: FIELD_RADIUS,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: background.content.primary,
-    color: text.default,
+    backgroundColor: appInput.background,
+    color: appInput.text,
     outlineWidth: 0,
     textAlignVertical: "top",
   },
