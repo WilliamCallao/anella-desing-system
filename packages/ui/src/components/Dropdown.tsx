@@ -10,7 +10,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { Icon, Text, type IconName } from "../";
-import { background, card, cta1, cta1Contrast, spacing } from "@antonella/theme";
+import { background, card, cta1, cta1Contrast, spacing, texts } from "@antonella/theme";
 
 export type DropdownOption = {
   label: string;
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   triggerText: {
-    fontSize: 16,
+    fontSize: texts.body.fontSize,
     color: card.text.primary,
     flex: 1,
   },
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   optionText: {
-    fontSize: 15,
+    fontSize: texts.label.fontSize,
     color: card.text.primary,
   },
   optionTextSelected: {
