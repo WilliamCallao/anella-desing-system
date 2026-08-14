@@ -7,7 +7,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { appInput, spacing, TextType } from "@antonella/theme";
+import { appInput, spacing, texts, TextType } from "@antonella/theme";
 import { Text } from "../text/Text";
 
 export interface TextFieldProps {
@@ -92,6 +92,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     backgroundColor: appInput.background,
     color: appInput.text,
+    fontSize: texts.body.fontSize,
     outlineWidth: 0,
     textAlignVertical: "top",
   },

@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from "react-native";
-import { appInput, spacing, text } from "@antonella/theme";
+import { appInput, spacing, text, texts } from "@antonella/theme";
 import { Icon, type IconName } from "./Icon";
 
 export interface InputProps extends TextInputProps {
@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    fontSize: 16,
+    fontSize: texts.body.fontSize,
     color: appInput.text,
     backgroundColor: appInput.background,
   },
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   inputFlex: {
     flex: 1,
     paddingVertical: spacing.sm,
-    fontSize: 16,
+    fontSize: texts.body.fontSize,
     color: appInput.text,
   },
 });
