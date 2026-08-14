@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { TreeEditor, type TreeNode } from "@antonella/ui";
+import { TreeEditor, type TreeEditorMode, type TreeNode } from "@antonella/ui";
 import { card, radius, space } from "@antonella/theme";
 import type { ComponentCategory } from "../types";
 
@@ -36,11 +36,11 @@ const SAMPLE_TREE: TreeNode[] = [
   { id: "patrimonio", code: 3000, name: "Patrimonio neto", children: [] },
 ];
 
-function TreeDemo() {
+function TreeDemo({ mode }: { mode: TreeEditorMode }) {
   const [tree, setTree] = useState<TreeNode[]>(SAMPLE_TREE);
   return (
     <View style={styles.surface}>
-      <TreeEditor value={tree} onChange={setTree} />
+      <TreeEditor value={tree} onChange={setTree} mode={mode} />
     </View>
   );
 }
@@ -62,8 +62,11 @@ export const arbol: ComponentCategory = {
       id: "tree-editor",
       name: "TreeEditor",
       description:
-        "Editor de estructuras jerárquicas: cada item tiene código numérico y nombre. Permite agregar items como hijo o al lado de otro, editar y eliminar.",
-      variants: [{ id: "plan-de-cuentas", label: "Plan de cuentas", render: () => <TreeDemo /> }],
+        "Editor de estructuras jerárquicas: cada item tiene código numérico y nombre. Soporta modo vista o edición, con conectores de árbol y alta por nivel.",
+      variants: [
+        { id: "vista", label: "Modo vista", render: () => <TreeDemo mode="view" /> },
+        { id: "edicion", label: "Modo edición", render: () => <TreeDemo mode="edit" /> },
+      ],
     },
   ],
 };

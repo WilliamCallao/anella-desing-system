@@ -22,10 +22,14 @@ export type TreeNode = {
   children: TreeNode[];
 };
 
+export type TreeEditorMode = "view" | "edit";
+
 export type TreeEditorProps = {
   value: TreeNode[];
   onChange: (value: TreeNode[]) => void;
-  /** Etiqueta del botón de agregar raíz. Default: "Agregar raíz". */
+  /** Default: "view" (solo visualización). Con "edit" se muestran las acciones. */
+  mode?: TreeEditorMode;
+  /** Etiqueta del botón de agregar raíz (solo modo edición). Default: "Agregar raíz". */
   rootLabel?: string;
   style?: StyleProp<ViewStyle>;
 };
@@ -109,11 +113,31 @@ export function countNodes(nodes: TreeNode[]): number {
 }
 
 // ----------------------------------------------------------------
-// Componente
+// Construcción de filas (DFS) para dibujar conectores tipo file-explorer
 // ----------------------------------------------------------------
 
-const INDENT = 20;
-const ROW_MIN_HEIGHT = 44;
+const INDENT = 24;
+const ROW_HEIGHT = 54;
+const LINE_COLOR = border.divider.secondary;
+
+type FlatRow =
+  | { kind: "node"; node: TreeNode; depth: number; isLastInLevel: boolean }
+  | { kind: "add"; parentId: string | null; depth: number };
+
+function buildRows(nodes: TreeNode[], depth: number, out: FlatRow[]): FlatRow[] {
+  nodes.forEach((node, idx) => {
+    out.push({ kind: "node", node, depth, isLastInLevel: idx === nodes.length - 1 });
+    if (node.children.length > 0) {
+      buildRows(node.children, depth + 1, out);
+      out.push({ kind: "add", parentId: node.id, depth: depth + 1 });
+    }
+  });
+  return out;
+}
+
+// ----------------------------------------------------------------
+// Componente
+// ----------------------------------------------------------------
 
 type DialogMode = "add-root" | "add-child" | "add-sibling" | "edit";
 
@@ -125,7 +149,7 @@ type DialogState = {
 
 type FormErrors = { code?: string; name?: string };
 
-export function TreeEditor({ value, onChange, rootLabel = "Agregar raíz", style }: TreeEditorProps) {
+export function TreeEditor({ value, onChange, mode = "view", rootLabel = "Agregar raíz", style }: TreeEditorProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [actionsNodeId, setActionsNodeId] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -133,9 +157,25 @@ export function TreeEditor({ value, onChange, rootLabel = "Agregar raíz", style
   const [name, setName] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
 
+  const isEdit = mode === "edit";
   const actionsNode = actionsNodeId ? findNode(value, actionsNodeId) : undefined;
   const dialogNode = dialog?.nodeId ? findNode(value, dialog.nodeId) : undefined;
   const dialogParent = dialog?.parentId ? findNode(value, dialog.parentId) : undefined;
+
+  // Fila "+ Agregar" al final del nivel de raíces (solo edición).
+  const rows: FlatRow[] = [];
+  buildRows(value, 0, rows);
+  if (isEdit) {
+    rows.push({ kind: "add", parentId: null, depth: 0 });
+  }
+
+  // Rango de índices por profundidad (solo filas de nodos) para los conectores.
+  const lastByDepth: Record<number, number> = {};
+  rows.forEach((row, i) => {
+    if (row.kind === "node") {
+      lastByDepth[row.depth] = i;
+    }
+  });
 
   function toggleCollapse(id: string) {
     setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -153,6 +193,16 @@ export function TreeEditor({ value, onChange, rootLabel = "Agregar raíz", style
     setName(isEdit ? node?.name ?? "" : "");
     setErrors({});
     setDialog({ mode, nodeId: opts.nodeId, parentId: opts.parentId });
+  }
+
+  function openLevelAdd(parentId: string | null) {
+    if (parentId === null) {
+      openDialog("add-root");
+      return;
+    }
+    const parent = findNode(value, parentId);
+    const lastChild = parent?.children[parent.children.length - 1];
+    if (lastChild) openDialog("add-sibling", { nodeId: lastChild.id });
   }
 
   function confirmDelete(nodeId: string) {
@@ -227,44 +277,92 @@ export function TreeEditor({ value, onChange, rootLabel = "Agregar raíz", style
   const ACTION_SHEET_OPTIONS: {
     key: string;
     label: string;
-    icon: "add" | "arrow-down" | "pencil" | "trash";
+    icon: "add" | "pencil" | "trash";
     danger?: boolean;
     onPress: () => void;
   }[] = actionsNode
     ? [
         { key: "child", label: "Agregar hijo", icon: "add", onPress: () => openDialog("add-child", { parentId: actionsNode.id }) },
-        { key: "sibling", label: "Agregar al lado", icon: "arrow-down", onPress: () => openDialog("add-sibling", { nodeId: actionsNode.id }) },
         { key: "edit", label: "Editar", icon: "pencil", onPress: () => openDialog("edit", { nodeId: actionsNode.id }) },
         { key: "delete", label: "Eliminar", icon: "trash", danger: true, onPress: () => confirmDelete(actionsNode.id) },
       ]
     : [];
 
-  function renderRows(nodes: TreeNode[], depth: number) {
-    return nodes.map((node) => {
-      const isCollapsed = !!collapsed[node.id];
-      const hasChildren = node.children.length > 0;
-      return (
-        <View key={node.id}>
-          <View style={[styles.row, { paddingLeft: depth * INDENT + space.space2 }]}>
-            {hasChildren ? (
-              <Pressable
-                onPress={() => toggleCollapse(node.id)}
-                hitSlop={8}
-                style={styles.chevron}
-                accessibilityRole="button"
-                accessibilityLabel={isCollapsed ? `Expandir ${node.name}` : `Colapsar ${node.name}`}
-              >
-                <Icon name={isCollapsed ? "chevron-forward" : "chevron-down"} size={16} color={text.secondary} />
-              </Pressable>
-            ) : (
-              <View style={styles.chevronSpacer} />
-            )}
-            <Text variant={TextType.BodyMedium} color={cta1} style={styles.code} numberOfLines={1}>
+  // Dibuja los conectores de una fila. Lógica verificada contra el render
+  // canónico de VS Code ("├─/│/└─"): por el nivel k pasa una línea mientras
+  // exista una fila posterior de profundidad k+1; la última fila de ese nivel
+  // recibe solo el tramo superior (el codo "└") que se une al stub.
+  function renderGutter(depth: number, rowIndex: number, isAddRow: boolean) {
+    const segments = [];
+    for (let k = 0; k < depth; k++) {
+      const last = lastByDepth[k + 1];
+      if (last === undefined || last < rowIndex) continue;
+      const isLastStub = last === rowIndex;
+      segments.push(
+        <View
+          key={`v${k}`}
+          style={[
+            styles.line,
+            {
+              left: k * INDENT,
+              top: 0,
+              bottom: isLastStub ? ROW_HEIGHT / 2 - 0.5 : 0,
+            },
+          ]}
+        />,
+      );
+    }
+    // Stub horizontal: conecta la línea del padre con el contenido de la fila.
+    // Las filas "+ Agregar" no llevan stub (el botón flota en el nivel).
+    if (depth > 0 && !isAddRow) {
+      segments.push(
+        <View
+          key="h"
+          style={[
+            styles.line,
+            {
+              left: (depth - 1) * INDENT,
+              top: ROW_HEIGHT / 2 - 0.5,
+              width: INDENT,
+              height: 1,
+            },
+          ]}
+        />,
+      );
+    }
+    return <>{segments}</>;
+  }
+
+  function renderNodeRow(row: FlatRow & { kind: "node" }, rowIndex: number) {
+    const { node, depth } = row;
+    const isCollapsed = !!collapsed[node.id];
+    const hasChildren = node.children.length > 0;
+    return (
+      <View key={node.id} style={[styles.row, { paddingLeft: depth * INDENT }]}>
+        {renderGutter(depth, rowIndex, false)}
+        <View style={styles.rowContent}>
+          {hasChildren ? (
+            <Pressable
+              onPress={() => toggleCollapse(node.id)}
+              hitSlop={8}
+              style={styles.chevron}
+              accessibilityRole="button"
+              accessibilityLabel={isCollapsed ? `Expandir ${node.name}` : `Colapsar ${node.name}`}
+            >
+              <Icon name={isCollapsed ? "chevron-forward" : "chevron-down"} size={14} color={text.secondary} />
+            </Pressable>
+          ) : (
+            <View style={styles.chevronSpacer} />
+          )}
+          <View style={styles.textBlock}>
+            <Text variant={TextType.Overline} color={text.secondary} numberOfLines={1}>
               {String(node.code)}
             </Text>
-            <Text variant={TextType.Body} color={card.text.primary} style={styles.name} numberOfLines={1}>
+            <Text variant={TextType.BodyMedium} color={card.text.primary} numberOfLines={1}>
               {node.name}
             </Text>
+          </View>
+          {isEdit ? (
             <Pressable
               onPress={() => openActions(node.id)}
               hitSlop={8}
@@ -274,29 +372,47 @@ export function TreeEditor({ value, onChange, rootLabel = "Agregar raíz", style
             >
               <Icon name="more-horizontal" size={18} color={text.secondary} />
             </Pressable>
-          </View>
-          {hasChildren && !isCollapsed ? (
-            <View>{renderRows(node.children, depth + 1)}</View>
           ) : null}
         </View>
-      );
-    });
+      </View>
+    );
+  }
+
+  function renderAddRow(row: FlatRow & { kind: "add" }, rowIndex: number) {
+    return (
+      <View key={`add-${rowIndex}`} style={[styles.row, { paddingLeft: row.depth * INDENT }]}>
+        {renderGutter(row.depth, rowIndex, true)}
+        <Pressable
+          onPress={() => openLevelAdd(row.parentId)}
+          style={({ pressed }) => [styles.addRow, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Agregar item en este nivel"
+        >
+          <Icon name="add" size={14} color={text.secondary} />
+          <Text variant={TextType.Caption} color={text.secondary}>
+            Agregar
+          </Text>
+        </Pressable>
+      </View>
+    );
   }
 
   return (
     <View style={[styles.container, style]}>
-      <Pressable
-        onPress={() => openDialog("add-root")}
-        style={({ pressed }) => [styles.addRoot, pressed && styles.pressed]}
-        accessibilityRole="button"
-      >
-        <Icon name="add" size={18} color={cta1} />
-        <Text variant={TextType.BodyMedium} color={cta1}>
-          {rootLabel}
-        </Text>
-      </Pressable>
+      {isEdit ? (
+        <Pressable
+          onPress={() => openDialog("add-root")}
+          style={({ pressed }) => [styles.addRoot, pressed && styles.pressed]}
+          accessibilityRole="button"
+        >
+          <Icon name="add" size={18} color={cta1} />
+          <Text variant={TextType.BodyMedium} color={cta1}>
+            {rootLabel}
+          </Text>
+        </Pressable>
+      ) : null}
 
-      <View>{renderRows(value, 0)}</View>
+      <View>{rows.map((row, i) => (row.kind === "node" ? renderNodeRow(row, i) : renderAddRow(row, i)))}</View>
 
       <BottomSheet
         visible={actionsNodeId !== null}
@@ -378,18 +494,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: space.space2,
-    minHeight: ROW_MIN_HEIGHT,
+    minHeight: ROW_HEIGHT,
     paddingHorizontal: space.space3,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: border.divider.secondary,
   },
   row: {
+    position: "relative",
+    minHeight: ROW_HEIGHT,
+    justifyContent: "center",
+  },
+  line: {
+    position: "absolute",
+    width: 1,
+    backgroundColor: LINE_COLOR,
+  },
+  rowContent: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    minHeight: ROW_MIN_HEIGHT,
+    gap: space.space1,
     paddingRight: space.space2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: border.divider.secondary,
   },
   chevron: {
     width: 24,
@@ -399,16 +524,26 @@ const styles = StyleSheet.create({
   chevronSpacer: {
     width: 24,
   },
-  code: {
-    minWidth: 56,
-    marginRight: space.space2,
-  },
-  name: {
+  textBlock: {
     flex: 1,
+    gap: 1,
   },
   actions: {
     padding: space.space1,
     marginLeft: space.space1,
+  },
+  addRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.space1,
+    alignSelf: "flex-start",
+    minHeight: 34,
+    paddingHorizontal: space.space2,
+    marginVertical: space.space1,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: border.divider.secondary,
+    borderRadius: radius.sm,
   },
   sheetOptions: {
     gap: 0,
