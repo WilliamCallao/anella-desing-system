@@ -23,6 +23,7 @@ export * from "./components/SkeletonText";
 export * from "./components/SkeletonCircle";
 export * from "./components/SkeletonCard";
 export * from "./components/ToolsCard";
+export * from "./components/TreeEditor";
 export * from "./components/TextField";
 export * from "./components/text";
 export * from "./components/card-form";
