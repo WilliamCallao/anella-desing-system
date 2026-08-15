@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Modal as RNModal,
   Pressable,
@@ -58,7 +58,6 @@ export function BottomSheet({
 
   const [mounted, setMounted] = useState(visible);
   const progress = useSharedValue(0);
-  const transitionAt = useRef<number | null>(null);
 
   const maxHeightRatio = useMemo(() => {
     let ratio = 0.9;
@@ -71,64 +70,17 @@ export function BottomSheet({
     return ratio;
   }, [snapPoints]);
 
-  const panelMaxHeight = Math.max(
-    space.space16,
-    (screenHeight - insets.top - insets.bottom) * maxHeightRatio,
-  );
-
-  // [debug] métricas de layout y transición
   useEffect(() => {
-    console.log(
-      `[BottomSheet:metrics] screenH=${screenHeight} insets(top=${insets.top},bottom=${insets.bottom}) snapPoints=${JSON.stringify(
-        snapPoints,
-      )} maxHeightRatio=${maxHeightRatio} panelMaxHeight=${panelMaxHeight} driver=UI(reanimated)`,
-    );
-  }, [screenHeight, insets.top, insets.bottom, snapPoints, maxHeightRatio, panelMaxHeight]);
-
-  useEffect(() => {
-    if (visible) {
-      transitionAt.current = performance.now();
-      console.log(
-        `[BottomSheet:transition] enter → slideInUp(${ANIM_IN_TIMING}ms) + backdropFadeIn(${ANIM_IN_TIMING}ms, alpha ${BACKDROP_OPACITY})`,
-      );
-      setMounted(true);
-    } else if (transitionAt.current != null) {
-      transitionAt.current = performance.now();
-      console.log(
-        `[BottomSheet:transition] exit → slideOutDown(${ANIM_OUT_TIMING}ms) + backdropFadeOut(${ANIM_OUT_TIMING}ms)`,
-      );
-    }
+    if (visible) setMounted(true);
   }, [visible]);
-
-  const logShown = () => {
-    const t = transitionAt.current;
-    console.log(
-      `[BottomSheet:onModalShow] totalmente visible (desde trigger: ${
-        t == null ? "n/a" : `${Math.round(performance.now() - t)}ms`
-      })`,
-    );
-  };
-
-  const logHidden = () => {
-    const t = transitionAt.current;
-    console.log(
-      `[BottomSheet:onModalHide] totalmente oculto (desde trigger: ${
-        t == null ? "n/a" : `${Math.round(performance.now() - t)}ms`
-      })`,
-    );
-  };
 
   useEffect(() => {
     if (!mounted) return;
     if (visible) {
-      progress.value = withTiming(
-        1,
-        {
-          duration: ANIM_IN_TIMING,
-          easing: Easing.out(Easing.cubic),
-        },
-        () => runOnJS(logShown)(),
-      );
+      progress.value = withTiming(1, {
+        duration: ANIM_IN_TIMING,
+        easing: Easing.out(Easing.cubic),
+      });
     } else {
       progress.value = withTiming(
         0,
@@ -138,7 +90,6 @@ export function BottomSheet({
         },
         (finished) => {
           if (finished) runOnJS(setMounted)(false);
-          if (finished) runOnJS(logHidden)();
         },
       );
     }
