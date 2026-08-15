@@ -28,7 +28,13 @@ function DockDemo() {
             El dock flota sobre la pantalla, separado de los bordes.
           </Text>
         </View>
-        <Dock visible={visible} items={DOCK_ITEMS} selectedIndex={selected} onSelect={setSelected} />
+        <Dock
+          visible={visible}
+          items={DOCK_ITEMS}
+          selectedIndex={selected}
+          onSelect={setSelected}
+          style={styles.dockPreview}
+        />
       </View>
     </View>
   );
@@ -44,6 +50,9 @@ const styles = StyleSheet.create({
   canvasHeader: {
     padding: spacing.md,
     gap: 2,
+  },
+  dockPreview: {
+    bottom: spacing.md,
   },
 });
 

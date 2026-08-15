@@ -18,6 +18,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { background, border, cta1, space, text } from "@antonella/theme";
 import { iconMap, type IconName } from "./Icon";
 
@@ -73,7 +74,11 @@ function DockItem({
     >
       <Pressable
         onPress={onPress}
-        style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          styles.pressable,
+          selected && styles.pressableSelected,
+          pressed && styles.pressed,
+        ]}
         accessibilityRole="button"
         accessibilityLabel={item.label}
         accessibilityState={{ selected }}
@@ -97,6 +102,7 @@ function DockItem({
 }
 
 export function Dock({ items, selectedIndex, onSelect, visible, style }: DockProps) {
+  const insets = useSafeAreaInsets();
   const visibility = useSharedValue(visible ? 1 : 0);
   const pillLeft = useSharedValue(0);
   const pillWidth = useSharedValue(0);
@@ -148,7 +154,7 @@ export function Dock({ items, selectedIndex, onSelect, visible, style }: DockPro
   return (
     <Animated.View
       pointerEvents={visible ? "auto" : "none"}
-      style={[styles.dock, dockStyle, style]}
+      style={[styles.dock, { bottom: insets.bottom + space.space3 }, dockStyle, style]}
     >
       <Animated.View style={styles.row} layout={transition}>
         <Animated.View pointerEvents="none" style={[styles.pill, pillStyle]} />
@@ -169,7 +175,8 @@ export function Dock({ items, selectedIndex, onSelect, visible, style }: DockPro
 const styles = StyleSheet.create({
   dock: {
     position: "absolute",
-    bottom: space.space3,
+    alignSelf: "center",
+    maxWidth: 440,
     left: space.space3,
     right: space.space3,
     backgroundColor: background.surface,
@@ -181,7 +188,6 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    gap: space.space1,
   },
   pill: {
     position: "absolute",
@@ -193,18 +199,20 @@ const styles = StyleSheet.create({
   item: {
     flexGrow: 1,
     flexShrink: 1,
-    paddingVertical: space.space3,
-    paddingHorizontal: space.space2,
   },
   itemSelected: {
     flexGrow: 0,
-    paddingVertical: space.space3,
-    paddingHorizontal: space.space3,
+    maxWidth: "70%",
   },
   pressable: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: space.space3,
+    paddingHorizontal: space.space2,
+  },
+  pressableSelected: {
+    paddingHorizontal: space.space3,
   },
   content: {
     flexDirection: "row",
