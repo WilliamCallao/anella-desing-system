@@ -173,7 +173,6 @@ type TreeRenderContext = {
 function renderGutter(
   depth: number,
   rowIndex: number,
-  isAddRow: boolean,
   lastByDepth: Record<number, number>,
 ): React.ReactNode {
   const segments = [];
@@ -196,8 +195,9 @@ function renderGutter(
     );
   }
   // Stub horizontal: conecta la línea del padre con el contenido de la fila.
-  // Las filas "+ Agregar" no llevan stub (el botón flota en el nivel).
-  if (depth > 0 && !isAddRow) {
+  // Las filas "+ Agregar" también lo reciben, para verse como un item más
+  // del nivel.
+  if (depth > 0) {
     segments.push(
       <View
         key="h"
@@ -222,18 +222,21 @@ function renderAddRow(ctx: TreeRenderContext, parentId: string | null, depth: nu
   const rowIndex = ctx.addIndex.get(parentId ?? "root") ?? -1;
   return (
     <View key={`add-${parentId ?? "root"}`} style={[styles.row, { paddingLeft: depth * INDENT }]}>
-      {renderGutter(depth, rowIndex, true, ctx.lastByDepth)}
-      <Pressable
-        onPress={() => ctx.onAdd(parentId)}
-        style={({ pressed }) => [styles.addRow, pressed && styles.pressed]}
-        accessibilityRole="button"
-        accessibilityLabel="Agregar item en este nivel"
-      >
-        <Icon name="add" size={14} color={text.secondary} />
-        <Text variant={TextType.Caption} color={text.secondary}>
-          Agregar
-        </Text>
-      </Pressable>
+      {renderGutter(depth, rowIndex, ctx.lastByDepth)}
+      <View style={styles.rowContent}>
+        <View style={styles.chevronSpacer} />
+        <Pressable
+          onPress={() => ctx.onAdd(parentId)}
+          style={({ pressed }) => [styles.addRow, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Agregar item en este nivel"
+        >
+          <Icon name="add" size={14} color={text.secondary} />
+          <Text variant={TextType.Caption} color={text.secondary}>
+            Agregar
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -318,7 +321,7 @@ function TreeNodeItem({ node, depth, ctx }: { node: TreeNode; depth: number; ctx
         accessibilityState={hasChildren ? { expanded: !isCollapsed } : undefined}
         accessibilityLabel={hasChildren ? `${isCollapsed ? "Expandir" : "Colapsar"} ${node.name}` : undefined}
       >
-        {renderGutter(depth, rowIndex, false, ctx.lastByDepth)}
+        {renderGutter(depth, rowIndex, ctx.lastByDepth)}
         <View style={styles.rowContent}>
           {hasChildren ? (
             <Animated.View style={[styles.chevron, { transform: [{ rotate: chevronRotate }] }]}>
@@ -401,8 +404,10 @@ export function TreeEditor({ value, onChange, mode = "view", rootLabel = "Agrega
   const nodeIndex = new Map<string, number>();
   const addIndex = new Map<string, number>();
   rows.forEach((row, i) => {
+    // Incluye también las filas "+ Agregar": así la línea del padre llega hasta
+    // el botón y se ve como un item más del nivel.
+    lastByDepth[row.depth] = i;
     if (row.kind === "node") {
-      lastByDepth[row.depth] = i;
       nodeIndex.set(row.node.id, i);
     } else {
       addIndex.set(row.parentId ?? "root", i);
@@ -681,7 +686,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: space.space1,
-    alignSelf: "flex-start",
     minHeight: 34,
     paddingHorizontal: space.space2,
     marginVertical: space.space1,
