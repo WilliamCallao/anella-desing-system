@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
+  Animated,
+  Easing,
   Pressable,
   StyleSheet,
   View,
@@ -113,26 +115,249 @@ export function countNodes(nodes: TreeNode[]): number {
 }
 
 // ----------------------------------------------------------------
-// Construcción de filas (DFS) para dibujar conectores tipo file-explorer
+// Construcción de filas (DFS) para dibujar conectores tipo file-explorer.
+// Solo las filas VISIBLES (respetando el colapso) se usan para los índices
+// de conectores; el render recursivo monta siempre los subárboles y los
+// anima/clipea con overflow hidden.
 // ----------------------------------------------------------------
 
 const INDENT = 24;
 const ROW_HEIGHT = 54;
 const LINE_COLOR = border.divider.secondary;
 
+const EXPAND_DURATION = 220;
+const EXPAND_FADE = 180;
+const COLLAPSE_FADE = 120;
+const CHEVRON_DURATION = 180;
+
 type FlatRow =
-  | { kind: "node"; node: TreeNode; depth: number; isLastInLevel: boolean }
+  | { kind: "node"; node: TreeNode; depth: number }
   | { kind: "add"; parentId: string | null; depth: number };
 
-function buildRows(nodes: TreeNode[], depth: number, out: FlatRow[]): FlatRow[] {
-  nodes.forEach((node, idx) => {
-    out.push({ kind: "node", node, depth, isLastInLevel: idx === nodes.length - 1 });
-    if (node.children.length > 0) {
-      buildRows(node.children, depth + 1, out);
-      out.push({ kind: "add", parentId: node.id, depth: depth + 1 });
+function buildRows(
+  nodes: TreeNode[],
+  depth: number,
+  collapsed: Record<string, boolean>,
+  includeAdd: boolean,
+  out: FlatRow[],
+): FlatRow[] {
+  nodes.forEach((node) => {
+    out.push({ kind: "node", node, depth });
+    const isCollapsed = !!collapsed[node.id];
+    if (node.children.length > 0 && !isCollapsed) {
+      buildRows(node.children, depth + 1, collapsed, includeAdd, out);
+      if (includeAdd) {
+        out.push({ kind: "add", parentId: node.id, depth: depth + 1 });
+      }
     }
   });
   return out;
+}
+
+// Contexto compartido entre el render recursivo y las filas.
+type TreeRenderContext = {
+  isEdit: boolean;
+  collapsed: Record<string, boolean>;
+  lastByDepth: Record<number, number>;
+  nodeIndex: Map<string, number>;
+  addIndex: Map<string, number>;
+  onToggle: (id: string) => void;
+  onOpenActions: (id: string) => void;
+  onAdd: (parentId: string | null) => void;
+};
+
+// Dibuja los conectores de una fila. Lógica verificada contra el render
+// canónico de VS Code ("├─/│/└─"): por el nivel k pasa una línea mientras
+// exista una fila posterior de profundidad k+1; la última fila de ese nivel
+// recibe solo el tramo superior (el codo "└") que se une al stub.
+function renderGutter(
+  depth: number,
+  rowIndex: number,
+  isAddRow: boolean,
+  lastByDepth: Record<number, number>,
+): React.ReactNode {
+  const segments = [];
+  for (let k = 0; k < depth; k++) {
+    const last = lastByDepth[k + 1];
+    if (last === undefined || last < rowIndex) continue;
+    const isLastStub = last === rowIndex;
+    segments.push(
+      <View
+        key={`v${k}`}
+        style={[
+          styles.line,
+          {
+            left: k * INDENT,
+            top: 0,
+            bottom: isLastStub ? ROW_HEIGHT / 2 - 0.5 : 0,
+          },
+        ]}
+      />,
+    );
+  }
+  // Stub horizontal: conecta la línea del padre con el contenido de la fila.
+  // Las filas "+ Agregar" no llevan stub (el botón flota en el nivel).
+  if (depth > 0 && !isAddRow) {
+    segments.push(
+      <View
+        key="h"
+        style={[
+          styles.line,
+          {
+            left: (depth - 1) * INDENT,
+            top: ROW_HEIGHT / 2 - 0.5,
+            width: INDENT,
+            height: 1,
+          },
+        ]}
+      />,
+    );
+  }
+  return <>{segments}</>;
+}
+
+// Fila "+ Agregar" de un nivel. Solo visible si el padre está expandido (o es
+// la raíz); si el padre está colapsado queda clipeada dentro del contenedor.
+function renderAddRow(ctx: TreeRenderContext, parentId: string | null, depth: number): React.ReactNode {
+  const rowIndex = ctx.addIndex.get(parentId ?? "root") ?? -1;
+  return (
+    <View key={`add-${parentId ?? "root"}`} style={[styles.row, { paddingLeft: depth * INDENT }]}>
+      {renderGutter(depth, rowIndex, true, ctx.lastByDepth)}
+      <Pressable
+        onPress={() => ctx.onAdd(parentId)}
+        style={({ pressed }) => [styles.addRow, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Agregar item en este nivel"
+      >
+        <Icon name="add" size={14} color={text.secondary} />
+        <Text variant={TextType.Caption} color={text.secondary}>
+          Agregar
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function renderForest(ctx: TreeRenderContext, nodes: TreeNode[], depth: number): React.ReactNode {
+  return (
+    <>
+      {nodes.map((node) => (
+        <TreeNodeItem key={node.id} node={node} depth={depth} ctx={ctx} />
+      ))}
+    </>
+  );
+}
+
+// Nodo del árbol: fila clickeable (colapsa/expande en toda la fila) + contenedor
+// animado del subárbol (altura/opacidad/chevron, patrón de AppSelector).
+function TreeNodeItem({ node, depth, ctx }: { node: TreeNode; depth: number; ctx: TreeRenderContext }) {
+  const hasChildren = node.children.length > 0;
+  const isCollapsed = !!ctx.collapsed[node.id];
+  const rowIndex = ctx.nodeIndex.get(node.id) ?? -1;
+
+  // Altura del subárbol calculada de forma determinística: cada fila visible
+  // (nodo o "+ Agregar") mide exactamente ROW_HEIGHT, así que no hace falta
+  // medir con onLayout (que reporta 0 por el overflow:hidden del contenedor).
+  const subtreeRows: FlatRow[] = [];
+  buildRows(node.children, depth + 1, ctx.collapsed, ctx.isEdit, subtreeRows);
+  const expandedHeight = (subtreeRows.length + (ctx.isEdit ? 1 : 0)) * ROW_HEIGHT;
+
+  const heightAnim = useRef(new Animated.Value(isCollapsed ? 0 : expandedHeight)).current;
+  const contentOpacity = useRef(new Animated.Value(isCollapsed ? 0 : 1)).current;
+  const chevronAnim = useRef(new Animated.Value(isCollapsed ? 0 : 1)).current;
+  const measured = useRef(false);
+
+  const chevronRotate = useMemo(
+    () => chevronAnim.interpolate({ inputRange: [0, 1], outputRange: ["-90deg", "0deg"] }),
+    [chevronAnim],
+  );
+
+  useEffect(() => {
+    if (!measured.current) {
+      // Primer render: fijar el estado sin animación.
+      measured.current = true;
+      heightAnim.setValue(isCollapsed ? 0 : expandedHeight);
+      contentOpacity.setValue(isCollapsed ? 0 : 1);
+      chevronAnim.setValue(isCollapsed ? 0 : 1);
+      return;
+    }
+    const animation = Animated.parallel([
+      Animated.timing(heightAnim, {
+        toValue: isCollapsed ? 0 : expandedHeight,
+        duration: EXPAND_DURATION,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      Animated.timing(contentOpacity, {
+        toValue: isCollapsed ? 0 : 1,
+        duration: isCollapsed ? COLLAPSE_FADE : EXPAND_FADE,
+        useNativeDriver: false,
+      }),
+      Animated.timing(chevronAnim, {
+        toValue: isCollapsed ? 0 : 1,
+        duration: CHEVRON_DURATION,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }),
+    ]);
+    animation.start();
+    return () => animation.stop();
+  }, [isCollapsed, expandedHeight, heightAnim, contentOpacity, chevronAnim]);
+
+  return (
+    <>
+      <Pressable
+        onPress={hasChildren ? () => ctx.onToggle(node.id) : undefined}
+        disabled={!hasChildren}
+        style={({ pressed }) => [
+          styles.row,
+          { paddingLeft: depth * INDENT },
+          hasChildren && pressed && styles.pressed,
+        ]}
+        accessibilityRole={hasChildren ? "button" : undefined}
+        accessibilityState={hasChildren ? { expanded: !isCollapsed } : undefined}
+        accessibilityLabel={hasChildren ? `${isCollapsed ? "Expandir" : "Colapsar"} ${node.name}` : undefined}
+      >
+        {renderGutter(depth, rowIndex, false, ctx.lastByDepth)}
+        <View style={styles.rowContent}>
+          {hasChildren ? (
+            <Animated.View style={[styles.chevron, { transform: [{ rotate: chevronRotate }] }]}>
+              <Icon name="chevron-down" size={14} color={text.secondary} />
+            </Animated.View>
+          ) : (
+            <View style={styles.chevronSpacer} />
+          )}
+          <View style={styles.textBlock}>
+            <Text variant={TextType.Overline} color={text.secondary} numberOfLines={1}>
+              {String(node.code)}
+            </Text>
+            <Text variant={TextType.BodyMedium} color={card.text.primary} numberOfLines={1}>
+              {node.name}
+            </Text>
+          </View>
+          {ctx.isEdit ? (
+            <Pressable
+              onPress={() => ctx.onOpenActions(node.id)}
+              hitSlop={8}
+              style={({ pressed }) => [styles.actions, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={`Acciones de ${node.name}`}
+            >
+              <Icon name="more-horizontal" size={18} color={text.secondary} />
+            </Pressable>
+          ) : null}
+        </View>
+      </Pressable>
+      {hasChildren ? (
+        <Animated.View style={[styles.subtree, { height: heightAnim }]}>
+          <Animated.View style={{ opacity: contentOpacity }}>
+            {renderForest(ctx, node.children, depth + 1)}
+            {ctx.isEdit ? renderAddRow(ctx, node.id, depth + 1) : null}
+          </Animated.View>
+        </Animated.View>
+      ) : null}
+    </>
+  );
 }
 
 // ----------------------------------------------------------------
@@ -162,20 +387,38 @@ export function TreeEditor({ value, onChange, mode = "view", rootLabel = "Agrega
   const dialogNode = dialog?.nodeId ? findNode(value, dialog.nodeId) : undefined;
   const dialogParent = dialog?.parentId ? findNode(value, dialog.parentId) : undefined;
 
-  // Fila "+ Agregar" al final del nivel de raíces (solo edición).
+  // Filas visibles (respetando colapso) usadas solo para los índices de
+  // conectores. El render real es recursivo y monta siempre los subárboles,
+  // animándolos con overflow hidden.
   const rows: FlatRow[] = [];
-  buildRows(value, 0, rows);
+  buildRows(value, 0, collapsed, isEdit, rows);
   if (isEdit) {
     rows.push({ kind: "add", parentId: null, depth: 0 });
   }
 
-  // Rango de índices por profundidad (solo filas de nodos) para los conectores.
+  // Último índice de fila por profundidad + mapas de índice (nodo y fila "+") para los conectores.
   const lastByDepth: Record<number, number> = {};
+  const nodeIndex = new Map<string, number>();
+  const addIndex = new Map<string, number>();
   rows.forEach((row, i) => {
     if (row.kind === "node") {
       lastByDepth[row.depth] = i;
+      nodeIndex.set(row.node.id, i);
+    } else {
+      addIndex.set(row.parentId ?? "root", i);
     }
   });
+
+  const ctx: TreeRenderContext = {
+    isEdit,
+    collapsed,
+    lastByDepth,
+    nodeIndex,
+    addIndex,
+    onToggle: toggleCollapse,
+    onOpenActions: openActions,
+    onAdd: openLevelAdd,
+  };
 
   function toggleCollapse(id: string) {
     setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -292,110 +535,6 @@ export function TreeEditor({ value, onChange, mode = "view", rootLabel = "Agrega
   // canónico de VS Code ("├─/│/└─"): por el nivel k pasa una línea mientras
   // exista una fila posterior de profundidad k+1; la última fila de ese nivel
   // recibe solo el tramo superior (el codo "└") que se une al stub.
-  function renderGutter(depth: number, rowIndex: number, isAddRow: boolean) {
-    const segments = [];
-    for (let k = 0; k < depth; k++) {
-      const last = lastByDepth[k + 1];
-      if (last === undefined || last < rowIndex) continue;
-      const isLastStub = last === rowIndex;
-      segments.push(
-        <View
-          key={`v${k}`}
-          style={[
-            styles.line,
-            {
-              left: k * INDENT,
-              top: 0,
-              bottom: isLastStub ? ROW_HEIGHT / 2 - 0.5 : 0,
-            },
-          ]}
-        />,
-      );
-    }
-    // Stub horizontal: conecta la línea del padre con el contenido de la fila.
-    // Las filas "+ Agregar" no llevan stub (el botón flota en el nivel).
-    if (depth > 0 && !isAddRow) {
-      segments.push(
-        <View
-          key="h"
-          style={[
-            styles.line,
-            {
-              left: (depth - 1) * INDENT,
-              top: ROW_HEIGHT / 2 - 0.5,
-              width: INDENT,
-              height: 1,
-            },
-          ]}
-        />,
-      );
-    }
-    return <>{segments}</>;
-  }
-
-  function renderNodeRow(row: FlatRow & { kind: "node" }, rowIndex: number) {
-    const { node, depth } = row;
-    const isCollapsed = !!collapsed[node.id];
-    const hasChildren = node.children.length > 0;
-    return (
-      <View key={node.id} style={[styles.row, { paddingLeft: depth * INDENT }]}>
-        {renderGutter(depth, rowIndex, false)}
-        <View style={styles.rowContent}>
-          {hasChildren ? (
-            <Pressable
-              onPress={() => toggleCollapse(node.id)}
-              hitSlop={8}
-              style={styles.chevron}
-              accessibilityRole="button"
-              accessibilityLabel={isCollapsed ? `Expandir ${node.name}` : `Colapsar ${node.name}`}
-            >
-              <Icon name={isCollapsed ? "chevron-forward" : "chevron-down"} size={14} color={text.secondary} />
-            </Pressable>
-          ) : (
-            <View style={styles.chevronSpacer} />
-          )}
-          <View style={styles.textBlock}>
-            <Text variant={TextType.Overline} color={text.secondary} numberOfLines={1}>
-              {String(node.code)}
-            </Text>
-            <Text variant={TextType.BodyMedium} color={card.text.primary} numberOfLines={1}>
-              {node.name}
-            </Text>
-          </View>
-          {isEdit ? (
-            <Pressable
-              onPress={() => openActions(node.id)}
-              hitSlop={8}
-              style={styles.actions}
-              accessibilityRole="button"
-              accessibilityLabel={`Acciones de ${node.name}`}
-            >
-              <Icon name="more-horizontal" size={18} color={text.secondary} />
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
-    );
-  }
-
-  function renderAddRow(row: FlatRow & { kind: "add" }, rowIndex: number) {
-    return (
-      <View key={`add-${rowIndex}`} style={[styles.row, { paddingLeft: row.depth * INDENT }]}>
-        {renderGutter(row.depth, rowIndex, true)}
-        <Pressable
-          onPress={() => openLevelAdd(row.parentId)}
-          style={({ pressed }) => [styles.addRow, pressed && styles.pressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Agregar item en este nivel"
-        >
-          <Icon name="add" size={14} color={text.secondary} />
-          <Text variant={TextType.Caption} color={text.secondary}>
-            Agregar
-          </Text>
-        </Pressable>
-      </View>
-    );
-  }
 
   return (
     <View style={[styles.container, style]}>
@@ -412,7 +551,10 @@ export function TreeEditor({ value, onChange, mode = "view", rootLabel = "Agrega
         </Pressable>
       ) : null}
 
-      <View>{rows.map((row, i) => (row.kind === "node" ? renderNodeRow(row, i) : renderAddRow(row, i)))}</View>
+      <View>
+        {renderForest(ctx, value, 0)}
+        {ctx.isEdit ? renderAddRow(ctx, null, 0) : null}
+      </View>
 
       <BottomSheet
         visible={actionsNodeId !== null}
@@ -531,6 +673,9 @@ const styles = StyleSheet.create({
   actions: {
     padding: space.space1,
     marginLeft: space.space1,
+  },
+  subtree: {
+    overflow: "hidden",
   },
   addRow: {
     flexDirection: "row",
