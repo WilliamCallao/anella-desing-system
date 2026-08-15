@@ -4,6 +4,8 @@ export * from "./components/Card";
 export * from "./components/CardTitle";
 export * from "./components/Chip";
 export * from "./components/BottomSheet";
+export * from "./components/CardStackSheet";
+export * from "./components/OptionListItem";
 export * from "./components/Modal";
 export * from "./components/AppResponsiveDialog";
 export * from "./components/AppFilterChips";
