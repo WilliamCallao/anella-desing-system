@@ -61,7 +61,7 @@ export type IconName =
    | "document-text-filled"
    | "backspace";
 
-const iconMap: Record<IconName, LibraryIconName> = {
+export const iconMap: Record<IconName, LibraryIconName> = {
   home: "home-outline",
   "home-filled": "home",
   mail: "mail-outline",

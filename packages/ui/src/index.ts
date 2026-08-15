@@ -14,6 +14,7 @@ export * from "./components/AppCheckItem";
 export * from "./components/DonutChart";
 export { default as DashboardShell } from "./components/DashboardShell/DashboardShell";
 export * from "./components/DashboardShell/types";
+export * from "./components/Dock";
 export * from "./components/Dropdown";
 export * from "./components/FloatingActionButton";
 export * from "./components/Icon";
