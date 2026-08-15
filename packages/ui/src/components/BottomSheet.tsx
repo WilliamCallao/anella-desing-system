@@ -191,7 +191,7 @@ export function BottomSheet({
         >
           <Animated.View style={[styles.backdrop, backdropStyle]} />
         </Pressable>
-        <Animated.View style={[styles.panelWrapper, containerAnimatedStyle]}>
+        <Animated.View style={[styles.panelWrapper, containerAnimatedStyle]} pointerEvents="box-none">
           <Animated.View style={[styles.panel, panelHeightStyle, panelStyle]}>
             <View style={styles.handleBar} />
             {title || icon || caption || showCloseButton ? (

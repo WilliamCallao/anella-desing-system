@@ -180,7 +180,7 @@ export function Modal({
         >
           <Animated.View style={[styles.backdrop, backdropStyle]} />
         </Pressable>
-        <Animated.View style={[styles.centered, containerAnimatedStyle]}>
+        <Animated.View style={[styles.centered, containerAnimatedStyle]} pointerEvents="box-none">
           <Animated.View style={[styles.panel, panelHeightStyle, panelStyle, contentStyle]}>
             {title || icon || caption || showCloseButton ? (
               <DialogHeader
