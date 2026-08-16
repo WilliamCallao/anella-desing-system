@@ -55,17 +55,17 @@ export const accent = {
 
 /**
  * Fondo de pantalla base.
- * REGLA: sobre `background.default` se pintan `background.content.*`
- * cuando el contenido va directo sobre el fondo (sin card).
- * `background.skeleton` es el tono de los placeholders de carga: un poco
- * más oscuro que `default` para que combine y se distinga sobre el shell.
+ * REGLA: la pantalla se pinta SIEMPRE con `background.default` (blanco).
+ * Sobre ella, los componentes (cards, formularios, chips, etc.) se pintan
+ * con `background.surface` (gris). `background.skeleton` es el tono de los
+ * placeholders de carga, un poco más claro que `surface`.
  */
 export const background = {
-  default: "#F2F2F7",
+  default: "#FFFFFFFF",
   subtle: "#dadadaff",
-  surface: "#FFFFFFFF",
+  surface: "#F7F7FA",
   content: {
-    primary: "#F2F2F7",
+    primary: "#F7F7FA",
     secondary: "#8E8E93",
   },
   skeleton: "#E5E5EA",
@@ -85,11 +85,12 @@ export const text = {
 } as const;
 
 /**
- * Card — tarjetas que flotan sobre `background.default`.
- * REGLA: una card se pinta con fondo `card.background` y su texto con `card.text.*`.
+ * Card — tarjetas que flotan sobre `background.default` (blanco).
+ * REGLA: una card se pinta con fondo `card.background` (gris) y su texto
+ * con `card.text.*`.
  */
 export const card = {
-  background: "#FFFFFF",
+  background: "#F7F7FA",
   text: {
     primary: text.default,
     secondary: text.secondary,
@@ -123,14 +124,14 @@ export const appInput = {
 
 /**
  * AppFormCard — grupo de campos de formulario estilo iOS (inset grouped).
- * REGLA: el contenedor se pinta con `appInputCard.background.default` (blanco
- * puro) y las filas se separan con `appInputCard.separator` (gris claro,
- * hairline, no de borde a borde). Los textos usan `appInputCard.text.*`:
+ * REGLA: el contenedor se pinta con `appInputCard.background.default` (gris
+ * claro) y las filas se separan con `appInputCard.separator` (gris, hairline,
+ * no de borde a borde). Los textos usan `appInputCard.text.*`:
  * label a la izquierda (semibold, más grande) y valor a la derecha.
  */
 export const appInputCard = {
   background: {
-    default: "#FFFFFF",
+    default: "#F7F7FA",
   },
   border: "#D1D1D6",
   separator: "#E5E5EA",

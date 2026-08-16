@@ -35,7 +35,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    fontSize: texts.body.fontSize,
+    fontSize: texts.caption.fontSize,
+    lineHeight: texts.caption.lineHeight,
     color: appInput.text,
     backgroundColor: appInput.background,
   },
@@ -52,7 +53,8 @@ const styles = StyleSheet.create({
   inputFlex: {
     flex: 1,
     paddingVertical: spacing.sm,
-    fontSize: texts.body.fontSize,
+    fontSize: texts.caption.fontSize,
+    lineHeight: texts.caption.lineHeight,
     color: appInput.text,
   },
 });

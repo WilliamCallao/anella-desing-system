@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, type ViewProps } from "react-native";
-import { background, card, palette, space, texts } from "@antonella/theme";
+import { card, palette, space, text, texts } from "@antonella/theme";
 import { Text } from "./text/Text";
 
 const MONTHS = [
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     color: card.text.primary,
   },
   dayMuted: {
-    color: background.default,
+    color: text.placeholder,
   },
   todayCircle: {
     width: 24,

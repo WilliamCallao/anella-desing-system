@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Input, TextField } from "@antonella/ui";
-import { card, radius, spacing } from "@antonella/theme";
+import { background, radius, spacing } from "@antonella/theme";
 import type { ComponentCategory } from "../types";
 
 function DemoSurface({ children }: { children: React.ReactNode }) {
@@ -129,7 +129,7 @@ function InputIconDemo() {
 
 const styles = StyleSheet.create({
   surface: {
-    backgroundColor: card.background,
+    backgroundColor: background.default,
     borderRadius: radius.md,
     padding: spacing.lg,
     gap: spacing.sm,

@@ -99,7 +99,8 @@ export function AppSelector({
           {label}
         </Text>
         <Text
-          variant={selected ? TextType.Body : TextType.Placeholder}
+          variant={TextType.Caption}
+          color={selected ? text.default : text.placeholder}
           numberOfLines={1}
           style={styles.value}
         >

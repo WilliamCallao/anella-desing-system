@@ -11,7 +11,7 @@ import { spacing, text, texts, TextType, space } from "@antonella/theme";
 import { Text } from "../text/Text";
 import type { AppInputProps } from "./AppInput";
 
-const SINGLE_LINE_HEIGHT = 20;
+const SINGLE_LINE_HEIGHT = 18;
 
 export type AppTextInputProps = AppInputProps & {
   type?: "text";
@@ -74,7 +74,11 @@ export function AppTextInput({
         ref={inputRef}
         style={[
           styles.value,
-          texts.body,
+          {
+            fontSize: texts.caption.fontSize,
+            lineHeight: texts.caption.lineHeight,
+            color: text.default,
+          },
           inputHeight != null && {
             height: Math.max(inputHeight, SINGLE_LINE_HEIGHT),
           },

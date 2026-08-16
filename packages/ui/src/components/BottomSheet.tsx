@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   },
   panel: {
     width: "100%",
-    backgroundColor: background.default,
+    backgroundColor: background.surface,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     paddingTop: space.space2,
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: background.default,
+    backgroundColor: background.surface,
     marginBottom: space.space2,
   },
   content: {
