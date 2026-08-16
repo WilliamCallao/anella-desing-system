@@ -14,18 +14,27 @@ const DOCK_ITEMS: DockItem[] = [
 function DockDemo() {
   const [visible, setVisible] = useState(true);
   const [selected, setSelected] = useState(0);
+  const [agent, setAgent] = useState(false);
   return (
     <View style={demoStyles.gap}>
-      <AppButton
-        label={visible ? "Ocultar dock" : "Mostrar dock"}
-        variant="ghost"
-        onPress={() => setVisible((v) => !v)}
-      />
+      <View style={demoStyles.row}>
+        <AppButton
+          label={visible ? "Ocultar dock" : "Mostrar dock"}
+          variant="ghost"
+          onPress={() => setVisible((v) => !v)}
+        />
+        <AppButton
+          label={agent ? "Modo agente: activo" : "Activar modo agente"}
+          variant={agent ? "solid" : "ghost"}
+          onPress={() => setAgent((a) => !a)}
+        />
+      </View>
       <View style={styles.canvas}>
         <View style={styles.canvasHeader}>
           <Text variant="heading">Vista previa</Text>
           <Text variant="caption" color="#8E8E93">
-            El dock flota sobre la pantalla, separado de los bordes.
+            El dock flota sobre la pantalla. Con modo agente, el orb de
+            composición aparece a la derecha.
           </Text>
         </View>
         <Dock
@@ -33,6 +42,7 @@ function DockDemo() {
           items={DOCK_ITEMS}
           selectedIndex={selected}
           onSelect={setSelected}
+          agentMode={agent}
           style={styles.dockPreview}
         />
       </View>
@@ -65,7 +75,7 @@ export const bottomBars: ComponentCategory = {
       id: "dock",
       name: "Dock",
       description:
-        "Overlay flotante con íconos horizontales. El seleccionado se expande mostrando su nombre, en color de la app.",
+        "Overlay flotante con íconos horizontales. El seleccionado se expande mostrando su nombre, en color de la app. Con agentMode, el orb de composición se muestra a la derecha.",
       variants: [{ id: "open", label: "Abrir", render: () => <DockDemo /> }],
     },
   ],

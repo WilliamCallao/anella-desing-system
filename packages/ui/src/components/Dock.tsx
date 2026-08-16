@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef } from "react";
 import {
   Pressable,
   StyleSheet,
+  View,
   type LayoutChangeEvent,
   type StyleProp,
   type ViewStyle,
@@ -10,6 +11,8 @@ import Animated, {
   Easing,
   FadeIn,
   LinearTransition,
+  ZoomIn,
+  ZoomOut,
   interpolateColor,
   useAnimatedProps,
   useAnimatedStyle,
@@ -21,6 +24,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { background, border, cta1, space, text } from "@antonella/theme";
 import { iconMap, type IconName } from "./Icon";
+import { ComposingOrb } from "./ComposingOrb/ComposingOrb";
 
 export type DockItem = {
   icon: IconName;
@@ -32,6 +36,11 @@ export type DockProps = {
   selectedIndex: number;
   onSelect: (index: number) => void;
   visible: boolean;
+  /**
+   * Activa el "modo agente": muestra el orb de composición a la derecha de
+   * la barra. Se pausa solo cuando el dock no es visible.
+   */
+  agentMode?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -101,7 +110,7 @@ function DockItem({
   );
 }
 
-export function Dock({ items, selectedIndex, onSelect, visible, style }: DockProps) {
+export function Dock({ items, selectedIndex, onSelect, visible, agentMode, style }: DockProps) {
   const insets = useSafeAreaInsets();
   const visibility = useSharedValue(visible ? 1 : 0);
   const pillLeft = useSharedValue(0);
@@ -156,18 +165,29 @@ export function Dock({ items, selectedIndex, onSelect, visible, style }: DockPro
       pointerEvents={visible ? "auto" : "none"}
       style={[styles.dock, { bottom: insets.bottom + space.space3 }, dockStyle, style]}
     >
-      <Animated.View style={styles.row} layout={transition}>
-        <Animated.View pointerEvents="none" style={[styles.pill, pillStyle]} />
-        {items.map((item, index) => (
-          <DockItem
-            key={item.label}
-            item={item}
-            selected={index === selectedIndex}
-            onPress={() => onSelect(index)}
-            onLayout={handleLayout(index)}
-          />
-        ))}
-      </Animated.View>
+      <View style={styles.bar}>
+        <Animated.View style={styles.row} layout={transition}>
+          <Animated.View pointerEvents="none" style={[styles.pill, pillStyle]} />
+          {items.map((item, index) => (
+            <DockItem
+              key={item.label}
+              item={item}
+              selected={index === selectedIndex}
+              onPress={() => onSelect(index)}
+              onLayout={handleLayout(index)}
+            />
+          ))}
+        </Animated.View>
+      </View>
+      {agentMode ? (
+        <Animated.View
+          entering={ZoomIn.duration(160)}
+          exiting={ZoomOut.duration(130)}
+          style={styles.agentBadge}
+        >
+          <ComposingOrb size={44} paused={!visible} accessibilityLabel="Modo agente" />
+        </Animated.View>
+      ) : null}
     </Animated.View>
   );
 }
@@ -179,6 +199,13 @@ const styles = StyleSheet.create({
     maxWidth: 440,
     left: space.space3,
     right: space.space3,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.space2,
+  },
+  bar: {
+    flexGrow: 1,
+    flexShrink: 1,
     backgroundColor: background.surface,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
@@ -219,6 +246,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: space.space1,
     maxWidth: "100%",
+  },
+  agentBadge: {
+    width: 56,
+    height: 56,
+    flexShrink: 0,
+    borderRadius: 999,
+    backgroundColor: "#000000",
+    alignItems: "center",
+    justifyContent: "center",
   },
   pressed: {
     opacity: 0.6,

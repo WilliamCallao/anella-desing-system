@@ -20,6 +20,7 @@
     "@antonella/theme": "^0.0.0",
     "@antonella/utils": "^0.0.0",
     "@expo/vector-icons": "^15.1.1",
+    "@shopify/react-native-skia": "2.2.12",
     "react-native-svg": "^15.12.1"
   },
   "peerDependencies": {
