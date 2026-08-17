@@ -3,7 +3,6 @@ export * from "./components/Calendar";
 export * from "./components/Card";
 export * from "./components/CardTitle";
 export * from "./components/Chip";
-export * from "./components/ComposingOrb/ComposingOrb";
 export * from "./components/BottomSheet";
 export * from "./components/CardStackSheet";
 export * from "./components/OptionListItem";

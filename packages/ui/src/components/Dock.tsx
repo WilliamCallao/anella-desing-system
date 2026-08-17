@@ -24,7 +24,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { background, border, cta1, space, text } from "@antonella/theme";
 import { iconMap, type IconName } from "./Icon";
-import { ComposingOrb } from "./ComposingOrb/ComposingOrb";
 
 export type DockItem = {
   icon: IconName;
@@ -39,8 +38,10 @@ export type DockProps = {
   /**
    * Activa el "modo agente": muestra el orb de composición a la derecha de
    * la barra. Se pausa solo cuando el dock no es visible.
+   * El componente se provee desde afuera via `renderAgentOrb`.
    */
   agentMode?: boolean;
+  renderAgentOrb?: React.ComponentType<{ size: number; paused: boolean }>;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -110,7 +111,7 @@ function DockItem({
   );
 }
 
-export function Dock({ items, selectedIndex, onSelect, visible, agentMode, style }: DockProps) {
+export function Dock({ items, selectedIndex, onSelect, visible, agentMode, renderAgentOrb, style }: DockProps) {
   const insets = useSafeAreaInsets();
   const visibility = useSharedValue(visible ? 1 : 0);
   const pillLeft = useSharedValue(0);
@@ -179,13 +180,13 @@ export function Dock({ items, selectedIndex, onSelect, visible, agentMode, style
           ))}
         </Animated.View>
       </View>
-      {agentMode ? (
+      {agentMode && renderAgentOrb ? (
         <Animated.View
           entering={ZoomIn.duration(160)}
           exiting={ZoomOut.duration(130)}
           style={styles.agentBadge}
         >
-          <ComposingOrb size={44} paused={!visible} accessibilityLabel="Modo agente" />
+          {React.createElement(renderAgentOrb, { size: 44, paused: !visible })}
         </Animated.View>
       ) : null}
     </Animated.View>
