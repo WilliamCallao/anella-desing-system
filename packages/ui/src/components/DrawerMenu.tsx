@@ -53,7 +53,7 @@ export type DrawerMenuProps = {
 const DEFAULT_TOKENS: ColorToken[] = [
   { name: "Fondo panel", key: "panelBg", value: neutrals.N950, tokenName: "N950" },
   { name: "Fondo header", key: "headerBg", value: neutrals.N900, tokenName: "N900" },
-  { name: "Fondo footer", key: "footerBg", value: neutrals.N900, tokenName: "N900" },
+  { name: "Fondo footer", key: "footerBg", value: neutrals.N950, tokenName: "N900" },
   { name: "Fondo item", key: "itemBg", value: neutrals.N950, tokenName: "N950" },
   { name: "Fondo item presionado", key: "itemPressedBg", value: neutrals.N950, tokenName: "N950" },
   { name: "Fondo item seleccionado", key: "itemSelectedBg", value: brand.M600, tokenName: "M600" },

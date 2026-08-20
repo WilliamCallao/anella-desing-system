@@ -11,11 +11,12 @@ import {
 } from "react-native";
 import { border, card, cta1, palette, radius, space, text, TextType } from "@antonella/theme";
 import { Text } from "./text/Text";
-import { Icon } from "./Icon";
+import { Icon, type IconName } from "./Icon";
 import { AppResponsiveDialog } from "./AppResponsiveDialog";
 import { BottomSheet } from "./BottomSheet";
 import { TextField } from "./TextField";
 import { AppButton } from "./card-form/AppButton";
+import { AppIcon } from "../AppIcons";
 
 export type TreeNode = {
   id: string;
@@ -525,14 +526,14 @@ export function TreeEditor({ value, onChange, mode = "view", rootLabel = "Agrega
   const ACTION_SHEET_OPTIONS: {
     key: string;
     label: string;
-    icon: "add" | "pencil" | "trash";
+    icon: IconName;
     danger?: boolean;
     onPress: () => void;
   }[] = actionsNode
     ? [
-        { key: "child", label: "Agregar hijo", icon: "add", onPress: () => openDialog("add-child", { parentId: actionsNode.id }) },
-        { key: "edit", label: "Editar", icon: "pencil", onPress: () => openDialog("edit", { nodeId: actionsNode.id }) },
-        { key: "delete", label: "Eliminar", icon: "trash", danger: true, onPress: () => confirmDelete(actionsNode.id) },
+        { key: "child", label: "Agregar hijo", icon: AppIcon.Add, onPress: () => openDialog("add-child", { parentId: actionsNode.id }) },
+        { key: "edit", label: "Editar", icon: AppIcon.Pencil, onPress: () => openDialog("edit", { nodeId: actionsNode.id }) },
+        { key: "delete", label: "Eliminar", icon: AppIcon.Trash, danger: true, onPress: () => confirmDelete(actionsNode.id) },
       ]
     : [];
 

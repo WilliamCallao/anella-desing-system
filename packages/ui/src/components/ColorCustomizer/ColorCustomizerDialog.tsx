@@ -129,7 +129,7 @@ export function ColorCustomizerDialog({
         {tokens.map((token) => {
           const current = normalizeHex(token.value);
           const tokenLabel = findTokenLabel(current);
-          const displayLabel = token.tokenName ?? tokenLabel ?? current;
+          const displayLabel = tokenLabel ?? token.tokenName ?? current;
           const isOpen = expanded === token.key;
 
           return (
