@@ -10,7 +10,7 @@ export const neutrals = {
   N700: "#334155",
   N800: "#1E293B",
   N900: "#0F172A",
-  N950: "#020617",
+  N950: "#000000",
 } as const;
 
 export const brand = {

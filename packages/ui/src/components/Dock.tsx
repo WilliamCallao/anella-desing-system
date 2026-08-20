@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, type ComponentType } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -20,7 +20,6 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { background, border, cta1, space, text } from "@antonella/theme";
 import { iconMap, type IconName } from "./Icon";
@@ -51,7 +50,24 @@ const transition = LinearTransition.springify()
   .stiffness(SPRING.stiffness)
   .mass(SPRING.mass);
 
-const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
+type LucideIconComponent = ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+
+function LucideIconRenderer({
+  icon,
+  size,
+  color = text.secondary,
+  strokeWidth = 2.25,
+}: {
+  icon: LucideIconComponent;
+  size: number;
+  color?: string;
+  strokeWidth?: number;
+}) {
+  const IconComponent = icon;
+  return <IconComponent size={size} color={color} strokeWidth={strokeWidth} />;
+}
+
+const AnimatedLucideIcon = Animated.createAnimatedComponent(LucideIconRenderer);
 
 type Frame = { x: number; width: number };
 
@@ -94,7 +110,7 @@ function DockItem({
         accessibilityState={{ selected }}
       >
         <Animated.View style={styles.content}>
-          <AnimatedIonicons name={iconMap[item.icon]} size={22} animatedProps={iconProps} />
+          <AnimatedLucideIcon icon={iconMap[item.icon]} size={22} color={text.secondary} animatedProps={iconProps} />
           {selected ? (
           <Animated.Text
             entering={FadeIn.duration(140)}

@@ -1,7 +1,48 @@
-import { Ionicons } from "@expo/vector-icons";
-import type { ComponentProps } from "react";
-
-type LibraryIconName = ComponentProps<typeof Ionicons>["name"];
+import {
+  Activity,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  BarChart,
+  Bell,
+  Camera,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  CircleAlert,
+  CircleCheck,
+  Clipboard,
+  ClipboardList,
+  Clock,
+  Delete,
+  Ellipsis,
+  EllipsisVertical,
+  FileText,
+  GitBranch,
+  Home,
+  Info,
+  Leaf,
+  LogIn,
+  LogOut,
+  Mail,
+  Menu,
+  MessageCircle,
+  Pencil,
+  Plus,
+  Search,
+  Settings,
+  Trash2,
+  User,
+  Users,
+  Warehouse,
+  Wrench,
+  X,
+  Calendar,
+} from "lucide-react-native";
+import type { ComponentType } from "react";
 
 export type IconName =
   | "home"
@@ -49,7 +90,7 @@ export type IconName =
   | "construct"
   | "chatbubble"
   | "camera"
-   | "time"
+  | "time"
   | "analytics"
   | "barn"
   | "barn-filled"
@@ -57,73 +98,80 @@ export type IconName =
   | "farm-filled"
   | "people"
   | "people-filled"
-   | "document-text"
-   | "document-text-filled"
-   | "backspace";
+  | "document-text"
+  | "document-text-filled"
+  | "backspace";
 
-export const iconMap: Record<IconName, LibraryIconName> = {
-  home: "home-outline",
-  "home-filled": "home",
-  mail: "mail-outline",
-  "mail-filled": "mail",
-  calendar: "calendar-outline",
-  "calendar-filled": "calendar",
-  "bar-chart": "bar-chart-outline",
-  "bar-chart-filled": "bar-chart",
-  settings: "settings-outline",
-  "settings-filled": "settings",
-  user: "person-outline",
-  "user-filled": "person",
-  search: "search",
-  clipboard: "clipboard",
-  "clipboard-filled": "clipboard",
-  checklist: "list-outline",
-  "checklist-filled": "list",
-  menu: "menu",
-  close: "close",
-  "chevron-down": "chevron-down",
-  "chevron-forward": "chevron-forward",
-  "chevron-back": "chevron-back",
-  "arrow-back": "arrow-back",
-  "arrow-forward": "arrow-forward",
-  "arrow-down": "arrow-down",
-  "arrow-up": "arrow-up",
-  "arrow-up-filled": "arrow-up",
-  add: "add",
-  checkmark: "checkmark",
-  pencil: "create-outline",
-  trash: "trash-outline",
-  "chevron-up": "chevron-up",
-  "alert-circle": "alert-circle-outline",
-  "checkmark-circle": "checkmark-circle-outline",
-  "information-circle": "information-circle-outline",
-  notifications: "notifications-outline",
-  "notifications-filled": "notifications",
-  "more-horizontal": "ellipsis-horizontal",
-  "more-vertical": "ellipsis-vertical",
-  "log-in": "log-in-outline",
-  "log-out": "log-out-outline",
-  "git-network": "git-network-outline",
-  construct: "construct-outline",
-  chatbubble: "chatbubble-outline",
-  camera: "camera-outline",
-  time: "time-outline",
-   analytics: "analytics-outline",
-  barn: "cube-outline",
-  "barn-filled": "cube",
-  farm: "leaf-outline",
-  "farm-filled": "leaf",
-  people: "people-outline",
-  "people-filled": "people",
-   "document-text": "document-text-outline",
-  "document-text-filled": "document-text",
-  backspace: "backspace-outline",
+export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: string; strokeWidth?: number }>> = {
+  home: Home,
+  "home-filled": Home,
+  mail: Mail,
+  "mail-filled": Mail,
+  calendar: Calendar,
+  "calendar-filled": Calendar,
+  "bar-chart": BarChart,
+  "bar-chart-filled": BarChart,
+  settings: Settings,
+  "settings-filled": Settings,
+  user: User,
+  "user-filled": User,
+  search: Search,
+  clipboard: Clipboard,
+  "clipboard-filled": Clipboard,
+  checklist: ClipboardList,
+  "checklist-filled": ClipboardList,
+  menu: Menu,
+  close: X,
+  "chevron-down": ChevronDown,
+  "chevron-forward": ChevronRight,
+  "chevron-back": ChevronLeft,
+  "arrow-back": ArrowLeft,
+  "arrow-forward": ArrowRight,
+  "arrow-down": ArrowDown,
+  "arrow-up": ArrowUp,
+  "arrow-up-filled": ArrowUp,
+  add: Plus,
+  checkmark: Check,
+  pencil: Pencil,
+  trash: Trash2,
+  "chevron-up": ChevronUp,
+  "alert-circle": CircleAlert,
+  "checkmark-circle": CircleCheck,
+  "information-circle": Info,
+  notifications: Bell,
+  "notifications-filled": Bell,
+  "more-horizontal": Ellipsis,
+  "more-vertical": EllipsisVertical,
+  "log-in": LogIn,
+  "log-out": LogOut,
+  "git-network": GitBranch,
+  construct: Wrench,
+  chatbubble: MessageCircle,
+  camera: Camera,
+  time: Clock,
+  analytics: Activity,
+  barn: Warehouse,
+  "barn-filled": Warehouse,
+  farm: Leaf,
+  "farm-filled": Leaf,
+  people: Users,
+  "people-filled": Users,
+  "document-text": FileText,
+  "document-text-filled": FileText,
+  backspace: Delete,
 };
 
-export type IconProps = Omit<ComponentProps<typeof Ionicons>, "name"> & {
+export type IconProps = {
   name: IconName;
+  size?: number;
+  color?: string;
+  style?: object;
+  testID?: string;
 };
 
-export function Icon({ name, size = 20, color, style, testID, ...rest }: IconProps) {
-  return <Ionicons name={iconMap[name]} size={size} color={color} style={style} testID={testID} {...rest} />;
+const STROKE_WIDTH = 2.25;
+
+export function Icon({ name, size = 20, color, style, testID }: IconProps) {
+  const LucideIcon = iconMap[name];
+  return <LucideIcon size={size} color={color} strokeWidth={STROKE_WIDTH} />;
 }

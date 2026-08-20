@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { AppButton, Dock, type DockItem, Text } from "@antonella/ui";
+import { AppButton, AppIcon, Dock, type DockItem, Text } from "@antonella/ui";
 import type { ComponentCategory } from "../types";
 import { demoStyles } from "./shared";
 import { background, radius, spacing } from "@antonella/theme";
 
 const DOCK_ITEMS: DockItem[] = [
-  { icon: "home", label: "Inicio" },
-  { icon: "bar-chart", label: "Reportes" },
-  { icon: "settings", label: "Ajustes" },
+  { icon: AppIcon.Home, label: "Inicio" },
+  { icon: AppIcon.Reportes, label: "Reportes" },
+  { icon: AppIcon.Configuracion, label: "Ajustes" },
 ];
 
 function DockDemo() {
