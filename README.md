@@ -1,5 +1,3 @@
-# Antonella
-
 Plataforma compartida para todas las aplicaciones React Native + Expo de iKonSoft.
 
 Antonella no es solo un Design System: es una plataforma reutilizable que contiene Design System, Theme, Componentes UI, Animaciones, Auth, API, Storage, Hooks y Utilidades. Cualquier aplicación (Inventario, POS, CRM, Ventas, etc.) consume Antonella como dependencia y **nunca** contiene su código.
