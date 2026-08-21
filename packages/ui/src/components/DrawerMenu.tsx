@@ -135,10 +135,10 @@ export function DrawerMenu({
 
   const backdropStyle = useAnimatedStyle(
     () => ({
-      opacity:
-        progress.value * (c.backdrop === BACKDROP_COLOR ? BACKDROP_OPACITY : 0.45),
+      backgroundColor: BACKDROP_COLOR,
+      opacity: progress.value * BACKDROP_OPACITY,
     }),
-    [c.backdrop],
+    [],
   );
 
   const translateX = useAnimatedStyle(() => {
