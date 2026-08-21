@@ -22,6 +22,7 @@ export type { ColorToken } from "./components/ColorCustomizer";
 export { ComposingOrb } from "./components/ComposingOrb/ComposingOrb";
 export * from "./components/Dropdown";
 export * from "./components/FloatingActionButton";
+export * from "./components/HeaderCardLayout";
 export * from "./components/Icon";
 export * from "./components/Input";
 export * from "./components/LayoutRow";
