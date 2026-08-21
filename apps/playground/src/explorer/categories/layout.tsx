@@ -1,5 +1,6 @@
 import React from "react";
-import { StyleSheet, View, TextInput } from "react-native";
+import { StyleSheet, View, TextInput, Pressable } from "react-native";
+import { useRouter } from "expo-router";
 import { Text, HeaderCardLayout } from "@antonella/ui";
 import type { ComponentCategory } from "../types";
 
@@ -108,7 +109,31 @@ const styles = StyleSheet.create({
   cardLineShort: {
     width: "60%",
   },
+  fullScreenBtn: {
+    backgroundColor: "#007AFF",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  fullScreenBtnText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
 });
+
+function FullScreenButton() {
+  const router = useRouter();
+  return (
+    <Pressable
+      onPress={() => router.push("/explorer/header-card-full")}
+      style={({ pressed }) => [styles.fullScreenBtn, pressed && { opacity: 0.7 }]}
+    >
+      <Text variant="body" style={styles.fullScreenBtnText}>
+        Abrir en pantalla completa →
+      </Text>
+    </Pressable>
+  );
+}
 
 export const layout: ComponentCategory = {
   id: "layout",
@@ -123,8 +148,13 @@ export const layout: ComponentCategory = {
       variants: [
         {
           id: "search",
-          label: "Con Search Bar",
+          label: "Preview (altura fija)",
           render: () => <HeaderCardDemo />,
+        },
+        {
+          id: "fullscreen",
+          label: "Pantalla completa",
+          render: () => <FullScreenButton />,
         },
       ],
     },
