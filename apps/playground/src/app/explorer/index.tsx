@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Card, Icon, Text } from "@antonella/ui";
 import { background, border, cta1, space, spacing, text, TextType } from "@antonella/theme";
-import { componentCategories, type ComponentCategory } from "../../explorer/registry";
+import { componentCategories, sectionCategories, type ComponentCategory } from "../../explorer/registry";
 
 export default function ExplorerScreen() {
   const router = useRouter();
@@ -32,6 +32,29 @@ export default function ExplorerScreen() {
         </View>
         <Icon name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
       </Pressable>
+
+      {sectionCategories.filter((c) => c.id !== "colores").map((section) => (
+        <Pressable
+          key={section.id}
+          onPress={() => handleSelectCategory(section)}
+          style={({ pressed }) => [styles.semanticCard, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel={section.title}
+        >
+          <View style={styles.semanticIconBox}>
+            <Icon name={section.icon} size={20} color="#FFFFFF" />
+          </View>
+          <View style={styles.colorBody}>
+            <Text variant={TextType.BodyMedium} color="#FFFFFF">
+              {section.title}
+            </Text>
+            <Text variant={TextType.Caption} color="rgba(255,255,255,0.7)">
+              {section.components[0]?.description?.slice(0, 60)}...
+            </Text>
+          </View>
+          <Icon name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
+        </Pressable>
+      ))}
 
       <Card>
         <Text variant={TextType.Heading}>Componentes App*</Text>
@@ -89,11 +112,29 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: cta1,
   },
+  semanticCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    minHeight: 56,
+    paddingHorizontal: space.space3,
+    paddingVertical: space.space3,
+    borderRadius: 14,
+    backgroundColor: "#7C3AED",
+  },
   colorBody: {
     flex: 1,
     gap: 2,
   },
   colorIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
+  semanticIconBox: {
     width: 36,
     height: 36,
     borderRadius: 10,

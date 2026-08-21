@@ -30,6 +30,7 @@ import {
   Mail,
   Menu,
   MessageCircle,
+  Palette,
   Pencil,
   Plus,
   Search,
@@ -100,7 +101,8 @@ export type IconName =
   | "people-filled"
   | "document-text"
   | "document-text-filled"
-  | "backspace";
+  | "backspace"
+  | "palette";
 
 export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: string; strokeWidth?: number }>> = {
   home: Home,
@@ -159,6 +161,7 @@ export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: st
   "document-text": FileText,
   "document-text-filled": FileText,
   backspace: Delete,
+  palette: Palette,
 };
 
 export type IconProps = {

@@ -8,6 +8,7 @@ export * from "./spacing";
 export * from "./texts";
 export * from "./basePalette";
 export * from "./semanticColors";
+export * from "./semanticTokens";
 export * from "./themes/light";
 export * from "./themes/dark";
 export * from "./layout";

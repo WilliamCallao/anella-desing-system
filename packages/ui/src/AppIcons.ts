@@ -38,4 +38,6 @@ export const AppIcon = {
   Camera: "camera" as IconName,
   Time: "time" as IconName,
   Analytics: "analytics" as IconName,
+  Palette: "palette" as IconName,
+  ChevronForward: "chevron-forward" as IconName,
 } as const;

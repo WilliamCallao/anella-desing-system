@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 import {
   AppButton,
   AppIcon,
+  Avatar,
   FloatingActionButton,
   DrawerMenu,
   type DrawerMenuItem,
@@ -32,17 +33,7 @@ function DrawerLeftDemo() {
         onClose={() => setOpen(false)}
         side="left"
         items={items}
-        header={
-          <View style={styles.drawerHeader}>
-            <View style={styles.avatar}>
-              <Text variant="heading" color="#FFFFFF">A</Text>
-            </View>
-            <View style={styles.headerInfo}>
-              <Text variant="bodyMedium" color={text.default}>Antonella</Text>
-              <Text variant="caption" color={text.secondary}>antonella@app.com</Text>
-            </View>
-          </View>
-        }
+        header={<Avatar name="Antonella" email="antonella@app.com" />}
       />
     </View>
   );
@@ -135,17 +126,7 @@ function DrawerCustomizableDemo() {
         side="left"
         customizable
         items={items}
-        header={
-          <View style={styles.drawerHeader}>
-            <View style={styles.avatar}>
-              <Text variant="heading" color="#FFFFFF">A</Text>
-            </View>
-            <View style={styles.headerInfo}>
-              <Text variant="bodyMedium" color={text.default}>Antonella</Text>
-              <Text variant="caption" color={text.secondary}>antonella@app.com</Text>
-            </View>
-          </View>
-        }
+        header={<Avatar name="Antonella" email="antonella@app.com" size="lg" />}
         footer={
           <Text variant="caption" color={text.secondary}>
             Antonella v1.0.0
@@ -163,23 +144,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: "hidden",
     padding: spacing.md,
-  },
-  drawerHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.space3,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#007AFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerInfo: {
-    flex: 1,
-    gap: 2,
   },
   drawerHeaderSimple: {
     gap: space.space1,
