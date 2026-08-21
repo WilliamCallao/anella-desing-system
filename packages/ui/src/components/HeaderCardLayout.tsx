@@ -18,7 +18,7 @@ export type HeaderCardLayoutProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-const CARD_RADIUS = 24;
+const CARD_RADIUS = 32;
 const BODY_OVERLAP = 12;
 
 export function HeaderCardLayout({
@@ -85,10 +85,5 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
   },
 });

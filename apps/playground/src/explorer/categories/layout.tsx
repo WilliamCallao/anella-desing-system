@@ -5,43 +5,52 @@ import type { ComponentCategory } from "../types";
 
 function HeaderCardDemo() {
   return (
-    <HeaderCardLayout
-      headerBackgroundColor="#FFFFFF"
-      bodyBackgroundColor="#E8EBF0"
-      header={
-        <View style={styles.headerInner}>
-          <Text variant="heading" style={styles.headerTitle}>
-            Buscar
-          </Text>
-          <View style={styles.searchBar}>
-            <TextInput
-              placeholder="Buscar..."
-              placeholderTextColor="#8E8E93"
-              style={styles.searchInput}
-            />
-          </View>
-        </View>
-      }
-    >
-      <View style={styles.bodyContent}>
-        <Text variant="heading" style={styles.sectionTitle}>
-          Resultados
-        </Text>
-        {Array.from({ length: 12 }).map((_, i) => (
-          <View key={i} style={styles.card}>
-            <View style={styles.cardIcon} />
-            <View style={styles.cardBody}>
-              <View style={styles.cardLine} />
-              <View style={[styles.cardLine, styles.cardLineShort]} />
+    <View style={styles.demoContainer}>
+      <HeaderCardLayout
+        headerBackgroundColor="#FFFFFF"
+        bodyBackgroundColor="#E8EBF0"
+        header={
+          <View style={styles.headerInner}>
+            <Text variant="heading" style={styles.headerTitle}>
+              Buscar
+            </Text>
+            <View style={styles.searchBar}>
+              <TextInput
+                placeholder="Buscar..."
+                placeholderTextColor="#8E8E93"
+                style={styles.searchInput}
+              />
             </View>
           </View>
-        ))}
-      </View>
-    </HeaderCardLayout>
+        }
+      >
+        <View style={styles.bodyContent}>
+          <Text variant="heading" style={styles.sectionTitle}>
+            Resultados
+          </Text>
+          {Array.from({ length: 20 }).map((_, i) => (
+            <View key={i} style={styles.card}>
+              <View style={styles.cardIcon} />
+              <View style={styles.cardBody}>
+                <View style={styles.cardLine} />
+                <View style={[styles.cardLine, styles.cardLineShort]} />
+              </View>
+            </View>
+          ))}
+        </View>
+      </HeaderCardLayout>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  demoContainer: {
+    height: 520,
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#E5E5EA",
+  },
   headerInner: {
     paddingHorizontal: 20,
     paddingBottom: 16,
