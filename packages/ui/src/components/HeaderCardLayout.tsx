@@ -9,7 +9,9 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { neutrals } from "@antonella/theme";
+import { resolveBackground, lightBackground, neutrals } from "@antonella/theme";
+
+const _bg = resolveBackground(lightBackground);
 
 export type HeaderCardLayoutProps = {
   headerBackgroundColor?: string;
@@ -23,7 +25,7 @@ const CARD_RADIUS = 32;
 const SHADOW_HEIGHT = 20;
 
 export function HeaderCardLayout({
-  headerBackgroundColor = "#FFFFFF",
+  headerBackgroundColor = _bg.default,
   bodyBackgroundColor = neutrals.N950,
   header,
   children,
