@@ -15,8 +15,6 @@ export default function HeaderCardFullScreen() {
         }}
       />
       <HeaderCardLayout
-        headerBackgroundColor="#FFFFFF"
-        bodyBackgroundColor="#E8EBF0"
         header={
           <View style={styles.headerInner}>
             <View style={styles.headerTop}>

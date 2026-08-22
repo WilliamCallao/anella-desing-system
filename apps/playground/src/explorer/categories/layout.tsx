@@ -8,8 +8,6 @@ function HeaderCardDemo() {
   return (
     <View style={styles.demoContainer}>
       <HeaderCardLayout
-        headerBackgroundColor="#FFFFFF"
-        bodyBackgroundColor="#E8EBF0"
         header={
           <View style={styles.headerInner}>
             <Text variant="heading" style={styles.headerTitle}>
