@@ -88,7 +88,7 @@ export function HeaderCardLayout({
         colors={[bodyBackgroundColor, "transparent"]}
         style={{
           position: "absolute",
-          top: headerHeight,
+          top: headerHeight - 1,
           left: 0,
           right: 0,
           height: SHADOW_HEIGHT,
