@@ -65,6 +65,22 @@ export function HeaderCardLayout({
         {header}
       </View>
 
+      {/* Filler behind the rounded corners of the gradient */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: headerHeight,
+          left: 0,
+          right: 0,
+          height: SHADOW_HEIGHT,
+          zIndex: 8,
+          backgroundColor: headerBackgroundColor,
+          borderTopLeftRadius: CARD_RADIUS,
+          borderTopRightRadius: CARD_RADIUS,
+        }}
+      />
+
       {/* Gradient in body area, with matching top border radius */}
       <LinearGradient
         pointerEvents="none"
