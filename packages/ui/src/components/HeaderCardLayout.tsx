@@ -19,7 +19,7 @@ export type HeaderCardLayoutProps = {
 };
 
 const CARD_RADIUS = 32;
-const SHADOW_HEIGHT = 16;
+const SHADOW_HEIGHT = 20;
 
 export function HeaderCardLayout({
   headerBackgroundColor = "#FFFFFF",
@@ -63,20 +63,14 @@ export function HeaderCardLayout({
         ]}
       >
         {header}
-      </View>
 
-      <LinearGradient
-        pointerEvents="none"
-        colors={[bodyBackgroundColor, "transparent"]}
-        style={{
-          position: "absolute",
-          top: headerHeight,
-          left: 0,
-          right: 0,
-          height: SHADOW_HEIGHT,
-          zIndex: 9,
-        }}
-      />
+        {/* Gradient inside header, clipped by overflow:hidden + border radius */}
+        <LinearGradient
+          pointerEvents="none"
+          colors={[`${bodyBackgroundColor}00`, bodyBackgroundColor]}
+          style={styles.headerGradient}
+        />
+      </View>
     </View>
   );
 }
@@ -98,5 +92,12 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
     overflow: "hidden",
+  },
+  headerGradient: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: SHADOW_HEIGHT,
   },
 });
