@@ -6,7 +6,7 @@ import {
   Avatar,
   FloatingActionButton,
   DrawerMenu,
-  type DrawerMenuItem,
+  type DrawerMenuItemType,
   Text,
 } from "@antonella/ui";
 import type { ComponentCategory } from "../types";
@@ -17,7 +17,7 @@ function DrawerLeftDemo() {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("inicio");
 
-  const items: DrawerMenuItem[] = [
+  const items: DrawerMenuItemType[] = [
     { icon: AppIcon.Home, label: "Inicio", onPress: () => setSelected("inicio"), selected: selected === "inicio" },
     { icon: AppIcon.Reportes, label: "Reportes", onPress: () => setSelected("reportes"), selected: selected === "reportes" },
     { icon: AppIcon.Calendario, label: "Calendario", onPress: () => setSelected("calendario"), selected: selected === "calendario" },
@@ -43,12 +43,12 @@ function DrawerRightDemo() {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("calendario");
 
-  const items: DrawerMenuItem[] = [
+  const items: DrawerMenuItemType[] = [
     { icon: AppIcon.Calendario, label: "Calendario", onPress: () => setSelected("calendario"), selected: selected === "calendario" },
     { icon: AppIcon.Inspeccion, label: "Inspección", onPress: () => setSelected("inspeccion"), selected: selected === "inspeccion" },
     { icon: AppIcon.Templates, label: "Templates", onPress: () => setSelected("templates"), selected: selected === "templates" },
     { icon: AppIcon.Configuracion, label: "Configuración", onPress: () => setSelected("config"), selected: selected === "config" },
-    { label: "Cerrar sesión", destructive: true, onPress: () => {} },
+    { label: "Cerrar sesión", onPress: () => {} },
   ];
 
   return (
@@ -106,12 +106,12 @@ function DrawerCustomizableDemo() {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("inicio");
 
-  const items: DrawerMenuItem[] = [
+  const items: DrawerMenuItemType[] = [
     { icon: AppIcon.Home, label: "Inicio", onPress: () => setSelected("inicio"), selected: selected === "inicio" },
     { icon: AppIcon.Reportes, label: "Reportes", onPress: () => setSelected("reportes"), selected: selected === "reportes" },
     { icon: AppIcon.Calendario, label: "Calendario", onPress: () => setSelected("calendario"), selected: selected === "calendario" },
     { icon: AppIcon.Configuracion, label: "Ajustes", onPress: () => setSelected("ajustes"), selected: selected === "ajustes" },
-    { label: "Cerrar sesión", destructive: true, onPress: () => {} },
+    { label: "Cerrar sesión", onPress: () => {} },
   ];
 
   return (

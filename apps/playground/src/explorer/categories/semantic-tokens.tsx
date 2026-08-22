@@ -1,64 +1,120 @@
 import React, { useState, useCallback } from "react";
 import { StyleSheet, View, TouchableOpacity } from "react-native";
-import { Text, Icon, AppIcon, ColorCustomizerDialog } from "@antonella/ui";
+import { Text, ColorCustomizerDialog } from "@antonella/ui";
 import type { ColorToken } from "@antonella/ui";
 import {
-  neutrals,
-  brand,
-  lightBackground,
-  darkBackground,
-  lightText,
-  darkText,
-  resolveBackground,
-  resolveText,
-  type BackgroundMap,
-  type TextMap,
+  lightSemantic,
+  darkSemantic,
+  resolveSemantic,
+  type SemanticMap,
+  type ContextMap,
+  type ContextTokens,
 } from "@antonella/theme";
 import type { ComponentCategory } from "../types";
 import { demoStyles } from "./shared";
 
-type EditingTarget = {
-  category: "background" | "text";
+type Ctx = "default" | "light" | "darkness";
+type BgKey = "default" | "subtle";
+type TextKey = "default" | "subtle" | "subtlest";
+
+type EditingTarget =
+  | { category: "bg"; ctx: Ctx; key: BgKey; group: "light" | "dark" }
+  | { category: "text"; ctx: Ctx; key: TextKey; group: "light" | "dark" };
+
+function contrast(hex: string): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1C1C1E" : "#FFFFFF";
+}
+
+// ── Card de contexto ────────────────────────────────────────
+// Muestra bg.default como fondo, bg.subtle como franja interna,
+// y texto en cada zona.
+
+function ContextCard({
+  ctx,
+  resolved,
+  map,
+  group,
+  onEditBg,
+  onEditText,
+}: {
+  ctx: Ctx;
+  resolved: ContextTokens;
+  map: ContextMap;
   group: "light" | "dark";
-  key: string;
-};
+  onEditBg: (key: BgKey) => void;
+  onEditText: (key: TextKey) => void;
+}) {
+  const defaultBg = resolved.bg.default;
+  const subtleBg = resolved.bg.subtle;
+  const cDef = contrast(defaultBg);
+  const cSub = contrast(subtleBg);
 
-type SemanticEntryProps = {
-  label: string;
-  description: string;
-  currentTokenName: string;
-  currentHex: string;
-  onColorPress: () => void;
-};
-
-function SemanticEntry({
-  label,
-  description,
-  currentTokenName,
-  currentHex,
-  onColorPress,
-}: SemanticEntryProps) {
   return (
-    <View style={styles.entry}>
-      <View style={styles.entryLeft}>
-        <View style={styles.entryInfo}>
-          <Text variant="body" style={styles.entryLabel}>
-            {label}
-          </Text>
-          <Text variant="caption" color="#8E8E93">
-            {description}
-          </Text>
-        </View>
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Text variant="caption" style={styles.cardCtx}>{ctx}</Text>
+        <Text variant="caption" style={styles.cardGroup}>{group}</Text>
       </View>
-      <View style={styles.entryRight}>
-        <TouchableOpacity onPress={onColorPress} activeOpacity={0.6}>
-          <View style={styles.tokenBadge}>
-            <View style={[styles.tokenSwatch, { backgroundColor: currentHex }]} />
-            <Text variant="caption" color="#1C1C1E" style={styles.tokenName}>
-              {currentTokenName}
+
+      {/* ── Zona default ── */}
+      <View style={[styles.zone, { backgroundColor: defaultBg }]}>
+        <TouchableOpacity onPress={() => onEditBg("default")} activeOpacity={0.6}>
+          <View style={[styles.tokenChip, { backgroundColor: subtleBg }]}>
+            <Text variant="caption" style={{ color: cSub, fontWeight: "600", fontSize: 10 }}>
+              bg.{ctx}.default = {map.bg.default}
             </Text>
-            <Icon name={AppIcon.ChevronForward} size={12} color="#8E8E93" />
           </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => onEditText("default")} activeOpacity={0.6}>
+          <Text style={{ color: resolved.text.default, fontSize: 15, fontWeight: "500" }}>
+            text.default — El veloz murciélago hindú
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => onEditText("subtle")} activeOpacity={0.6}>
+          <Text style={{ color: resolved.text.subtle, fontSize: 13 }}>
+            text.subtle — comía feliz cardillo y kiwi
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => onEditText("subtlest")} activeOpacity={0.6}>
+          <Text style={{ color: resolved.text.subtlest, fontSize: 12 }}>
+            text.subtlest —能量不足请充电
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Franja subtle ── */}
+      <View style={[styles.zone, { backgroundColor: subtleBg, marginTop: 6 }]}>
+        <TouchableOpacity onPress={() => onEditBg("subtle")} activeOpacity={0.6}>
+          <View style={[styles.tokenChip, { backgroundColor: defaultBg }]}>
+            <Text variant="caption" style={{ color: cDef, fontWeight: "600", fontSize: 10 }}>
+              bg.{ctx}.subtle = {map.bg.subtle}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => onEditText("default")} activeOpacity={0.6}>
+          <Text style={{ color: resolved.text.default, fontSize: 15, fontWeight: "500" }}>
+            text.default — El veloz murciélago hindú
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => onEditText("subtle")} activeOpacity={0.6}>
+          <Text style={{ color: resolved.text.subtle, fontSize: 13 }}>
+            text.subtle — comía feliz cardillo y kiwi
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => onEditText("subtlest")} activeOpacity={0.6}>
+          <Text style={{ color: resolved.text.subtlest, fontSize: 12 }}>
+            text.subtlest —能量不足请充电
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -66,167 +122,94 @@ function SemanticEntry({
 }
 
 function SemanticTokensDemo() {
-  const [lightBgMap, setLightBgMap] = useState<BackgroundMap>(lightBackground);
-  const [darkBgMap, setDarkBgMap] = useState<BackgroundMap>(darkBackground);
-  const [lightTextMap, setLightTextMap] = useState<TextMap>(lightText);
-  const [darkTextMap, setDarkTextMap] = useState<TextMap>(darkText);
+  const [lightMap, setLightMap] = useState<SemanticMap>(lightSemantic);
+  const [darkMap, setDarkMap] = useState<SemanticMap>(darkSemantic);
   const [editing, setEditing] = useState<EditingTarget | null>(null);
 
-  const lightBg = resolveBackground(lightBgMap);
-  const darkBg = resolveBackground(darkBgMap);
-  const lightTxt = resolveText(lightTextMap);
-  const darkTxt = resolveText(darkTextMap);
+  const lightResolved = resolveSemantic(lightMap);
+  const darkResolved = resolveSemantic(darkMap);
 
   const getCurrentTokens = (): ColorToken[] => {
     if (!editing) return [];
-    if (editing.category === "background") {
-      const map = editing.group === "light" ? lightBgMap : darkBgMap;
-      const resolved = editing.group === "light" ? lightBg : darkBg;
+    const isL = editing.group === "light";
+    const map = isL ? lightMap : darkMap;
+    const resolved = isL ? lightResolved : darkResolved;
+
+    if (editing.category === "bg") {
       return [{
-        name: `background.${editing.key}`,
+        name: `bg.${editing.ctx}.${editing.key}`,
         key: editing.key,
-        value: resolved[editing.key as keyof typeof resolved],
-        tokenName: map[editing.key as keyof typeof map],
-      }];
-    } else {
-      const map = editing.group === "light" ? lightTextMap : darkTextMap;
-      const resolved = editing.group === "light" ? lightTxt : darkTxt;
-      return [{
-        name: `text.${editing.key}`,
-        key: editing.key,
-        value: resolved[editing.key as keyof typeof resolved],
-        tokenName: map[editing.key as keyof typeof map],
+        value: resolved[editing.ctx].bg[editing.key],
+        tokenName: map[editing.ctx].bg[editing.key],
       }];
     }
+    return [{
+      name: `text.${editing.ctx}.${editing.key}`,
+      key: editing.key,
+      value: resolved[editing.ctx].text[editing.key],
+      tokenName: map[editing.ctx].text[editing.key],
+    }];
   };
 
-  const handleTokenChange = useCallback(
-    (key: string, value: string) => {
-      if (!editing) return;
-      if (editing.category === "background") {
-        if (editing.group === "light") setLightBgMap((p) => ({ ...p, [key]: value }));
-        else setDarkBgMap((p) => ({ ...p, [key]: value }));
-      } else {
-        if (editing.group === "light") setLightTextMap((p) => ({ ...p, [key]: value }));
-        else setDarkTextMap((p) => ({ ...p, [key]: value }));
-      }
-    },
-    [editing]
-  );
+  const handleTokenChange = useCallback((key: string, value: string) => {
+    if (!editing) return;
+    const isL = editing.group === "light";
+    const setter = isL ? setLightMap : setDarkMap;
 
-  const dialogTitle = editing
-    ? `${editing.group === "light" ? "Light" : "Dark"} · ${editing.category}.${editing.key}`
-    : "";
+    if (editing.category === "bg") {
+      setter((p) => ({
+        ...p,
+        [editing.ctx]: {
+          ...p[editing.ctx],
+          bg: { ...p[editing.ctx].bg, [key]: value },
+        },
+      }));
+    } else {
+      setter((p) => ({
+        ...p,
+        [editing.ctx]: {
+          ...p[editing.ctx],
+          text: { ...p[editing.ctx].text, [key]: value },
+        },
+      }));
+    }
+  }, [editing]);
+
+  const contexts: Ctx[] = ["default", "light", "darkness"];
 
   return (
     <View style={demoStyles.gap}>
-      {/* ── Preview Light ── */}
-      <View style={styles.previewCard}>
-        <Text variant="body" style={styles.previewTitle}>Light Mode</Text>
-        <View style={[styles.previewBg, { backgroundColor: lightBg.default }]}>
-          <Text variant="caption" style={{ color: lightTxt.subtle, marginBottom: 4 }}>
-            ← background.default ({lightBgMap.default})
-          </Text>
-          <View style={[styles.previewSurface, { backgroundColor: lightBg.subtle }]}>
-            <Text variant="body" style={{ color: lightTxt.default }}>
-              text.default ({lightTextMap.default})
-            </Text>
-          </View>
-          <View style={[styles.previewSurfaceAlt, { backgroundColor: lightBg.subtlest }]}>
-            <Text variant="caption" style={{ color: lightTxt.subtle }}>
-              text.subtle ({lightTextMap.subtle})
-            </Text>
-          </View>
-        </View>
-      </View>
+      <Text variant="heading" style={styles.sectionTitle}>Light Mode</Text>
+      {contexts.map((ctx) => (
+        <ContextCard
+          key={`l-${ctx}`}
+          ctx={ctx}
+          resolved={lightResolved[ctx]}
+          map={lightMap[ctx]}
+          group="light"
+          onEditBg={(key) => setEditing({ category: "bg", ctx, key, group: "light" })}
+          onEditText={(key) => setEditing({ category: "text", ctx, key, group: "light" })}
+        />
+      ))}
 
-      {/* ── Preview Dark ── */}
-      <View style={styles.previewCard}>
-        <Text variant="body" style={styles.previewTitle}>Dark Mode</Text>
-        <View style={[styles.previewBgDark, { backgroundColor: darkBg.default }]}>
-          <Text variant="caption" style={{ color: darkTxt.subtle, marginBottom: 4 }}>
-            ← background.default ({darkBgMap.default})
-          </Text>
-          <View style={[styles.previewSurfaceDark, { backgroundColor: darkBg.subtle }]}>
-            <Text variant="body" style={{ color: darkTxt.default }}>
-              text.default ({darkTextMap.default})
-            </Text>
-          </View>
-          <View style={[styles.previewSurfaceAltDark, { backgroundColor: darkBg.subtlest }]}>
-            <Text variant="caption" style={{ color: darkTxt.subtle }}>
-              text.subtle ({darkTextMap.subtle})
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* ── Config Light ── */}
-      <View style={styles.configSection}>
-        <Text variant="heading">Light Mode</Text>
-        <Text variant="caption" color="#8E8E93" style={{ marginBottom: 4 }}>Background</Text>
-        {(["default", "subtle", "subtlest"] as const).map((key) => (
-          <SemanticEntry
-            key={`lb-${key}`}
-            label={`background.${key}`}
-            description={
-              key === "default" ? "Fondo principal" : key === "subtle" ? "Cards / superficies" : "Bordes / separadores"
-            }
-            currentTokenName={lightBgMap[key]}
-            currentHex={lightBg[key]}
-            onColorPress={() => setEditing({ category: "background", group: "light", key })}
-          />
-        ))}
-        <Text variant="caption" color="#8E8E93" style={{ marginTop: 8, marginBottom: 4 }}>Text</Text>
-        {(["default", "subtle", "light"] as const).map((key) => (
-          <SemanticEntry
-            key={`lt-${key}`}
-            label={`text.${key}`}
-            description={
-              key === "default" ? "Texto principal" : key === "subtle" ? "Texto secundario / caption" : "Texto sobre fondos oscuros"
-            }
-            currentTokenName={lightTextMap[key]}
-            currentHex={lightTxt[key]}
-            onColorPress={() => setEditing({ category: "text", group: "light", key })}
-          />
-        ))}
-      </View>
-
-      {/* ── Config Dark ── */}
-      <View style={styles.configSection}>
-        <Text variant="heading">Dark Mode</Text>
-        <Text variant="caption" color="#8E8E93" style={{ marginBottom: 4 }}>Background</Text>
-        {(["default", "subtle", "subtlest"] as const).map((key) => (
-          <SemanticEntry
-            key={`db-${key}`}
-            label={`background.${key}`}
-            description={
-              key === "default" ? "Fondo principal" : key === "subtle" ? "Cards / superficies" : "Bordes / separadores"
-            }
-            currentTokenName={darkBgMap[key]}
-            currentHex={darkBg[key]}
-            onColorPress={() => setEditing({ category: "background", group: "dark", key })}
-          />
-        ))}
-        <Text variant="caption" color="#8E8E93" style={{ marginTop: 8, marginBottom: 4 }}>Text</Text>
-        {(["default", "subtle", "light"] as const).map((key) => (
-          <SemanticEntry
-            key={`dt-${key}`}
-            label={`text.${key}`}
-            description={
-              key === "default" ? "Texto principal" : key === "subtle" ? "Texto secundario / caption" : "Texto sobre fondos oscuros"
-            }
-            currentTokenName={darkTextMap[key]}
-            currentHex={darkTxt[key]}
-            onColorPress={() => setEditing({ category: "text", group: "dark", key })}
-          />
-        ))}
-      </View>
+      <Text variant="heading" style={styles.sectionTitle}>Dark Mode</Text>
+      {contexts.map((ctx) => (
+        <ContextCard
+          key={`d-${ctx}`}
+          ctx={ctx}
+          resolved={darkResolved[ctx]}
+          map={darkMap[ctx]}
+          group="dark"
+          onEditBg={(key) => setEditing({ category: "bg", ctx, key, group: "dark" })}
+          onEditText={(key) => setEditing({ category: "text", ctx, key, group: "dark" })}
+        />
+      ))}
 
       {editing && (
         <ColorCustomizerDialog
           visible
           onClose={() => setEditing(null)}
-          componentName={dialogTitle}
+          componentName={`${editing.group} · ${editing.category === "bg" ? "bg" : "text"}.${editing.ctx}.${editing.key}`}
           tokens={getCurrentTokens()}
           onTokenChange={handleTokenChange}
         />
@@ -236,98 +219,53 @@ function SemanticTokensDemo() {
 }
 
 const styles = StyleSheet.create({
-  previewCard: {
-    backgroundColor: "#FFFFFF",
+  sectionTitle: {
+    fontWeight: "700",
+    fontSize: 18,
+    marginTop: 4,
+  },
+  card: {
     borderRadius: 12,
-    padding: 16,
+    overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "#E5E5EA",
   },
-  previewTitle: {
-    marginBottom: 12,
-    fontWeight: "600",
-  },
-  previewBg: {
-    borderRadius: 12,
-    padding: 12,
-    gap: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E5EA",
-  },
-  previewSurface: {
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E5EA",
-  },
-  previewSurfaceAlt: {
-    borderRadius: 8,
-    padding: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E5EA",
-  },
-  previewBgDark: {
-    borderRadius: 12,
-    padding: 12,
-    gap: 8,
-  },
-  previewSurfaceDark: {
-    borderRadius: 8,
-    padding: 12,
-  },
-  previewSurfaceAltDark: {
-    borderRadius: 8,
-    padding: 10,
-  },
-  configSection: {
-    gap: 8,
-  },
-  entry: {
+  cardHeader: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E5EA",
-  },
-  entryLeft: {
-    flexDirection: "row",
     alignItems: "center",
-    flex: 1,
-    gap: 10,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 6,
   },
-  entryInfo: {
-    flex: 1,
+  cardCtx: {
+    fontWeight: "700",
+    fontSize: 12,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    color: "#8E8E93",
   },
-  entryLabel: {
-    fontWeight: "500",
-  },
-  entryRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  tokenBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#F5F7FA",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  tokenSwatch: {
-    width: 14,
-    height: 14,
+  cardGroup: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#B0B0B0",
+    backgroundColor: "#F0F0F0",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E5EA",
+    overflow: "hidden",
   },
-  tokenName: {
-    fontWeight: "500",
+  zone: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 6,
+  },
+  tokenChip: {
+    alignSelf: "flex-start",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 2,
   },
 });
 
@@ -340,7 +278,7 @@ export const semanticTokens: ComponentCategory = {
       id: "semantic",
       name: "Tokens Semánticos",
       description:
-        "Tokens de fondo y texto que mapean a tokens base. Cambia las equivalencias para ver cómo cambia el look en light/dark.",
+        "3 contextos (default, light, darkness) × bg + text. Toca cualquier zona para editar.",
       variants: [
         {
           id: "all",

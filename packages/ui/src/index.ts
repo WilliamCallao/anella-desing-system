@@ -17,6 +17,7 @@ export { default as DashboardShell } from "./components/DashboardShell/Dashboard
 export * from "./components/DashboardShell/types";
 export * from "./components/Dock";
 export * from "./components/DrawerMenu";
+export * from "./components/Item";
 export { ColorWheel, ColorCustomizerDialog } from "./components/ColorCustomizer";
 export type { ColorToken } from "./components/ColorCustomizer";
 export { ComposingOrb } from "./components/ComposingOrb/ComposingOrb";
@@ -34,6 +35,7 @@ export * from "./components/SkeletonCard";
 export * from "./components/ToolsCard";
 export * from "./components/TreeEditor";
 export * from "./components/TextField";
+export * from "./components/SplitColorCard";
 export * from "./components/text";
 export * from "./components/card-form";
 export * from "./layout";

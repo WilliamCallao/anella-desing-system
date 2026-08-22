@@ -18,11 +18,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { radius, space } from "@antonella/theme";
 import { neutrals, brand, danger as dangerPalette } from "@antonella/theme";
 import { Text } from "./text";
-import { Icon } from "./Icon";
-import type { IconName } from "./Icon";
+import { Item } from "./Item";
+import type { ItemProps } from "./Item";
+import { ItemStyle } from "./Item";
 import { ColorWheel } from "./ColorCustomizer/ColorWheel";
 import { ColorCustomizerDialog } from "./ColorCustomizer/ColorCustomizerDialog";
 import type { ColorToken } from "./ColorCustomizer/types";
+
+export { ItemStyle } from "./Item";
 
 const ANIM_IN_MS = 260;
 const ANIM_OUT_MS = 240;
@@ -30,11 +33,10 @@ const BACKDROP_COLOR = "#0F172A";
 const BACKDROP_OPACITY = 0.45;
 const DEFAULT_WIDTH = 300;
 
-export type DrawerMenuItem = {
-  icon?: IconName;
+export type DrawerMenuItemType = {
+  icon?: import("./Icon").IconName;
   label: string;
   onPress: () => void;
-  destructive?: boolean;
   selected?: boolean;
 };
 
@@ -43,11 +45,12 @@ export type DrawerMenuProps = {
   onClose: () => void;
   side?: "left" | "right";
   width?: number;
-  items?: DrawerMenuItem[];
+  items?: DrawerMenuItemType[];
   header?: React.ReactNode;
   footer?: React.ReactNode;
   dismissible?: boolean;
   customizable?: boolean;
+  itemStyle?: ItemStyle;
 };
 
 const DEFAULT_TOKENS: ColorToken[] = [
@@ -78,6 +81,7 @@ export function DrawerMenu({
   footer,
   dismissible = true,
   customizable = false,
+  itemStyle = ItemStyle.DARKNESS,
 }: DrawerMenuProps) {
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -148,7 +152,7 @@ export function DrawerMenu({
     };
   }, [side, panelWidth]);
 
-  const handleItemPress = (item: DrawerMenuItem) => {
+  const handleItemPress = (item: DrawerMenuItemType) => {
     item.onPress();
     onClose();
   };
@@ -206,58 +210,16 @@ export function DrawerMenu({
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {items?.map((item, i) => {
-              const isSelected = item.selected;
-              const isDestructive = item.destructive;
-              const itemIconColor = isSelected
-                ? c.iconSelectedColor
-                : isDestructive
-                  ? c.iconDestructiveColor
-                  : c.iconColor;
-              const itemTextColor = isSelected
-                ? c.cta
-                : isDestructive
-                  ? c.destructive
-                  : c.itemText;
-
-              return (
-                <Pressable
-                  key={i}
-                  onPress={() => handleItemPress(item)}
-                  style={({ pressed }) => [
-                    styles.row,
-                    { backgroundColor: c.itemBg },
-                    isSelected && { backgroundColor: c.itemSelectedBg },
-                    pressed && { backgroundColor: c.itemPressedBg },
-                  ]}
-                >
-                  {item.icon ? (
-                    <View
-                      style={[
-                        styles.iconCircle,
-                        { backgroundColor: c.iconBg },
-                        isSelected && {
-                          backgroundColor: c.itemSelectedBg,
-                        },
-                      ]}
-                    >
-                      <Icon
-                        name={item.icon}
-                        size={20}
-                        color={itemIconColor}
-                      />
-                    </View>
-                  ) : null}
-                  <Text
-                    variant="body"
-                    color={itemTextColor}
-                    style={styles.rowLabel}
-                  >
-                    {item.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+            {items?.map((item, i) => (
+              <Item
+                key={i}
+                icon={item.icon}
+                label={item.label}
+                onPress={() => handleItemPress(item)}
+                selected={item.selected}
+                style={itemStyle}
+              />
+            ))}
           </ScrollView>
 
           {footer ? (
@@ -328,26 +290,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.space3,
     paddingVertical: space.space5,
     gap: space.space2,
-  },
-
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.space3,
-    minHeight: 50,
-    paddingHorizontal: 5,
-    paddingVertical: 4,
-    borderRadius: radius.md,
-  },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rowLabel: {
-    flex: 1,
   },
 
   footerSection: {},

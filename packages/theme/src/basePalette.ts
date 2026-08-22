@@ -1,16 +1,16 @@
 export const neutrals = {
   N0: "#FFFFFF",
-  N50: "#F5F7FA",
-  N100: "#ECEEF3",
-  N200: "#D8DCE5",
-  N300: "#C1C7D4",
-  N400: "#8B96AB",
-  N500: "#5C6A80",
-  N600: "#3A4860",
-  N700: "#243044",
-  N800: "#1A2435",
-  N900: "#111A28",
-  N950: "#0A1019",
+  N50: "#FEFEFE",
+  N100: "#F6F6F6",
+  N200: "#EFEFEF",
+  N300: "#D4D4D4",
+  N400: "#9E9E9E",
+  N500: "#6E6E6E",
+  N600: "#353A3E",
+  N700: "#424242",
+  N800: "#222222",
+  N900: "#1F1F1F",
+  N950: "#0A0A0A",
 } as const;
 
 export const brand = {

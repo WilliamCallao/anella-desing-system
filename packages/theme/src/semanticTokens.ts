@@ -4,6 +4,9 @@ import { neutrals, brand } from "./basePalette";
 // Semantic Tokens
 // Cada token semántico mapea a un token base (nombre de paleta).
 // Para cambiar de tema, solo se cambia el mapa, no los componentes.
+//
+// Estructura: 3 contextos (default, light, darkness)
+// Cada contexto tiene: bg, text, icon
 // ============================================================
 
 const PALETTE: Record<string, string> = {
@@ -11,147 +14,135 @@ const PALETTE: Record<string, string> = {
   ...brand,
 };
 
-// ── Background ──────────────────────────────────────────────
+// ── Tipos ───────────────────────────────────────────────────
 
-export type BackgroundTokens = {
-  default: string;
-  subtle: string;
-  subtlest: string;
+export type ContextBgMap = { default: string; subtle: string };
+export type ContextTextMap = { default: string; subtle: string; subtlest: string };
+export type ContextIconMap = { default: string; subtle: string };
+export type ContextMap = { bg: ContextBgMap; text: ContextTextMap; icon: ContextIconMap };
+
+export type ContextBgTokens = { default: string; subtle: string };
+export type ContextTextTokens = { default: string; subtle: string; subtlest: string };
+export type ContextIconTokens = { default: string; subtle: string };
+export type ContextTokens = { bg: ContextBgTokens; text: ContextTextTokens; icon: ContextIconTokens };
+
+export type SemanticMap = {
+  default: ContextMap;
+  light: ContextMap;
+  darkness: ContextMap;
 };
 
-export type BackgroundMap = {
-  [K in keyof BackgroundTokens]: string;
+export type SemanticTokens = {
+  default: ContextTokens;
+  light: ContextTokens;
+  darkness: ContextTokens;
 };
 
-export const lightBackground: BackgroundMap = {
-  default: "N0",    // #FFFFFF
-  subtle: "N50",    // #F5F7FA
-  subtlest: "N100", // #ECEEF3
+// ── Light mode ──────────────────────────────────────────────
+
+export const lightSemantic: SemanticMap = {
+  default: {
+    bg:  { default: "N0",   subtle: "N100" },
+    text: { default: "N950", subtle: "N500", subtlest: "N300" },
+    icon: { default: "M600", subtle: "N500" },
+  },
+  light: {
+    bg:  { default: "N200", subtle: "N0" },
+    text: { default: "N950", subtle: "N500", subtlest: "N300" },
+    icon: { default: "N600", subtle: "N500" },
+  },
+  darkness: {
+    bg:  { default: "N950", subtle: "N900" },
+    text: { default: "N0",   subtle: "N400", subtlest: "N600" },
+    icon: { default: "N0",   subtle: "N400" },
+  },
 };
 
-export const darkBackground: BackgroundMap = {
-  default: "N950",  // #0A1019
-  subtle: "N900",   // #111A28
-  subtlest: "N800", // #1A2435
-};
+// ── Dark mode ───────────────────────────────────────────────
 
-// ── Background Darkness ─────────────────────────────────────
-
-export type BackgroundDarknessTokens = {
-  /** Fondo oscuro principal (sidebar, headers) */
-  default: string;
-  /** Superficie oscura (cards sobre fondo oscuro) */
-  surface: string;
-};
-
-export type BackgroundDarknessMap = {
-  [K in keyof BackgroundDarknessTokens]: string;
-};
-
-export const lightBackgroundDarkness: BackgroundDarknessMap = {
-  default: "N950",  // #0A1019
-  surface: "N900",  // #111A28
-};
-
-export const darkBackgroundDarkness: BackgroundDarknessMap = {
-  default: "N950",  // #0A1019
-  surface: "N900",  // #111A28
-};
-
-// ── Text ────────────────────────────────────────────────────
-
-export type TextTokens = {
-  /** Texto principal (oscuro en light, claro en dark) */
-  default: string;
-  /** Texto sutil (gris en light, gris claro en dark) */
-  subtle: string;
-  /** Texto claro para fondos oscuros (claro en ambos modos) */
-  light: string;
-};
-
-export type TextMap = {
-  [K in keyof TextTokens]: string;
-};
-
-export const lightText: TextMap = {
-  default: "N950",  // #0A1019  (oscuro sobre fondo blanco)
-  subtle: "N500",   // #5C6A80  (gris suave)
-  light: "N0",      // #FFFFFF  (para fondos oscuros)
-};
-
-export const darkText: TextMap = {
-  default: "N0",    // #FFFFFF  (claro sobre fondo oscuro)
-  subtle: "N400",   // #6B7A90  (gris claro)
-  light: "N0",      // #FFFFFF  (para fondos oscuros)
+export const darkSemantic: SemanticMap = {
+  default: {
+    bg:  { default: "N950", subtle: "N900" },
+    text: { default: "N0",   subtle: "N400", subtlest: "N600" },
+    icon: { default: "N0",   subtle: "N400" },
+  },
+  light: {
+    bg:  { default: "N800", subtle: "N950" },
+    text: { default: "N0",   subtle: "N400", subtlest: "N600" },
+    icon: { default: "N0",   subtle: "N400" },
+  },
+  darkness: {
+    bg:  { default: "N950", subtle: "N900" },
+    text: { default: "N0",   subtle: "N400", subtlest: "N600" },
+    icon: { default: "N0",   subtle: "N400" },
+  },
 };
 
 // ── Resolución ──────────────────────────────────────────────
 
-function resolve<T extends Record<string, string>>(map: T): { [K in keyof T]: string } {
-  const result = {} as { [K in keyof T]: string };
-  for (const key of Object.keys(map) as (keyof T)[]) {
-    result[key] = PALETTE[map[key]] ?? map[key];
-  }
-  return result;
+function resolveCtx(map: ContextMap): ContextTokens {
+  return {
+    bg: {
+      default: PALETTE[map.bg.default] ?? map.bg.default,
+      subtle: PALETTE[map.bg.subtle] ?? map.bg.subtle,
+    },
+    text: {
+      default: PALETTE[map.text.default] ?? map.text.default,
+      subtle: PALETTE[map.text.subtle] ?? map.text.subtle,
+      subtlest: PALETTE[map.text.subtlest] ?? map.text.subtlest,
+    },
+    icon: {
+      default: PALETTE[map.icon.default] ?? map.icon.default,
+      subtle: PALETTE[map.icon.subtle] ?? map.icon.subtle,
+    },
+  };
 }
 
-export function resolveBackground(map: BackgroundMap): BackgroundTokens {
-  return resolve(map);
+export function resolveSemantic(map: SemanticMap): SemanticTokens {
+  return {
+    default: resolveCtx(map.default),
+    light: resolveCtx(map.light),
+    darkness: resolveCtx(map.darkness),
+  };
 }
 
-export function resolveBackgroundDarkness(map: BackgroundDarknessMap): BackgroundDarknessTokens {
-  return resolve(map);
-}
+// ── Backward compat: text tokens globales ───────────────────
+
+export type TextTokens = ContextTextTokens & { light: string };
+export type TextMap = ContextTextMap & { light: string };
+
+export const lightText: TextMap = { ...lightSemantic.default.text, light: "N0" };
+export const darkText: TextMap = { ...darkSemantic.default.text, light: "N0" };
 
 export function resolveText(map: TextMap): TextTokens {
-  return resolve(map);
+  return {
+    default: PALETTE[map.default] ?? map.default,
+    subtle: PALETTE[map.subtle] ?? map.subtle,
+    subtlest: PALETTE[map.subtlest] ?? map.subtlest,
+    light: PALETTE[map.light] ?? map.light,
+  };
 }
 
-// ── Listing de todos los tokens semánticos ───────────────────
+// ── Backward compat: background legacy ──────────────────────
 
-export type SemanticTokenEntry = {
-  key: string;
-  label: string;
-  baseToken: string;
-  hex: string;
+export type BackgroundMap = { default: string; subtle: string; subtlest: string };
+
+export const lightBackground: BackgroundMap = {
+  default: lightSemantic.default.bg.default,
+  subtle: lightSemantic.default.bg.subtle,
+  subtlest: lightSemantic.light.bg.default,
 };
 
-export type SemanticGroup = {
-  name: string;
-  tokens: SemanticTokenEntry[];
+export const darkBackground: BackgroundMap = {
+  default: darkSemantic.default.bg.default,
+  subtle: darkSemantic.default.bg.subtle,
+  subtlest: darkSemantic.light.bg.default,
 };
 
-export function getSemanticGroups(
-  bgMap: BackgroundMap,
-  bgDarknessMap: BackgroundDarknessMap,
-  textMap: TextMap
-): SemanticGroup[] {
-  const resolvedBg = resolveBackground(bgMap);
-  const resolvedBgDarkness = resolveBackgroundDarkness(bgDarknessMap);
-  const resolvedText = resolveText(textMap);
-  return [
-    {
-      name: "Background",
-      tokens: [
-        { key: "default", label: "default", baseToken: bgMap.default, hex: resolvedBg.default },
-        { key: "subtle", label: "subtle", baseToken: bgMap.subtle, hex: resolvedBg.subtle },
-        { key: "subtlest", label: "subtlest", baseToken: bgMap.subtlest, hex: resolvedBg.subtlest },
-      ],
-    },
-    {
-      name: "Background Darkness",
-      tokens: [
-        { key: "default", label: "default", baseToken: bgDarknessMap.default, hex: resolvedBgDarkness.default },
-        { key: "surface", label: "surface", baseToken: bgDarknessMap.surface, hex: resolvedBgDarkness.surface },
-      ],
-    },
-    {
-      name: "Text",
-      tokens: [
-        { key: "default", label: "default", baseToken: textMap.default, hex: resolvedText.default },
-        { key: "subtle", label: "subtle", baseToken: textMap.subtle, hex: resolvedText.subtle },
-        { key: "light", label: "light", baseToken: textMap.light, hex: resolvedText.light },
-      ],
-    },
-  ];
+export function resolveBackground(map: BackgroundMap): { default: string; subtle: string; subtlest: string } {
+  return {
+    default: PALETTE[map.default] ?? map.default,
+    subtle: PALETTE[map.subtle] ?? map.subtle,
+    subtlest: PALETTE[map.subtlest] ?? map.subtlest,
+  };
 }
