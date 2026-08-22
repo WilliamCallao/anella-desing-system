@@ -35,6 +35,29 @@ export const darkBackground: BackgroundMap = {
   subtlest: "N800", // #1A2435
 };
 
+// ── Background Darkness ─────────────────────────────────────
+
+export type BackgroundDarknessTokens = {
+  /** Fondo oscuro principal (sidebar, headers) */
+  default: string;
+  /** Superficie oscura (cards sobre fondo oscuro) */
+  surface: string;
+};
+
+export type BackgroundDarknessMap = {
+  [K in keyof BackgroundDarknessTokens]: string;
+};
+
+export const lightBackgroundDarkness: BackgroundDarknessMap = {
+  default: "N950",  // #0A1019
+  surface: "N900",  // #111A28
+};
+
+export const darkBackgroundDarkness: BackgroundDarknessMap = {
+  default: "N950",  // #0A1019
+  surface: "N900",  // #111A28
+};
+
 // ── Text ────────────────────────────────────────────────────
 
 export type TextTokens = {
@@ -76,6 +99,10 @@ export function resolveBackground(map: BackgroundMap): BackgroundTokens {
   return resolve(map);
 }
 
+export function resolveBackgroundDarkness(map: BackgroundDarknessMap): BackgroundDarknessTokens {
+  return resolve(map);
+}
+
 export function resolveText(map: TextMap): TextTokens {
   return resolve(map);
 }
@@ -96,9 +123,11 @@ export type SemanticGroup = {
 
 export function getSemanticGroups(
   bgMap: BackgroundMap,
+  bgDarknessMap: BackgroundDarknessMap,
   textMap: TextMap
 ): SemanticGroup[] {
   const resolvedBg = resolveBackground(bgMap);
+  const resolvedBgDarkness = resolveBackgroundDarkness(bgDarknessMap);
   const resolvedText = resolveText(textMap);
   return [
     {
@@ -107,6 +136,13 @@ export function getSemanticGroups(
         { key: "default", label: "default", baseToken: bgMap.default, hex: resolvedBg.default },
         { key: "subtle", label: "subtle", baseToken: bgMap.subtle, hex: resolvedBg.subtle },
         { key: "subtlest", label: "subtlest", baseToken: bgMap.subtlest, hex: resolvedBg.subtlest },
+      ],
+    },
+    {
+      name: "Background Darkness",
+      tokens: [
+        { key: "default", label: "default", baseToken: bgDarknessMap.default, hex: resolvedBgDarkness.default },
+        { key: "surface", label: "surface", baseToken: bgDarknessMap.surface, hex: resolvedBgDarkness.surface },
       ],
     },
     {
