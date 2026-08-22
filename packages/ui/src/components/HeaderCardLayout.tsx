@@ -7,8 +7,8 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { radius } from "@antonella/theme";
 
 export type HeaderCardLayoutProps = {
   headerBackgroundColor?: string;
@@ -20,6 +20,7 @@ export type HeaderCardLayoutProps = {
 
 const CARD_RADIUS = 32;
 const BODY_OVERLAP = 12;
+const SHADOW_HEIGHT = 20;
 
 export function HeaderCardLayout({
   headerBackgroundColor = "#FFFFFF",
@@ -50,6 +51,7 @@ export function HeaderCardLayout({
         {children}
       </ScrollView>
 
+      {/* Card header */}
       <View
         onLayout={onHeaderLayout}
         style={[
@@ -64,6 +66,16 @@ export function HeaderCardLayout({
       >
         {header}
       </View>
+
+      {/* Bottom shadow gradient (body color fading out) */}
+      <LinearGradient
+        pointerEvents="none"
+        colors={[bodyBackgroundColor, "transparent"]}
+        style={[
+          styles.shadow,
+          { top: insets.top + headerHeight - BODY_OVERLAP },
+        ]}
+      />
     </View>
   );
 }
@@ -85,5 +97,12 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
     overflow: "hidden",
+  },
+  shadow: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: SHADOW_HEIGHT,
+    zIndex: 9,
   },
 });
