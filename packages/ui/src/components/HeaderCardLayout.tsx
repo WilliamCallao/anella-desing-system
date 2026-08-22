@@ -41,7 +41,7 @@ export function HeaderCardLayout({
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: headerHeight },
+          { paddingTop: headerHeight + SHADOW_HEIGHT },
         ]}
         bounces={false}
         keyboardShouldPersistTaps="handled"
@@ -63,14 +63,23 @@ export function HeaderCardLayout({
         ]}
       >
         {header}
-
-        {/* Gradient inside header, clipped by overflow:hidden + border radius */}
-        <LinearGradient
-          pointerEvents="none"
-          colors={[`${bodyBackgroundColor}00`, bodyBackgroundColor]}
-          style={styles.headerGradient}
-        />
       </View>
+
+      {/* Gradient in body area, with matching top border radius */}
+      <LinearGradient
+        pointerEvents="none"
+        colors={[bodyBackgroundColor, "transparent"]}
+        style={{
+          position: "absolute",
+          top: headerHeight,
+          left: 0,
+          right: 0,
+          height: SHADOW_HEIGHT,
+          zIndex: 9,
+          borderTopLeftRadius: CARD_RADIUS,
+          borderTopRightRadius: CARD_RADIUS,
+        }}
+      />
     </View>
   );
 }
@@ -92,12 +101,5 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
     overflow: "hidden",
-  },
-  headerGradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: SHADOW_HEIGHT,
   },
 });
