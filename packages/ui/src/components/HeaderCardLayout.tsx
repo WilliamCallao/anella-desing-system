@@ -50,6 +50,20 @@ export function HeaderCardLayout({
         {children}
       </ScrollView>
 
+      {/* Solid body-color rect behind header — fills gaps from rounded corners */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: headerHeight,
+          backgroundColor: bodyBackgroundColor,
+          zIndex: 9,
+        }}
+      />
+
       <View
         onLayout={onHeaderLayout}
         style={[
@@ -64,22 +78,6 @@ export function HeaderCardLayout({
       >
         {header}
       </View>
-
-      {/* Filler behind the rounded corners of the gradient */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: headerHeight,
-          left: 0,
-          right: 0,
-          height: SHADOW_HEIGHT,
-          zIndex: 8,
-          backgroundColor: headerBackgroundColor,
-          borderTopLeftRadius: CARD_RADIUS,
-          borderTopRightRadius: CARD_RADIUS,
-        }}
-      />
 
       {/* Gradient in body area, with matching top border radius */}
       <LinearGradient
