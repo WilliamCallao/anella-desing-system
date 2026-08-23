@@ -41,6 +41,7 @@ import {
   Search,
   Settings,
   Trash2,
+  TriangleAlert,
   User,
   Users,
   Warehouse,
@@ -112,7 +113,8 @@ export type IconName =
   | "folder-open"
   | "file"
   | "loader"
-  | "inbox";
+  | "inbox"
+  | "triangle-alert";
 
 export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: string; strokeWidth?: number }>> = {
   home: Home,
@@ -177,6 +179,7 @@ export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: st
   file: File,
   loader: LoaderCircle,
   inbox: Inbox,
+  "triangle-alert": TriangleAlert,
 };
 
 export type IconProps = {

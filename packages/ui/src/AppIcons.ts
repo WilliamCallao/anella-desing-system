@@ -34,6 +34,7 @@ export const AppIcon = {
   Bell: "notifications" as IconName,
   Info: "information-circle" as IconName,
   Alert: "alert-circle" as IconName,
+  Warning: "triangle-alert" as IconName,
   Chat: "chatbubble" as IconName,
   Camera: "camera" as IconName,
   Time: "time" as IconName,
