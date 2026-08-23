@@ -136,6 +136,8 @@ export type TreeEditorProps = {
   onRequestAdd?: (parentId: string | null) => void;
   /** Called when user taps "Editar" from the node menu. When provided, the built-in edit dialog is bypassed. */
   onRequestEdit?: (node: TreeNode) => void;
+  /** Called when the user confirms deletion of a node. When provided, the built-in removal is bypassed (the node is NOT deleted). */
+  onRequestDelete?: (node: TreeNode) => void;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -534,7 +536,7 @@ type DialogState = {
 
 type FormErrors = { code?: string; name?: string };
 
-export function TreeEditor({ value, onChange, mode = "view", variant = "default", collapsed: collapsedProp, onCollapsedChange, rootLabel = "Agregar raíz", renderNode, onRequestAdd, onRequestEdit, style }: TreeEditorProps) {
+export function TreeEditor({ value, onChange, mode = "view", variant = "default", collapsed: collapsedProp, onCollapsedChange, rootLabel = "Agregar raíz", renderNode, onRequestAdd, onRequestEdit, onRequestDelete, style }: TreeEditorProps) {
   const [internalCollapsed, setInternalCollapsed] = useState<Record<string, boolean>>({});
   // Estado inicial implícito: mientras el mapa de colapso esté vacío y haya
   // datos, se muestra solo la primera rama expandida. Se deriva DURANTE el
@@ -659,7 +661,12 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
   function performDelete() {
     const node = actionsNode;
     closeActions();
-    if (node) onChange(removeNode(value, node.id));
+    if (!node) return;
+    if (onRequestDelete) {
+      onRequestDelete(node);
+      return;
+    }
+    onChange(removeNode(value, node.id));
   }
 
   function save() {
