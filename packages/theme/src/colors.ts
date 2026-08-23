@@ -1,6 +1,6 @@
 export const palette = {
-  primary: "#007AFF",
-  primaryDark: "#0A84FF",
+  primary: "#346FA9",
+  primaryDark: "#2B5B8A",
   background: "#F2F2F7",
   surface: "#FFFFFF",
   border: "#E5E5EA",
@@ -12,8 +12,8 @@ export const palette = {
 } as const;
 
 export const darkPalette = {
-  primary: "#0A84FF",
-  primaryDark: "#007AFF",
+  primary: "#64A4D7",
+  primaryDark: "#4689C6",
   background: "#000000",
   surface: "#1C1C1E",
   border: "#2C2C2E",
@@ -33,7 +33,7 @@ export const darkPalette = {
  * USO: fondo de elementos CTA (ej. opción activa del sidebar).
  * REGLA: sobre CTA1, el contenido (texto e íconos) se pinta SIEMPRE con `cta1Contrast`.
  */
-export const cta1 = "#007AFF";
+export const cta1 = "#346FA9";
 export const cta1Contrast = "#FFFFFF";
 
 /**

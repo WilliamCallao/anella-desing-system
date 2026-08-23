@@ -8,6 +8,8 @@ import { composingOrb } from "./categories/composing-orb";
 import { dialogos } from "./categories/dialogos";
 import { drawerMenu } from "./categories/drawer-menu";
 import { drawerMenuItem } from "./categories/drawer-menu-item";
+import { searchBar } from "./categories/search-bar";
+import { categoryText } from "./categories/category-text";
 import { filtros } from "./categories/filtros";
 import { formularios } from "./categories/formularios";
 import { inputs } from "./categories/inputs";
@@ -19,7 +21,7 @@ import type { ComponentCategory } from "./types";
 
 export type { ComponentCategory, ComponentEntry, VariantDemo } from "./types";
 
-export const componentCategories = [formularios, inputs, animaciones, botones, dialogos, checklists, filtros, arbol, other, tipografia, bottomBars, composingOrb, drawerMenu, drawerMenuItem, layout];
+export const componentCategories = [formularios, inputs, animaciones, botones, dialogos, checklists, filtros, arbol, other, tipografia, bottomBars, composingOrb, drawerMenu, drawerMenuItem, searchBar, categoryText, layout];
 
 export const sectionCategories: ComponentCategory[] = [colores, semanticTokens];
 

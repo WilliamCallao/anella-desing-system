@@ -14,16 +14,16 @@ export const neutrals = {
 } as const;
 
 export const brand = {
-  M50: "#EFF6FF",
-  M100: "#DBEAFE",
-  M200: "#BFDBFE",
-  M300: "#93C5FD",
-  M400: "#60A5FA",
-  M500: "#3B82F6",
-  M600: "#2563EB",
-  M700: "#1D4ED8",
-  M800: "#1E40AF",
-  M900: "#1E3A8A",
+  M50: "#EFF5FB",
+  M100: "#DCE9F6",
+  M200: "#BEDAF0",
+  M300: "#93C1E5",
+  M400: "#64A4D7",
+  M500: "#4689C6",
+  M600: "#346FA9",
+  M700: "#2B5B8A",
+  M800: "#264C72",
+  M900: "#213F5E",
 } as const;
 
 export const success = {

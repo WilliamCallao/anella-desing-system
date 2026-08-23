@@ -40,4 +40,9 @@ export const AppIcon = {
   Analytics: "analytics" as IconName,
   Palette: "palette" as IconName,
   ChevronForward: "chevron-forward" as IconName,
+  Folder: "folder" as IconName,
+  FolderOpen: "folder-open" as IconName,
+  File: "file" as IconName,
+  Loader: "loader" as IconName,
+  Inbox: "inbox" as IconName,
 } as const;

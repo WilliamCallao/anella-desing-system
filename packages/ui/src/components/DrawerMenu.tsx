@@ -18,18 +18,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { radius, space } from "@antonella/theme";
 import { neutrals, brand, danger as dangerPalette } from "@antonella/theme";
 import { Text } from "./text";
-import { Item } from "./Item";
-import type { ItemProps } from "./Item";
-import { ItemStyle } from "./Item";
+import { DrawerMenuItem } from "./DrawerMenuItem";
+import { DrawerMenuItemStyle } from "./DrawerMenuItem";
 import { ColorWheel } from "./ColorCustomizer/ColorWheel";
 import { ColorCustomizerDialog } from "./ColorCustomizer/ColorCustomizerDialog";
 import type { ColorToken } from "./ColorCustomizer/types";
 
-export { ItemStyle } from "./Item";
+export { DrawerMenuItemStyle } from "./DrawerMenuItem";
 
 const ANIM_IN_MS = 260;
 const ANIM_OUT_MS = 240;
-const BACKDROP_COLOR = "#0F172A";
+const BACKDROP_COLOR = "#000000";
 const BACKDROP_OPACITY = 0.45;
 const DEFAULT_WIDTH = 300;
 
@@ -50,7 +49,7 @@ export type DrawerMenuProps = {
   footer?: React.ReactNode;
   dismissible?: boolean;
   customizable?: boolean;
-  itemStyle?: ItemStyle;
+  itemStyle?: DrawerMenuItemStyle;
 };
 
 const DEFAULT_TOKENS: ColorToken[] = [
@@ -81,7 +80,7 @@ export function DrawerMenu({
   footer,
   dismissible = true,
   customizable = false,
-  itemStyle = ItemStyle.DARKNESS,
+  itemStyle = DrawerMenuItemStyle.DARKNESS,
 }: DrawerMenuProps) {
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -211,7 +210,7 @@ export function DrawerMenu({
             showsVerticalScrollIndicator={false}
           >
             {items?.map((item, i) => (
-              <Item
+              <DrawerMenuItem
                 key={i}
                 icon={item.icon}
                 label={item.label}

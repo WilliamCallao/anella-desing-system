@@ -20,11 +20,16 @@ import {
   Delete,
   Ellipsis,
   EllipsisVertical,
+  File,
   FileText,
+  Folder,
+  FolderOpen,
   GitBranch,
   Home,
+  Inbox,
   Info,
   Leaf,
+  LoaderCircle,
   LogIn,
   LogOut,
   Mail,
@@ -102,7 +107,12 @@ export type IconName =
   | "document-text"
   | "document-text-filled"
   | "backspace"
-  | "palette";
+  | "palette"
+  | "folder"
+  | "folder-open"
+  | "file"
+  | "loader"
+  | "inbox";
 
 export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: string; strokeWidth?: number }>> = {
   home: Home,
@@ -162,6 +172,11 @@ export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: st
   "document-text-filled": FileText,
   backspace: Delete,
   palette: Palette,
+  folder: Folder,
+  "folder-open": FolderOpen,
+  file: File,
+  loader: LoaderCircle,
+  inbox: Inbox,
 };
 
 export type IconProps = {

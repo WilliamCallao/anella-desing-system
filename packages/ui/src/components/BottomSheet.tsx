@@ -24,7 +24,7 @@ import { useModalKeyboardHeight } from "./useModalKeyboard";
 
 const ANIM_IN_TIMING = 260;
 const ANIM_OUT_TIMING = 240;
-const BACKDROP_COLOR = "#0F172A";
+const BACKDROP_COLOR = "#000000";
 const BACKDROP_OPACITY = 0.45;
 
 export type BottomSheetProps = {

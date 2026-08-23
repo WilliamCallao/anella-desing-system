@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Alert,
   Animated,
   Easing,
   Pressable,
@@ -9,31 +8,134 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { border, card, cta1, palette, radius, space, text, TextType } from "@antonella/theme";
+import { brand, card, cta1, neutrals, palette, radius, resolveSemantic, lightSemantic, space, text, TextType } from "@antonella/theme";
 import { Text } from "./text/Text";
 import { Icon, type IconName } from "./Icon";
 import { AppResponsiveDialog } from "./AppResponsiveDialog";
-import { BottomSheet } from "./BottomSheet";
+import { CardStackSheet } from "./CardStackSheet";
+import { Card } from "./Card";
+import { OptionListItem, OptionListItemVariant } from "./OptionListItem";
+import { TransitionView } from "@antonella/animations";
 import { TextField } from "./TextField";
 import { AppButton } from "./card-form/AppButton";
 import { AppIcon } from "../AppIcons";
 
 export type TreeNode = {
   id: string;
-  code: number;
+  code: string;
   name: string;
   children: TreeNode[];
 };
 
 export type TreeEditorMode = "view" | "edit";
 
+export type TreeEditorVariant = "default" | "darkness";
+
+type VariantTokens = {
+  containerBg: string;
+  cardBg: string;
+  /** Color de estructura: conectores del árbol (token semántico subtle). */
+  lineColor: string;
+  /** Icono de carpeta abierta en grupos expandidos (brand). */
+  iconExpanded: string;
+  /** Relleno y texto del chip de código (espejo del resaltado de Item). */
+  chipBg: string;
+  chipText: string;
+  /** Chip inactivo (grupo colapsado): sin relleno, borde gris discreto. */
+  neutralChipBg: string;
+  neutralChipBorder: string;
+  neutralChipText: string;
+  /** Item activo (grupo expandido): fondo brand y textos con contraste ajustado. */
+  activeCardBg: string;
+  activeTextPrimary: string;
+  activeTextSecondary: string;
+  activeIconColor: string;
+  activeChipBg: string;
+  activeChipText: string;
+  activePressedBg: string;
+  textPrimary: string;
+  textSecondary: string;
+  codeColor: string;
+  chevronColor: string;
+  addRootText: string;
+  actionsColor: string;
+  pressedBg: string;
+};
+
+const _semantic = resolveSemantic(lightSemantic);
+
+const VARIANT_TOKENS: Record<TreeEditorVariant, VariantTokens> = {
+  default: {
+    containerBg: "transparent",
+    cardBg: card.background,
+    lineColor: neutrals.N700,
+    iconExpanded: brand.M500,
+    chipBg: brand.M100,
+    chipText: brand.M700,
+    neutralChipBg: "transparent",
+    neutralChipBorder: neutrals.N300,
+    neutralChipText: _semantic.default.text.default,
+    activeCardBg: brand.M100,
+    activeTextPrimary: brand.M900,
+    activeTextSecondary: brand.M700,
+    activeIconColor: brand.M700,
+    activeChipBg: neutrals.N0,
+    activeChipText: brand.M800,
+    activePressedBg: "rgba(0,0,0,0.08)",
+    textPrimary: card.text.primary,
+    textSecondary: card.text.secondary,
+    codeColor: card.text.secondary,
+    chevronColor: text.secondary,
+    addRootText: cta1,
+    actionsColor: text.secondary,
+    pressedBg: "rgba(0,0,0,0.04)",
+  },
+  darkness: {
+    containerBg: "transparent",
+    cardBg: "#1C1C1E",
+    lineColor: neutrals.N600,
+    iconExpanded: brand.M300,
+    chipBg: brand.M700,
+    chipText: neutrals.N0,
+    neutralChipBg: "transparent",
+    neutralChipBorder: neutrals.N600,
+    neutralChipText: _semantic.darkness.text.default,
+    activeCardBg: brand.M700,
+    activeTextPrimary: neutrals.N0,
+    activeTextSecondary: "rgba(255,255,255,0.72)",
+    activeIconColor: neutrals.N0,
+    activeChipBg: "rgba(255,255,255,0.18)",
+    activeChipText: neutrals.N0,
+    activePressedBg: "rgba(255,255,255,0.10)",
+    textPrimary: "#F2F2F7",
+    textSecondary: "#98989F",
+    codeColor: "#AEAEB2",
+    chevronColor: "#98989F",
+    addRootText: "#64A4D7",
+    actionsColor: "#98989F",
+    pressedBg: "rgba(255,255,255,0.06)",
+  },
+};
+
 export type TreeEditorProps = {
   value: TreeNode[];
   onChange: (value: TreeNode[]) => void;
   /** Default: "view" (solo visualización). Con "edit" se muestran las acciones. */
   mode?: TreeEditorMode;
+  /** Variant visual del árbol. Default: "default". "darkness" usa cards oscuras individuales. */
+  variant?: TreeEditorVariant;
+  /** Estado controlado de nodos colapsados. Si se provee, sobreescribe el estado interno. */
+  collapsed?: Record<string, boolean>;
+  /** Callback cuando cambia el estado de colapso de un nodo. Requiere `collapsed` controlado. */
+  onCollapsedChange?: (collapsed: Record<string, boolean>) => void;
   /** Etiqueta del botón de agregar raíz (solo modo edición). Default: "Agregar raíz". */
   rootLabel?: string;
+  /** Render custom para el contenido de cada nodo. Recibe el nodo y el render por defecto. */
+  renderNode?: (node: TreeNode, defaultContent: React.ReactNode) => React.ReactNode;
+  /** Called when user taps any add button/row. When provided, the built-in add dialog is bypassed. */
+  onRequestAdd?: (parentId: string | null) => void;
+  /** Called when user taps "Editar" from the node menu. When provided, the built-in edit dialog is bypassed. */
+  onRequestEdit?: (node: TreeNode) => void;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -41,7 +143,7 @@ export type TreeEditorProps = {
 // Helpers puros: mutan copias del bosque y devuelven nuevos arrays
 // ----------------------------------------------------------------
 
-export function createNode(code: number, name: string, children: TreeNode[] = []): TreeNode {
+export function createNode(code: string, name: string, children: TreeNode[] = []): TreeNode {
   return {
     id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
     code,
@@ -93,7 +195,25 @@ export function findNode(nodes: TreeNode[], nodeId: string): TreeNode | undefine
   return undefined;
 }
 
-export function hasCode(nodes: TreeNode[], code: number, excludeId?: string): boolean {
+/** Marca en `acc` el nodo y todos sus descendientes como colapsados. */
+function markBranchCollapsed(nodes: TreeNode[], acc: Record<string, boolean>) {
+  for (const n of nodes) {
+    acc[n.id] = true;
+    markBranchCollapsed(n.children, acc);
+  }
+}
+
+/** Grupo de hermanos al que pertenece `nodeId` (o null si es raíz del bosque). */
+function findSiblingGroup(nodes: TreeNode[], id: string): TreeNode[] | null {
+  if (nodes.some((n) => n.id === id)) return nodes;
+  for (const n of nodes) {
+    const found = findSiblingGroup(n.children, id);
+    if (found) return found;
+  }
+  return null;
+}
+
+export function hasCode(nodes: TreeNode[], code: string, excludeId?: string): boolean {
   for (const n of nodes) {
     if (n.code === code && n.id !== excludeId) return true;
     if (hasCode(n.children, code, excludeId)) return true;
@@ -101,18 +221,27 @@ export function hasCode(nodes: TreeNode[], code: number, excludeId?: string): bo
   return false;
 }
 
-export function maxCode(nodes: TreeNode[]): number {
-  let max = 0;
-  for (const n of nodes) {
-    if (n.code > max) max = n.code;
-    const childMax = maxCode(n.children);
-    if (childMax > max) max = childMax;
-  }
-  return max;
-}
-
 export function countNodes(nodes: TreeNode[]): number {
   return nodes.reduce((acc, n) => acc + 1 + countNodes(n.children), 0);
+}
+
+/**
+ * Estado colapso inicial: todo contraído salvo la primera raíz, que se muestra
+ * expandida con su primer nivel visible.
+ */
+export function buildInitialCollapsed(nodes: TreeNode[]): Record<string, boolean> {
+  const acc: Record<string, boolean> = {};
+  const markAll = (list: TreeNode[]) => {
+    for (const n of list) {
+      acc[n.id] = true;
+      markAll(n.children);
+    }
+  };
+  if (nodes.length > 0) {
+    markAll(nodes.slice(1));
+    markAll(nodes[0].children);
+  }
+  return acc;
 }
 
 // ----------------------------------------------------------------
@@ -122,34 +251,34 @@ export function countNodes(nodes: TreeNode[]): number {
 // anima/clipea con overflow hidden.
 // ----------------------------------------------------------------
 
-const INDENT = 24;
-const ROW_HEIGHT = 54;
-const LINE_COLOR = border.divider.secondary;
+const INDENT = 28;
+const ROW_HEIGHT = 72;
+const CARD_MARGIN = 12;
+const CARD_PADDING_H = space.space4;
+const CARD_RADIUS = 24;
+/** Offset del riel vertical dentro de su columna de indentación. */
+const LINE_X = 10;
 
 const EXPAND_DURATION = 220;
 const EXPAND_FADE = 180;
 const COLLAPSE_FADE = 120;
-const CHEVRON_DURATION = 180;
 
-type FlatRow =
-  | { kind: "node"; node: TreeNode; depth: number }
-  | { kind: "add"; parentId: string | null; depth: number };
+/** Icono de nodo (folder/file) alineado con el título. */
+const NODE_ICON_SIZE = 18;
+
+type FlatRow = { node: TreeNode; depth: number };
 
 function buildRows(
   nodes: TreeNode[],
   depth: number,
   collapsed: Record<string, boolean>,
-  includeAdd: boolean,
   out: FlatRow[],
 ): FlatRow[] {
   nodes.forEach((node) => {
-    out.push({ kind: "node", node, depth });
+    out.push({ node, depth });
     const isCollapsed = !!collapsed[node.id];
     if (node.children.length > 0 && !isCollapsed) {
-      buildRows(node.children, depth + 1, collapsed, includeAdd, out);
-      if (includeAdd) {
-        out.push({ kind: "add", parentId: node.id, depth: depth + 1 });
-      }
+      buildRows(node.children, depth + 1, collapsed, out);
     }
   });
   return out;
@@ -159,94 +288,72 @@ function buildRows(
 type TreeRenderContext = {
   isEdit: boolean;
   collapsed: Record<string, boolean>;
-  lastByDepth: Record<number, number>;
-  nodeIndex: Map<string, number>;
-  addIndex: Map<string, number>;
   onToggle: (id: string) => void;
   onOpenActions: (id: string) => void;
-  onAdd: (parentId: string | null) => void;
+  renderNode?: (node: TreeNode, defaultContent: React.ReactNode) => React.ReactNode;
+  vt: VariantTokens;
 };
 
-// Dibuja los conectores de una fila. Lógica verificada contra el render
-// canónico de VS Code ("├─/│/└─"): por el nivel k pasa una línea mientras
-// exista una fila posterior de profundidad k+1; la última fila de ese nivel
-// recibe solo el tramo superior (el codo "└") que se une al stub.
-function renderGutter(
-  depth: number,
-  rowIndex: number,
-  lastByDepth: Record<number, number>,
-): React.ReactNode {
-  const segments = [];
+// Columnas de conectores tipo file-explorer ("│/├/└"). Cada nivel es un item
+// flex de ancho INDENT con su riel vertical y, en el último, el stub horizontal
+// que llega hasta el borde del card. Al ser items del propio row (sin absolutos
+// sobre la fila ni padding intermedio), la alineación entre filas es exacta por
+// construcción. `terminal` cierra el codo en el centro de la fila: es el "└"
+// del último item visible del nivel.
+function NodeGutter({
+  depth,
+  lineColor,
+  terminal,
+}: {
+  depth: number;
+  lineColor: string;
+  terminal: boolean;
+}) {
+  if (depth === 0) return null;
+  const columns = [];
   for (let k = 0; k < depth; k++) {
-    const last = lastByDepth[k + 1];
-    if (last === undefined || last < rowIndex) continue;
-    const isLastStub = last === rowIndex;
-    segments.push(
-      <View
-        key={`v${k}`}
-        style={[
-          styles.line,
-          {
-            left: k * INDENT,
-            top: 0,
-            bottom: isLastStub ? ROW_HEIGHT / 2 - 0.5 : 0,
-          },
-        ]}
-      />,
+    const isElbow = k === depth - 1;
+    columns.push(
+      <View key={`g${k}`} style={styles.gutterCol}>
+        <View
+          style={[
+            styles.gutterRail,
+            {
+              left: LINE_X,
+              backgroundColor: lineColor,
+              top: 0,
+              bottom: isElbow && terminal ? "50%" : 0,
+            },
+          ]}
+        />
+        {isElbow ? (
+          <View style={[styles.gutterStub, { left: LINE_X, backgroundColor: lineColor }]} />
+        ) : null}
+      </View>,
     );
   }
-  // Stub horizontal: conecta la línea del padre con el contenido de la fila.
-  // Las filas "+ Agregar" también lo reciben, para verse como un item más
-  // del nivel.
-  if (depth > 0) {
-    segments.push(
-      <View
-        key="h"
-        style={[
-          styles.line,
-          {
-            left: (depth - 1) * INDENT,
-            top: ROW_HEIGHT / 2 - 0.5,
-            width: INDENT,
-            height: 1,
-          },
-        ]}
-      />,
-    );
-  }
-  return <>{segments}</>;
+  return <>{columns}</>;
 }
 
-// Fila "+ Agregar" de un nivel. Solo visible si el padre está expandido (o es
-// la raíz); si el padre está colapsado queda clipeada dentro del contenedor.
-function renderAddRow(ctx: TreeRenderContext, parentId: string | null, depth: number): React.ReactNode {
-  const rowIndex = ctx.addIndex.get(parentId ?? "root") ?? -1;
-  return (
-    <View key={`add-${parentId ?? "root"}`} style={[styles.row, { paddingLeft: depth * INDENT }]}>
-      {renderGutter(depth, rowIndex, ctx.lastByDepth)}
-      <View style={styles.rowContent}>
-        <View style={styles.chevronSpacer} />
-        <Pressable
-          onPress={() => ctx.onAdd(parentId)}
-          style={({ pressed }) => [styles.addRow, pressed && styles.pressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Agregar item en este nivel"
-        >
-          <Icon name="add" size={14} color={text.secondary} />
-          <Text variant={TextType.Caption} color={text.secondary}>
-            Agregar
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-function renderForest(ctx: TreeRenderContext, nodes: TreeNode[], depth: number): React.ReactNode {
+// Fila compacta "+ Agregar" de un nivel. El riel del padre termina en el chip,
+// así el botón se lee como el último item del nivel y queda conectado.
+function renderForest(
+  ctx: TreeRenderContext,
+  nodes: TreeNode[],
+  depth: number,
+  parentName?: string,
+): React.ReactNode {
   return (
     <>
-      {nodes.map((node) => (
-        <TreeNodeItem key={node.id} node={node} depth={depth} ctx={ctx} />
+      {nodes.map((node, i) => (
+        <TreeNodeItem
+          key={node.id}
+          node={node}
+          depth={depth}
+          isLast={i === nodes.length - 1}
+          parentName={parentName}
+          ctx={ctx}
+        />
       ))}
     </>
   );
@@ -254,35 +361,40 @@ function renderForest(ctx: TreeRenderContext, nodes: TreeNode[], depth: number):
 
 // Nodo del árbol: fila clickeable (colapsa/expande en toda la fila) + contenedor
 // animado del subárbol (altura/opacidad/chevron, patrón de AppSelector).
-function TreeNodeItem({ node, depth, ctx }: { node: TreeNode; depth: number; ctx: TreeRenderContext }) {
+function TreeNodeItem({
+  node,
+  depth,
+  isLast,
+  parentName,
+  ctx,
+}: {
+  node: TreeNode;
+  depth: number;
+  isLast: boolean;
+  parentName?: string;
+  ctx: TreeRenderContext;
+}) {
   const hasChildren = node.children.length > 0;
   const isCollapsed = !!ctx.collapsed[node.id];
-  const rowIndex = ctx.nodeIndex.get(node.id) ?? -1;
+  // Activo: grupo expandido. Pinta el card de brand con textos contrastados.
+  const isActive = hasChildren && !isCollapsed;
 
-  // Altura del subárbol calculada de forma determinística: cada fila visible
-  // (nodo o "+ Agregar") mide exactamente ROW_HEIGHT, así que no hace falta
-  // medir con onLayout (que reporta 0 por el overflow:hidden del contenedor).
+  // El "└" del riel cierra en el último hijo visible del nivel.
+  const terminalElbow = isLast;
+
   const subtreeRows: FlatRow[] = [];
-  buildRows(node.children, depth + 1, ctx.collapsed, ctx.isEdit, subtreeRows);
-  const expandedHeight = (subtreeRows.length + (ctx.isEdit ? 1 : 0)) * ROW_HEIGHT;
+  buildRows(node.children, depth + 1, ctx.collapsed, subtreeRows);
+  const expandedHeight = subtreeRows.length * (ROW_HEIGHT + CARD_MARGIN) + 2;
 
   const heightAnim = useRef(new Animated.Value(isCollapsed ? 0 : expandedHeight)).current;
   const contentOpacity = useRef(new Animated.Value(isCollapsed ? 0 : 1)).current;
-  const chevronAnim = useRef(new Animated.Value(isCollapsed ? 0 : 1)).current;
   const measured = useRef(false);
-
-  const chevronRotate = useMemo(
-    () => chevronAnim.interpolate({ inputRange: [0, 1], outputRange: ["-90deg", "0deg"] }),
-    [chevronAnim],
-  );
 
   useEffect(() => {
     if (!measured.current) {
-      // Primer render: fijar el estado sin animación.
       measured.current = true;
       heightAnim.setValue(isCollapsed ? 0 : expandedHeight);
       contentOpacity.setValue(isCollapsed ? 0 : 1);
-      chevronAnim.setValue(isCollapsed ? 0 : 1);
       return;
     }
     const animation = Animated.parallel([
@@ -297,66 +409,110 @@ function TreeNodeItem({ node, depth, ctx }: { node: TreeNode; depth: number; ctx
         duration: isCollapsed ? COLLAPSE_FADE : EXPAND_FADE,
         useNativeDriver: false,
       }),
-      Animated.timing(chevronAnim, {
-        toValue: isCollapsed ? 0 : 1,
-        duration: CHEVRON_DURATION,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: false,
-      }),
     ]);
     animation.start();
     return () => animation.stop();
-  }, [isCollapsed, expandedHeight, heightAnim, contentOpacity, chevronAnim]);
+  }, [isCollapsed, expandedHeight, heightAnim, contentOpacity]);
+
+  // Fila 1: icono + título. Fila 2: descripción alineada con el título.
+  // Grupos: folder cerrado/abierto según colapso; hojas: file.
+  const defaultContent = (
+    <View style={styles.textBlock}>
+      <View style={styles.titleRow}>
+        <Icon
+          name={hasChildren ? (isCollapsed ? AppIcon.Folder : AppIcon.FolderOpen) : AppIcon.File}
+          size={NODE_ICON_SIZE}
+          color={isActive ? ctx.vt.activeIconColor : hasChildren ? ctx.vt.chevronColor : ctx.vt.codeColor}
+        />
+        <Text
+          variant={TextType.Caption}
+          color={isActive ? ctx.vt.activeTextPrimary : ctx.vt.textPrimary}
+          numberOfLines={1}
+        >
+          {node.name}
+        </Text>
+      </View>
+      <View style={styles.captionRow}>
+        <View
+          style={[
+            styles.codeChip,
+            isActive
+              ? { backgroundColor: ctx.vt.activeChipBg }
+              : !hasChildren
+                ? { backgroundColor: ctx.vt.chipBg }
+                : {
+                    backgroundColor: ctx.vt.neutralChipBg,
+                    borderWidth: 1,
+                    borderColor: ctx.vt.neutralChipBorder,
+                  },
+          ]}
+        >
+          <Text
+            variant={TextType.Caption}
+            color={
+              isActive ? ctx.vt.activeChipText : !hasChildren ? ctx.vt.chipText : ctx.vt.neutralChipText
+            }
+            numberOfLines={1}
+          >
+            {node.code}
+          </Text>
+        </View>
+        {parentName ? (
+          <Text
+            variant={TextType.Caption}
+            color={isActive ? ctx.vt.activeTextSecondary : ctx.vt.textSecondary}
+            numberOfLines={1}
+          >
+            {parentName}
+          </Text>
+        ) : null}
+      </View>
+    </View>
+  );
 
   return (
     <>
-      <Pressable
-        onPress={hasChildren ? () => ctx.onToggle(node.id) : undefined}
-        disabled={!hasChildren}
-        style={({ pressed }) => [
-          styles.row,
-          { paddingLeft: depth * INDENT },
-          hasChildren && pressed && styles.pressed,
-        ]}
-        accessibilityRole={hasChildren ? "button" : undefined}
-        accessibilityState={hasChildren ? { expanded: !isCollapsed } : undefined}
-        accessibilityLabel={hasChildren ? `${isCollapsed ? "Expandir" : "Colapsar"} ${node.name}` : undefined}
-      >
-        {renderGutter(depth, rowIndex, ctx.lastByDepth)}
-        <View style={styles.rowContent}>
-          {hasChildren ? (
-            <Animated.View style={[styles.chevron, { transform: [{ rotate: chevronRotate }] }]}>
-              <Icon name="chevron-down" size={14} color={text.secondary} />
-            </Animated.View>
-          ) : (
-            <View style={styles.chevronSpacer} />
-          )}
-          <View style={styles.textBlock}>
-            <Text variant={TextType.Overline} color={text.secondary} numberOfLines={1}>
-              {String(node.code)}
-            </Text>
-            <Text variant={TextType.BodyMedium} color={card.text.primary} numberOfLines={1}>
-              {node.name}
-            </Text>
-          </View>
+      <View style={styles.nodeRow}>
+        <NodeGutter depth={depth} lineColor={ctx.vt.lineColor} terminal={terminalElbow} />
+          <Pressable
+            onPress={hasChildren ? () => ctx.onToggle(node.id) : undefined}
+            disabled={!hasChildren}
+            style={({ pressed }) => [
+              styles.nodeCard,
+              {
+                backgroundColor: pressed
+                  ? isActive
+                    ? ctx.vt.activePressedBg
+                    : ctx.vt.pressedBg
+                  : isActive
+                    ? ctx.vt.activeCardBg
+                    : ctx.vt.cardBg,
+              },
+            ]}
+            accessibilityRole={hasChildren ? "button" : undefined}
+            accessibilityState={hasChildren ? { expanded: !isCollapsed } : undefined}
+            accessibilityLabel={hasChildren ? `${isCollapsed ? "Expandir" : "Colapsar"} ${node.name}` : undefined}
+          >
+            <View style={styles.rowContent}>
+              {ctx.renderNode ? ctx.renderNode(node, defaultContent) : defaultContent}
+            </View>
+          </Pressable>
           {ctx.isEdit ? (
             <Pressable
               onPress={() => ctx.onOpenActions(node.id)}
-              hitSlop={8}
-              style={({ pressed }) => [styles.actions, pressed && styles.pressed]}
+              hitSlop={12}
+              style={({ pressed }) => [styles.actions, pressed && { backgroundColor: ctx.vt.pressedBg }]}
               accessibilityRole="button"
               accessibilityLabel={`Acciones de ${node.name}`}
             >
-              <Icon name="more-horizontal" size={18} color={text.secondary} />
+              <Icon name="more-vertical" size={20} color={ctx.vt.actionsColor} />
             </Pressable>
           ) : null}
-        </View>
-      </Pressable>
+      </View>
       {hasChildren ? (
         <Animated.View style={[styles.subtree, { height: heightAnim }]}>
           <Animated.View style={{ opacity: contentOpacity }}>
-            {renderForest(ctx, node.children, depth + 1)}
-            {ctx.isEdit ? renderAddRow(ctx, node.id, depth + 1) : null}
+            {renderForest(ctx, node.children, depth + 1, node.name)}
           </Animated.View>
         </Animated.View>
       ) : null}
@@ -378,56 +534,80 @@ type DialogState = {
 
 type FormErrors = { code?: string; name?: string };
 
-export function TreeEditor({ value, onChange, mode = "view", rootLabel = "Agregar raíz", style }: TreeEditorProps) {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+export function TreeEditor({ value, onChange, mode = "view", variant = "default", collapsed: collapsedProp, onCollapsedChange, rootLabel = "Agregar raíz", renderNode, onRequestAdd, onRequestEdit, style }: TreeEditorProps) {
+  const [internalCollapsed, setInternalCollapsed] = useState<Record<string, boolean>>({});
+  // Estado inicial implícito: mientras el mapa de colapso esté vacío y haya
+  // datos, se muestra solo la primera rama expandida. Se deriva DURANTE el
+  // render para que el primer frame ya salga correcto (sin flash del árbol
+  // completo), funcione o no el componente sea controlado.
+  const source = collapsedProp ?? internalCollapsed;
+  const needsImplicitInit = value.length > 0 && Object.keys(source).length === 0;
+  const implicitInit = useMemo(
+    () => (needsImplicitInit ? buildInitialCollapsed(value) : null),
+    [needsImplicitInit, value],
+  );
+  const collapsed = implicitInit ?? source;
+
+  // Sincroniza el estado inicial con el dueño del estado.
+  useEffect(() => {
+    if (implicitInit == null) return;
+    if (collapsedProp != null) {
+      onCollapsedChange?.(implicitInit);
+    } else {
+      setInternalCollapsed(implicitInit);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [implicitInit]);
   const [actionsNodeId, setActionsNodeId] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
 
+  const vt = VARIANT_TOKENS[variant];
   const isEdit = mode === "edit";
   const actionsNode = actionsNodeId ? findNode(value, actionsNodeId) : undefined;
   const dialogNode = dialog?.nodeId ? findNode(value, dialog.nodeId) : undefined;
   const dialogParent = dialog?.parentId ? findNode(value, dialog.parentId) : undefined;
 
-  // Filas visibles (respetando colapso) usadas solo para los índices de
-  // conectores. El render real es recursivo y monta siempre los subárboles,
-  // animándolos con overflow hidden.
-  const rows: FlatRow[] = [];
-  buildRows(value, 0, collapsed, isEdit, rows);
-  if (isEdit) {
-    rows.push({ kind: "add", parentId: null, depth: 0 });
-  }
-
-  // Último índice de fila por profundidad + mapas de índice (nodo y fila "+") para los conectores.
-  const lastByDepth: Record<number, number> = {};
-  const nodeIndex = new Map<string, number>();
-  const addIndex = new Map<string, number>();
-  rows.forEach((row, i) => {
-    // Incluye también las filas "+ Agregar": así la línea del padre llega hasta
-    // el botón y se ve como un item más del nivel.
-    lastByDepth[row.depth] = i;
-    if (row.kind === "node") {
-      nodeIndex.set(row.node.id, i);
-    } else {
-      addIndex.set(row.parentId ?? "root", i);
-    }
-  });
-
   const ctx: TreeRenderContext = {
     isEdit,
     collapsed,
-    lastByDepth,
-    nodeIndex,
-    addIndex,
     onToggle: toggleCollapse,
     onOpenActions: openActions,
-    onAdd: openLevelAdd,
+    renderNode,
+    vt,
   };
 
   function toggleCollapse(id: string) {
-    setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
+    const collapsing = !collapsed[id];
+    let next: Record<string, boolean>;
+    if (collapsing) {
+      // Al colapsar un nivel se colapsan también todos sus descendientes,
+      // así al re-expandirlo sus hijos vuelven contraídos.
+      next = { ...collapsed, [id]: true };
+      const node = findNode(value, id);
+      if (node) markBranchCollapsed(node.children, next);
+    } else {
+      // Acordeón por nivel: al expandir un nodo se colapsan sus hermanos
+      // (y las ramas de estos) para que solo uno quede desplegado por nivel.
+      next = { ...collapsed, [id]: false };
+      const siblings = findSiblingGroup(value, id);
+      if (siblings) {
+        for (const s of siblings) {
+          if (s.id !== id && s.children.length > 0) {
+            next[s.id] = true;
+            markBranchCollapsed(s.children, next);
+          }
+        }
+      }
+    }
+    if (collapsedProp != null) {
+      onCollapsedChange?.(next);
+    } else {
+      setInternalCollapsed(next);
+    }
   }
 
   function openActions(nodeId: string) {
@@ -438,47 +618,58 @@ export function TreeEditor({ value, onChange, mode = "view", rootLabel = "Agrega
     setActionsNodeId(null);
     const node = opts.nodeId ? findNode(value, opts.nodeId) : undefined;
     const isEdit = mode === "edit";
-    setCode(isEdit ? String(node?.code ?? "") : String(maxCode(value) + 1));
+    setCode(isEdit ? (node?.code ?? "") : "");
     setName(isEdit ? node?.name ?? "" : "");
     setErrors({});
     setDialog({ mode, nodeId: opts.nodeId, parentId: opts.parentId });
   }
 
-  function openLevelAdd(parentId: string | null) {
-    if (parentId === null) {
-      openDialog("add-root");
+  function openLevelAdd() {
+    if (onRequestAdd) {
+      onRequestAdd(null);
+      setActionsNodeId(null);
       return;
     }
-    const parent = findNode(value, parentId);
-    const lastChild = parent?.children[parent.children.length - 1];
-    if (lastChild) openDialog("add-sibling", { nodeId: lastChild.id });
+    openDialog("add-root");
   }
 
-  function confirmDelete(nodeId: string) {
+  function closeActions() {
     setActionsNodeId(null);
-    const node = findNode(value, nodeId);
-    if (!node) return;
-    const subItems = countNodes(node.children);
-    const message =
-      subItems > 0
-        ? `¿Eliminar "${node.name}" y sus ${subItems} subitem${subItems === 1 ? "" : "s"}?`
-        : `¿Eliminar "${node.name}"?`;
-    Alert.alert("Eliminar", message, [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Eliminar", style: "destructive", onPress: () => onChange(removeNode(value, nodeId)) },
-    ]);
+    setConfirmingDelete(false);
+  }
+
+  function handleAddChild(node: TreeNode) {
+    if (onRequestAdd) {
+      closeActions();
+      onRequestAdd(node.id);
+    } else {
+      openDialog("add-child", { parentId: node.id });
+    }
+  }
+
+  function handleEditNode(node: TreeNode) {
+    if (onRequestEdit) {
+      closeActions();
+      onRequestEdit(node);
+    } else {
+      openDialog("edit", { nodeId: node.id });
+    }
+  }
+
+  function performDelete() {
+    const node = actionsNode;
+    closeActions();
+    if (node) onChange(removeNode(value, node.id));
   }
 
   function save() {
     if (!dialog) return;
     const nextErrors: FormErrors = {};
-    const codeNum = Number(code.trim());
+    const trimmedCode = code.trim();
 
-    if (!code.trim()) {
+    if (!trimmedCode) {
       nextErrors.code = "El código es obligatorio";
-    } else if (!Number.isInteger(codeNum) || codeNum <= 0) {
-      nextErrors.code = "Ingresá un código numérico válido";
-    } else if (hasCode(value, codeNum, dialog.mode === "edit" ? dialog.nodeId : undefined)) {
+    } else if (hasCode(value, trimmedCode, dialog.mode === "edit" ? dialog.nodeId : undefined)) {
       nextErrors.code = "El código ya existe en el árbol";
     }
 
@@ -491,7 +682,7 @@ export function TreeEditor({ value, onChange, mode = "view", rootLabel = "Agrega
       return;
     }
 
-    const node = createNode(codeNum, name.trim());
+    const node = createNode(trimmedCode, name.trim());
     const apply = (nodes: TreeNode[]): TreeNode[] => {
       switch (dialog.mode) {
         case "add-root":
@@ -501,7 +692,7 @@ export function TreeEditor({ value, onChange, mode = "view", rootLabel = "Agrega
         case "add-sibling":
           return dialog.nodeId ? addSibling(nodes, dialog.nodeId, node) : nodes;
         case "edit":
-          return dialog.nodeId ? updateNode(nodes, dialog.nodeId, { code: codeNum, name: name.trim() }) : nodes;
+          return dialog.nodeId ? updateNode(nodes, dialog.nodeId, { code: trimmedCode, name: name.trim() }) : nodes;
       }
     };
     onChange(apply(value));
@@ -523,78 +714,94 @@ export function TreeEditor({ value, onChange, mode = "view", rootLabel = "Agrega
     }
   })();
 
-  const ACTION_SHEET_OPTIONS: {
-    key: string;
-    label: string;
-    icon: IconName;
-    danger?: boolean;
-    onPress: () => void;
-  }[] = actionsNode
-    ? [
-        { key: "child", label: "Agregar hijo", icon: AppIcon.Add, onPress: () => openDialog("add-child", { parentId: actionsNode.id }) },
-        { key: "edit", label: "Editar", icon: AppIcon.Pencil, onPress: () => openDialog("edit", { nodeId: actionsNode.id }) },
-        { key: "delete", label: "Eliminar", icon: AppIcon.Trash, danger: true, onPress: () => confirmDelete(actionsNode.id) },
-      ]
-    : [];
-
-  // Dibuja los conectores de una fila. Lógica verificada contra el render
-  // canónico de VS Code ("├─/│/└─"): por el nivel k pasa una línea mientras
-  // exista una fila posterior de profundidad k+1; la última fila de ese nivel
-  // recibe solo el tramo superior (el codo "└") que se une al stub.
-
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, { backgroundColor: vt.containerBg }, style]}>
+      <View>
+        {renderForest(ctx, value, 0)}
+      </View>
+
       {isEdit ? (
         <Pressable
-          onPress={() => openDialog("add-root")}
-          style={({ pressed }) => [styles.addRoot, pressed && styles.pressed]}
+          onPress={openLevelAdd}
+          style={({ pressed }) => [
+            styles.addRoot,
+            pressed && { backgroundColor: vt.pressedBg },
+          ]}
           accessibilityRole="button"
         >
-          <Icon name="add" size={18} color={cta1} />
-          <Text variant={TextType.BodyMedium} color={cta1}>
+          <View style={[styles.addChip, { borderColor: vt.addRootText }]}>
+            <Icon name="add" size={13} color={vt.addRootText} />
+          </View>
+          <Text variant={TextType.BodyMedium} color={vt.addRootText}>
             {rootLabel}
           </Text>
         </Pressable>
       ) : null}
 
-      <View>
-        {renderForest(ctx, value, 0)}
-        {ctx.isEdit ? renderAddRow(ctx, null, 0) : null}
-      </View>
-
-      <BottomSheet
-        visible={actionsNodeId !== null}
-        onClose={() => setActionsNodeId(null)}
-        title={actionsNode?.name}
-        caption="Seleccioná una acción"
-        showCloseButton
-      >
-        <View style={styles.sheetOptions}>
-          {ACTION_SHEET_OPTIONS.map((option, idx) => (
-            <Pressable
-              key={option.key}
-              onPress={option.onPress}
-              style={({ pressed }) => [
-                styles.sheetOption,
-                idx < ACTION_SHEET_OPTIONS.length - 1 && styles.sheetOptionSeparator,
-                pressed && styles.pressed,
-              ]}
-              accessibilityRole="button"
-            >
-              <Icon name={option.icon} size={20} color={option.danger ? palette.danger : text.default} />
-              <Text variant={TextType.Body} color={option.danger ? palette.danger : card.text.primary}>
-                {option.label}
+      <CardStackSheet visible={actionsNodeId !== null} onClose={closeActions}>
+        <Card>
+          {actionsNode ? (
+            <>
+              <OptionListItem
+                icon={AppIcon.Add}
+                title="Agregar hijo"
+                description="Creá una cuenta dependiente de esta."
+                onPress={() => handleAddChild(actionsNode)}
+                showSeparator
+              />
+              <OptionListItem
+                icon={AppIcon.Pencil}
+                title="Editar"
+                description="Modificá el código y el nombre."
+                onPress={() => handleEditNode(actionsNode)}
+                showSeparator
+              />
+              <OptionListItem
+                icon={AppIcon.Trash}
+                title="Eliminar"
+                description="Borrá la cuenta y sus subcuentas."
+                variant={OptionListItemVariant.Destructive}
+                onPress={() => setConfirmingDelete(true)}
+              />
+            </>
+          ) : null}
+        </Card>
+        <TransitionView contentKey={confirmingDelete ? "confirm" : "none"}>
+          {confirmingDelete && actionsNode ? (
+            <Card>
+              <Text variant={TextType.BodyMedium} color={palette.danger}>
+                {countNodes(actionsNode.children) > 0
+                  ? `¿Eliminar "${actionsNode.name}" y sus ${countNodes(actionsNode.children)} subitem${countNodes(actionsNode.children) === 1 ? "" : "s"}?`
+                  : `¿Eliminar "${actionsNode.name}"?`}
               </Text>
-            </Pressable>
-          ))}
-        </View>
-      </BottomSheet>
+              <Text variant={TextType.Caption} color={vt.textSecondary}>
+                Esta acción no se puede deshacer.
+              </Text>
+              <View style={styles.confirmActions}>
+                <AppButton
+                  label="Cancelar"
+                  variant="ghost"
+                  style={styles.confirmButton}
+                  onPress={() => setConfirmingDelete(false)}
+                />
+                <AppButton
+                  label="Eliminar"
+                  backgroundColor={palette.danger}
+                  textColor="#FFFFFF"
+                  style={styles.confirmButton}
+                  onPress={performDelete}
+                />
+              </View>
+            </Card>
+          ) : null}
+        </TransitionView>
+      </CardStackSheet>
 
       <AppResponsiveDialog
         visible={dialog !== null}
         onClose={() => setDialog(null)}
         title={dialogTitle}
-        caption="El código debe ser numérico y único en todo el árbol"
+        caption="El código debe ser único en todo el árbol"
         snapPoints={["60%"]}
       >
         <View style={styles.dialogBody}>
@@ -605,8 +812,7 @@ export function TreeEditor({ value, onChange, mode = "view", rootLabel = "Agrega
               setCode(v);
               if (errors.code) setErrors((prev) => ({ ...prev, code: undefined }));
             }}
-            keyboardType="number-pad"
-            placeholder="Ej: 1300"
+            placeholder="Ej: 1.1.1.1"
             error={errors.code}
           />
           <TextField
@@ -631,9 +837,7 @@ export function TreeEditor({ value, onChange, mode = "view", rootLabel = "Agrega
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: card.background,
-    borderRadius: radius.md,
-    overflow: "hidden",
+    gap: space.space2,
   },
   pressed: {
     opacity: 0.6,
@@ -641,73 +845,91 @@ const styles = StyleSheet.create({
   addRoot: {
     flexDirection: "row",
     alignItems: "center",
-    gap: space.space2,
-    minHeight: ROW_HEIGHT,
-    paddingHorizontal: space.space3,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: border.divider.secondary,
+    gap: space.space1,
+    minHeight: 44,
+    paddingHorizontal: space.space2,
+    borderRadius: radius.sm,
   },
-  row: {
+  nodeCard: {
     position: "relative",
+    flex: 1,
+    borderRadius: CARD_RADIUS,
     minHeight: ROW_HEIGHT,
     justifyContent: "center",
+    overflow: "hidden",
+    marginBottom: CARD_MARGIN,
   },
-  line: {
+  nodeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  gutterCol: {
+    width: INDENT,
+    alignSelf: "stretch",
+  },
+  gutterRail: {
     position: "absolute",
     width: 1,
-    backgroundColor: LINE_COLOR,
+  },
+  gutterStub: {
+    position: "absolute",
+    height: 1,
+    right: 0,
+    top: "50%",
+    marginTop: -0.5,
   },
   rowContent: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: space.space1,
-    paddingRight: space.space2,
+    gap: space.space2,
+    paddingHorizontal: CARD_PADDING_H,
+    paddingVertical: space.space1,
   },
-  chevron: {
-    width: 24,
+  titleRow: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: space.space2,
   },
-  chevronSpacer: {
-    width: 24,
+  captionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.space2,
+    marginLeft: NODE_ICON_SIZE + space.space2,
+  },
+  codeChip: {
+    borderRadius: 999,
+    paddingHorizontal: space.space4,
+    paddingVertical: 2,
   },
   textBlock: {
-    flex: 1,
-    gap: 1,
+    flex: 0,
+    gap: space.space1,
   },
   actions: {
-    padding: space.space1,
+    padding: space.space2,
     marginLeft: space.space1,
+    marginBottom: CARD_MARGIN,
+    borderRadius: radius.sm,
   },
   subtree: {
     overflow: "hidden",
   },
-  addRow: {
-    flexDirection: "row",
+  addChip: {
+    width: 22,
+    height: 22,
     alignItems: "center",
-    gap: space.space1,
-    minHeight: 34,
-    paddingHorizontal: space.space2,
-    marginVertical: space.space1,
+    justifyContent: "center",
     borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: border.divider.secondary,
-    borderRadius: radius.sm,
+    borderRadius: 11,
   },
-  sheetOptions: {
-    gap: 0,
-  },
-  sheetOption: {
+  confirmActions: {
     flexDirection: "row",
-    alignItems: "center",
     gap: space.space3,
-    minHeight: 52,
-    paddingHorizontal: space.space2,
+    marginTop: space.space4,
   },
-  sheetOptionSeparator: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: border.divider.secondary,
+  confirmButton: {
+    flex: 1,
   },
   dialogBody: {
     gap: space.space4,

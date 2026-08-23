@@ -1,8 +1,9 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Item, ItemStyle, AppIcon } from "@antonella/ui";
+import { Item, ItemStyle, ChipRow, AppIcon } from "@antonella/ui";
 import { resolveSemantic, lightSemantic } from "@antonella/theme";
 import type { ComponentCategory } from "../types";
+import type { IconName } from "@antonella/ui";
 
 const _s = resolveSemantic(lightSemantic);
 
@@ -45,9 +46,35 @@ function ItemNoIconDemo() {
   );
 }
 
+// ── Horizontal chip row ─────────────────────────────────────
+
+const CHIP_OPTIONS = [
+  { icon: AppIcon.Home, label: "Inicio", value: "inicio" },
+  { icon: AppIcon.Chat, label: "Chat", value: "chat" },
+  { icon: AppIcon.Bell, label: "Alertas", value: "alertas" },
+  { icon: AppIcon.Analytics, label: "Reportes", value: "reportes" },
+  { icon: AppIcon.Calendario, label: "Calendario", value: "calendario" },
+  { icon: AppIcon.Configuracion, label: "Ajustes", value: "ajustes" },
+];
+
+function HorizontalChipRowDemo() {
+  return (
+    <View style={[styles.chipSection, { backgroundColor: _s.darkness.bg.default }]}>
+      <ChipRow
+        options={CHIP_OPTIONS}
+        selected="inicio"
+        style={ItemStyle.DARKNESS}
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     gap: 6,
+  },
+  chipSection: {
+    borderRadius: 16,
   },
 });
 
@@ -86,6 +113,14 @@ export const drawerMenuItem: ComponentCategory = {
       description: "Solo texto, sin icono.",
       variants: [
         { id: "all", label: "Items", render: () => <ItemNoIconDemo /> },
+      ],
+    },
+    {
+      id: "horizontal-chip",
+      name: "Chip Row",
+      description: "Fila horizontal con scroll, borde brand al seleccionar.",
+      variants: [
+        { id: "all", label: "Chips", render: () => <HorizontalChipRowDemo /> },
       ],
     },
   ],

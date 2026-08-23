@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { space, brand as brandPalette, neutrals } from "@antonella/theme";
+import { space, brand as brandPalette, neutrals, TextType } from "@antonella/theme";
 import { Text } from "./text";
 import { Icon } from "./Icon";
 import type { IconName } from "./Icon";
@@ -64,7 +64,7 @@ export function Item({
           <Icon name={icon} size={20} color={iconColor} />
         </View>
       ) : null}
-      <Text variant="body" color={textColor} style={styles.label}>
+      <Text variant={TextType.Caption} color={textColor} style={styles.label}>
         {label}
       </Text>
     </Pressable>
@@ -138,5 +138,6 @@ const styles = StyleSheet.create({
   },
   label: {
     flex: 1,
+    paddingRight: space.space5,
   },
 });
