@@ -127,7 +127,7 @@ export function AppSelector({
                 accessibilityRole="button"
               >
                 <Text
-                  variant={TextType.Body}
+                  variant={TextType.Caption}
                   color={isSelected ? cta1 : text.default}
                   numberOfLines={1}
                   style={styles.optionText}

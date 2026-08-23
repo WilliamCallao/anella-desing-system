@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { TextType, palette, space, text } from "@antonella/theme";
+import { TextType, space, text } from "@antonella/theme";
 import { Icon, type IconName } from "./Icon";
 import { Text } from "./text/Text";
 
@@ -24,7 +24,7 @@ export function DialogHeader({
       {icon ? <Icon name={icon} size={28} color={text.default} /> : null}
       {title || caption ? (
         <View style={styles.titles}>
-          {title ? <Text variant={TextType.Title}>{title}</Text> : null}
+          {title ? <Text variant={TextType.Subtitle}>{title}</Text> : null}
           {caption ? <Text variant={TextType.Caption}>{caption}</Text> : null}
         </View>
       ) : null}
@@ -48,8 +48,6 @@ const styles = StyleSheet.create({
     paddingBottom: space.space1,
     marginBottom: space.space2,
     gap: space.space2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: palette.border,
   },
   titles: {
     gap: space.space1,
