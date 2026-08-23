@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   },
   panel: {
     width: "100%",
-    backgroundColor: background.surface,
+    backgroundColor: background.default,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     paddingTop: space.space2,
