@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { StyleSheet, View, Pressable } from "react-native";
+import React, { useState, useEffect } from "react";
+import { StyleSheet, View, Pressable, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   useAnimatedScrollHandler,
+  withTiming,
   interpolate,
   Extrapolation,
 } from "react-native-reanimated";
@@ -68,11 +69,20 @@ export function MainLayoutDemo() {
 
 export function MainLayoutFullScreen() {
   const router = useRouter();
+  const { height: H } = useWindowDimensions();
   const [mode, setMode] = useState<"TEST" | "BOTTOM">("TEST");
   const [showLines, setShowLines] = useState(false);
 
   const isBottom = mode === "BOTTOM";
+  const progress = useSharedValue(0);
   const scrollY = useSharedValue(0);
+  const blueH = useSharedValue(0);
+  const yellowH = useSharedValue(0);
+
+  // Animación de la transición TEST <-> BOTTOM.
+  useEffect(() => {
+    progress.value = withTiming(isBottom ? 1 : 0, { duration: 320 });
+  }, [isBottom, progress]);
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (e) => {
@@ -80,14 +90,22 @@ export function MainLayoutFullScreen() {
     },
   });
 
-  // En BOTTOM la azul sube con el scroll y se desvanece (opacity).
-  const blueFade = useAnimatedStyle(() => ({
+  const redStyle = useAnimatedStyle(() => ({
+    height: interpolate(progress.value, [0, 1], [H / 3, 0]),
+  }));
+
+  const blueStyle = useAnimatedStyle(() => ({
+    height: interpolate(progress.value, [0, 1], [H / 3, blueH.value]),
     opacity: interpolate(
       scrollY.value,
       [0, COLLAPSE],
       [1, 0],
       Extrapolation.CLAMP
     ),
+  }));
+
+  const yellowStyle = useAnimatedStyle(() => ({
+    height: interpolate(progress.value, [0, 1], [H / 3, yellowH.value]),
   }));
 
   const blueContent = (
@@ -118,43 +136,55 @@ export function MainLayoutFullScreen() {
     </View>
   );
 
-  // TEST: tres secciones iguales, sin scroll.
-  if (!isBottom) {
-    return (
-      <MainLayout scroll={false}>
-        <View style={[styles.section, { backgroundColor: "#FF3B30" }]} />
-        <View style={[styles.section, { backgroundColor: "#007AFF" }]}>
-          {blueContent}
-        </View>
-        <View style={[styles.section, { backgroundColor: "#FFCC00" }]} />
-      </MainLayout>
-    );
-  }
-
-  // BOTTOM: scroll de página. La azul sube y se desvanece; la amarilla (lista) es el contenido.
   return (
     <MainLayout scroll={false}>
       <Animated.ScrollView
         style={styles.pageScroll}
-        contentContainerStyle={styles.pageScrollContent}
+        contentContainerStyle={styles.pageContent}
+        scrollEnabled={isBottom}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={onScroll}
       >
         <Animated.View
-          style={[styles.block, { backgroundColor: "#007AFF" }, blueFade]}
+          style={[styles.colBlock, { backgroundColor: "#FF3B30" }, redStyle]}
+        />
+        <Animated.View
+          style={[
+            styles.colBlock,
+            { backgroundColor: "#007AFF", overflow: "hidden" },
+            blueStyle,
+          ]}
         >
-          {blueContent}
+          <View
+            onLayout={(e) => {
+              blueH.value = e.nativeEvent.layout.height;
+            }}
+          >
+            {blueContent}
+          </View>
         </Animated.View>
-        <View style={[styles.block, { backgroundColor: "#FFCC00" }]}>
-          {Array.from({ length: 30 }).map((_, i) => (
-            <View key={i} style={styles.rect}>
-              <Text variant="body" style={styles.rectText}>
-                {`Item ${i + 1}`}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <Animated.View
+          style={[
+            styles.colBlock,
+            { backgroundColor: "#FFCC00", overflow: "hidden" },
+            yellowStyle,
+          ]}
+        >
+          <View
+            onLayout={(e) => {
+              yellowH.value = e.nativeEvent.layout.height;
+            }}
+          >
+            {Array.from({ length: 30 }).map((_, i) => (
+              <View key={i} style={styles.rect}>
+                <Text variant="body" style={styles.rectText}>
+                  {`Item ${i + 1}`}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </Animated.View>
       </Animated.ScrollView>
     </MainLayout>
   );
@@ -174,10 +204,10 @@ const styles = StyleSheet.create({
   pageScroll: {
     flex: 1,
   },
-  pageScrollContent: {
+  pageContent: {
     gap: 0,
   },
-  block: {
+  colBlock: {
     width: "100%",
   },
   midBar: {
@@ -248,7 +278,7 @@ export const mainLayout: ComponentCategory = {
       id: "main-layout",
       name: "MainLayout",
       description:
-        "TEST: tres secciones iguales sin scroll. BOTTOM: la sección roja se oculta y, al scrollear la página, la azul sube y se desvanece mientras la amarilla (lista) es el contenido.",
+        "TEST: tres secciones iguales sin scroll. BOTTOM: la roja colapsa, la azul pasa a su alto de contenido (y se desvanece al scrollear) y la amarilla muestra la lista. La transición entre modos está animada con reanimated.",
       variants: [
         {
           id: "preview",
