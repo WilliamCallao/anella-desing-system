@@ -19,6 +19,8 @@ export type ChipRowProps = {
   selected?: string;
   onSelect?: (value: string) => void;
   style?: ItemStyle;
+  /** Cuando es true, los items se reparten el ancho completo (flex: 1) sin scroll horizontal. */
+  fullWidth?: boolean;
 };
 
 // ── Component ───────────────────────────────────────────────
@@ -28,6 +30,7 @@ export function ChipRow({
   selected: controlledSelected,
   onSelect,
   style = ItemStyle.DARKNESS,
+  fullWidth = false,
 }: ChipRowProps) {
   const [internalSelected, setInternalSelected] = useState(
     options[0]?.value ?? ""
@@ -38,6 +41,24 @@ export function ChipRow({
     onSelect?.(value);
     if (!controlledSelected) setInternalSelected(value);
   };
+
+  if (fullWidth) {
+    return (
+      <View style={styles.fullWidth}>
+        {options.map((opt) => (
+          <View key={opt.value} style={styles.fullWidthItem}>
+            <Item
+              icon={opt.icon}
+              label={opt.label}
+              style={style}
+              selected={selected === opt.value}
+              onPress={() => handlePress(opt.value)}
+            />
+          </View>
+        ))}
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -66,5 +87,12 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingLeft: space.space3,
     paddingRight: space.space3,
+  },
+  fullWidth: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  fullWidthItem: {
+    flex: 1,
   },
 });

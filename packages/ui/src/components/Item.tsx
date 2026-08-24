@@ -61,7 +61,7 @@ export function Item({
     >
       {icon ? (
         <View style={[styles.iconCircle, { backgroundColor: iconBg }]}>
-          <Icon name={icon} size={20} color={iconColor} />
+          <Icon name={icon} size={18} color={iconColor} />
         </View>
       ) : null}
       <Text variant={TextType.Caption} color={textColor} style={styles.label}>
@@ -125,19 +125,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: space.space2,
-    minHeight: 54,
+    minHeight: 44,
     padding: space.space1,
     borderRadius: 9999,
   },
   iconCircle: {
-    width: 46,
-    height: 46,
+    width: 36,
+    height: 36,
     borderRadius: 9999,
     alignItems: "center",
     justifyContent: "center",
   },
   label: {
     flex: 1,
-    paddingRight: space.space5,
+    paddingRight: space.space4,
   },
 });
