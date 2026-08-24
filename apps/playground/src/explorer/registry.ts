@@ -14,6 +14,8 @@ import { filtros } from "./categories/filtros";
 import { formularios } from "./categories/formularios";
 import { inputs } from "./categories/inputs";
 import { layout } from "./categories/layout";
+import { sheetLayout } from "./categories/sheet-layout";
+import { mainLayout } from "./categories/main-layout";
 import { other } from "./categories/other";
 import { semanticTokens } from "./categories/semantic-tokens";
 import { tipografia } from "./categories/tipografia";
@@ -21,7 +23,7 @@ import type { ComponentCategory } from "./types";
 
 export type { ComponentCategory, ComponentEntry, VariantDemo } from "./types";
 
-export const componentCategories = [formularios, inputs, animaciones, botones, dialogos, checklists, filtros, arbol, other, tipografia, bottomBars, composingOrb, drawerMenu, drawerMenuItem, searchBar, categoryText, layout];
+export const componentCategories = [formularios, inputs, animaciones, botones, dialogos, checklists, filtros, arbol, other, tipografia, bottomBars, composingOrb, drawerMenu, drawerMenuItem, searchBar, categoryText, layout, sheetLayout, mainLayout];
 
 export const sectionCategories: ComponentCategory[] = [colores, semanticTokens];
 

@@ -12,6 +12,7 @@
     "lint": "turbo lint"
   },
   "devDependencies": {
+    "expo-router": "~6.0.24",
     "react-native-keyboard-controller": "1.18.5",
     "react-native-reanimated": "^4.1.7",
     "react-native-worklets": "^0.5.1",
