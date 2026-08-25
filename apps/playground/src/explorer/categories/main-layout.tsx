@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { StyleSheet, View, Pressable, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import Animated, {
@@ -13,7 +13,8 @@ import { Button, MainLayout, Text } from "@antonella/ui";
 import type { ComponentCategory } from "../types";
 
 const COLLAPSE = 160;
-const APP_OPTIONS = ["TEST", "BOTTOM"] as const;
+const APP_OPTIONS = ["TEST", "BOTTOM", "FULLBOTTOM"] as const;
+const MODE_INDEX = { TEST: 0, BOTTOM: 1, FULLBOTTOM: 2 } as const;
 
 function AppSelector({
   value,
@@ -70,19 +71,46 @@ export function MainLayoutDemo() {
 export function MainLayoutFullScreen() {
   const router = useRouter();
   const { height: H } = useWindowDimensions();
-  const [mode, setMode] = useState<"TEST" | "BOTTOM">("TEST");
+  const [mode, setMode] = useState<"TEST" | "BOTTOM" | "FULLBOTTOM">("TEST");
   const [showLines, setShowLines] = useState(false);
 
-  const isBottom = mode === "BOTTOM";
+  const isBottom = mode === "BOTTOM" || mode === "FULLBOTTOM";
+  const isFullBottom = mode === "FULLBOTTOM";
   const progress = useSharedValue(0);
   const scrollY = useSharedValue(0);
   const blueH = useSharedValue(0);
   const yellowH = useSharedValue(0);
+  const scrollRef = useRef<Animated.ScrollView>(null);
 
-  // Animación de la transición TEST <-> BOTTOM.
+  // Animación de la transición TEST (0) <-> BOTTOM (1) <-> FULLBOTTOM (2).
   useEffect(() => {
-    progress.value = withTiming(isBottom ? 1 : 0, { duration: 320 });
-  }, [isBottom, progress]);
+    console.log(
+      "[MODE] transición ->",
+      mode,
+      "| isBottom:",
+      isBottom,
+      "| isFullBottom:",
+      isFullBottom,
+      "| progress target:",
+      MODE_INDEX[mode],
+      "| blueH:",
+      blueH.value,
+      "| yellowH:",
+      yellowH.value
+    );
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+    scrollY.value = 0;
+    progress.value = withTiming(MODE_INDEX[mode], { duration: 320 }, () => {
+      console.log(
+        "[PROGRESS] completado ->",
+        mode,
+        "| blueH:",
+        blueH.value,
+        "| yellowH:",
+        yellowH.value
+      );
+    });
+  }, [mode, progress]);
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (e) => {
@@ -91,11 +119,11 @@ export function MainLayoutFullScreen() {
   });
 
   const redStyle = useAnimatedStyle(() => ({
-    height: interpolate(progress.value, [0, 1], [H / 3, 0]),
+    height: interpolate(progress.value, [0, 1, 2], [H / 3, 0, 0]),
   }));
 
   const blueStyle = useAnimatedStyle(() => ({
-    height: interpolate(progress.value, [0, 1], [H / 3, blueH.value]),
+    height: interpolate(progress.value, [0, 1, 2], [H / 3, blueH.value, 0]),
     opacity: interpolate(
       scrollY.value,
       [0, COLLAPSE],
@@ -105,7 +133,7 @@ export function MainLayoutFullScreen() {
   }));
 
   const yellowStyle = useAnimatedStyle(() => ({
-    height: interpolate(progress.value, [0, 1], [H / 3, yellowH.value]),
+    height: interpolate(progress.value, [0, 1, 2], [H / 3, yellowH.value, yellowH.value]),
   }));
 
   const blueContent = (
@@ -116,7 +144,7 @@ export function MainLayoutFullScreen() {
       </Text>
       <AppSelector
         value={mode}
-        onChange={(v) => setMode(v as "TEST" | "BOTTOM")}
+        onChange={(v) => setMode(v as "TEST" | "BOTTOM" | "FULLBOTTOM")}
       />
       <Button
         variant="secondary"
@@ -139,9 +167,10 @@ export function MainLayoutFullScreen() {
   return (
     <MainLayout scroll={false}>
       <Animated.ScrollView
+        ref={scrollRef}
         style={styles.pageScroll}
         contentContainerStyle={styles.pageContent}
-        scrollEnabled={isBottom}
+        scrollEnabled={isBottom || isFullBottom}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={onScroll}
@@ -158,7 +187,11 @@ export function MainLayoutFullScreen() {
         >
           <View
             onLayout={(e) => {
-              blueH.value = e.nativeEvent.layout.height;
+              const h = e.nativeEvent.layout.height;
+              console.log("[BLUE] onLayout height =", h, "| mode:", mode);
+              // En FULLBOTTOM la azul colapsa y su onLayout reporta 0; no
+              // sobreescribimos la medida natural, si no BOTTOM no reaparece.
+              if (mode !== "FULLBOTTOM") blueH.value = h;
             }}
           >
             {blueContent}
@@ -173,9 +206,22 @@ export function MainLayoutFullScreen() {
         >
           <View
             onLayout={(e) => {
-              yellowH.value = e.nativeEvent.layout.height;
+              const h = e.nativeEvent.layout.height;
+              console.log("[YELLOW] onLayout height =", h, "| mode:", mode);
+              yellowH.value = h;
             }}
           >
+            {isFullBottom && (
+              <View style={styles.fullBar}>
+                <Text variant="heading" style={styles.selectorLabel}>
+                  App
+                </Text>
+                <AppSelector
+                  value={mode}
+                  onChange={(v) => setMode(v as "TEST" | "BOTTOM" | "FULLBOTTOM")}
+                />
+              </View>
+            )}
             {Array.from({ length: 30 }).map((_, i) => (
               <View key={i} style={styles.rect}>
                 <Text variant="body" style={styles.rectText}>
@@ -217,6 +263,11 @@ const styles = StyleSheet.create({
   },
   selectorLabel: {
     color: "#FFFFFF",
+  },
+  fullBar: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    gap: 12,
   },
   selectorRow: {
     flexDirection: "row",
@@ -278,7 +329,7 @@ export const mainLayout: ComponentCategory = {
       id: "main-layout",
       name: "MainLayout",
       description:
-        "TEST: tres secciones iguales sin scroll. BOTTOM: la roja colapsa, la azul pasa a su alto de contenido (y se desvanece al scrollear) y la amarilla muestra la lista. La transición entre modos está animada con reanimated.",
+        "TEST: tres secciones iguales sin scroll. BOTTOM: la roja colapsa, la azul pasa a su alto de contenido (y se desvanece al scrollear) y la amarilla muestra la lista. FULLBOTTOM: roja y azul a alto 0, solo queda la amarilla. La transición entre modos está animada con reanimated.",
       variants: [
         {
           id: "preview",
