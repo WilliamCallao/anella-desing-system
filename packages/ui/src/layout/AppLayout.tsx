@@ -2,12 +2,13 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
 } from "react";
-import { StyleSheet, View, type LayoutChangeEvent } from "react-native";
+import { BackHandler, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 import { useWindowDimensions } from "react-native";
 import Animated, {
   useSharedValue,
@@ -169,6 +170,17 @@ export function AppLayout({
   }, []);
   const canGoBack = stack.length > 1;
   const currentRoute = stack[stack.length - 1];
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (canGoBack) {
+        back();
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [canGoBack, back]);
 
   const navigationValue: AppNavigation = {
     navigate,
