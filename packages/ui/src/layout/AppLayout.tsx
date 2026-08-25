@@ -14,9 +14,11 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   useAnimatedScrollHandler,
+  useDerivedValue,
   withTiming,
   interpolate,
   Extrapolation,
+  Easing,
   type SharedValue,
 } from "react-native-reanimated";
 import { Button } from "../components/Button";
@@ -205,18 +207,10 @@ export function AppLayout({
   const showTopDivisor = topVisible && (midVisible || bottomVisible);
   const showBottomDivisor = bottomVisible && (topVisible || midVisible);
 
-  const topHeight = useSharedValue(H / 3);
-  const midHeight = useSharedValue(H / 3);
-  const bottomHeight = useSharedValue(H / 3);
   const topNatural = useSharedValue(H / 3);
   const midNatural = useSharedValue(H / 3);
   const bottomNatural = useSharedValue(H / 3);
 
-  const heights: Record<SectionKey, SharedValue<number>> = {
-    top: topHeight,
-    mid: midHeight,
-    bottom: bottomHeight,
-  };
   const naturals: Record<SectionKey, SharedValue<number>> = {
     top: topNatural,
     mid: midNatural,
@@ -226,6 +220,37 @@ export function AppLayout({
   const animating = useSharedValue(0);
   const scrollY = useSharedValue(0);
   const scrollRef = useRef<Animated.ScrollView>(null);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Motor de transición: un solo driver `progress` (0 -> 1). Cada altura se
+  // deriva como interpolate(progress, [fromH, toH]). `toH` se actualiza en vivo
+  // con la medición del contenido, de modo que ninguna sección salta a 0 de
+  // golpe: todo es interpolación continua y coordinada.
+  const progress = useSharedValue(1);
+  const fromH: Record<SectionKey, SharedValue<number>> = {
+    top: useSharedValue(H / 3),
+    mid: useSharedValue(H / 3),
+    bottom: useSharedValue(H / 3),
+  };
+  const toH: Record<SectionKey, SharedValue<number>> = {
+    top: useSharedValue(H / 3),
+    mid: useSharedValue(H / 3),
+    bottom: useSharedValue(H / 3),
+  };
+  const topDisplay = useDerivedValue(() =>
+    interpolate(progress.value, [0, 1], [fromH.top.value, toH.top.value])
+  );
+  const midDisplay = useDerivedValue(() =>
+    interpolate(progress.value, [0, 1], [fromH.mid.value, toH.mid.value])
+  );
+  const bottomDisplay = useDerivedValue(() =>
+    interpolate(progress.value, [0, 1], [fromH.bottom.value, toH.bottom.value])
+  );
+  const display: Record<SectionKey, SharedValue<number>> = {
+    top: topDisplay,
+    mid: midDisplay,
+    bottom: bottomDisplay,
+  };
 
   const onScroll = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
@@ -252,39 +277,40 @@ export function AppLayout({
   const makeOnMeasure = (k: SectionKey) => (e: LayoutChangeEvent) => {
     const h = e.nativeEvent.layout.height;
     naturals[k].value = h;
-    if (animating.value === 0) {
-      const b = state.sections[k];
-      if (b?.height === "content") {
-        heights[k].value = h;
-      }
-      for (const j of SECTION_KEYS) {
-        const bj = state.sections[j];
-        if (bj?.visible && bj.height === "fillRest" && bj.restsOn === k) {
-          heights[j].value = H - h;
-        }
+    const b = state.sections[k];
+    if (b?.height === "content") {
+      toH[k].value = h;
+      if (progress.value === 1) fromH[k].value = h;
+    }
+    for (const j of SECTION_KEYS) {
+      const bj = state.sections[j];
+      if (bj?.visible && bj.height === "fillRest" && bj.restsOn === k) {
+        toH[j].value = H - h;
+        if (progress.value === 1) fromH[j].value = H - h;
       }
     }
   };
 
   useLayoutEffect(() => {
-    scrollRef.current?.scrollTo({ y: 0, animated: false });
-    scrollY.value = 0;
+    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
     animating.value = 1;
     const targets = computeTargets(state);
-    const done = () => {
-      animating.value = 0;
-      for (const k of SECTION_KEYS) {
-        const b = state.sections[k];
-        if (!b?.visible) continue;
-        if (b.height === "content") heights[k].value = naturals[k].value;
-        else if (b.height === "fillRest" && b.restsOn) {
-          heights[k].value = H - naturals[b.restsOn].value;
-        }
-      }
-    };
     for (const k of SECTION_KEYS) {
-      heights[k].value = withTiming(targets[k], { duration: TRANSITION }, done);
+      fromH[k].value = display[k].value;
+      toH[k].value = targets[k];
     }
+    progress.value = 0;
+    progress.value = withTiming(
+      1,
+      { duration: TRANSITION, easing: Easing.inOut(Easing.cubic) },
+      () => {
+        animating.value = 0;
+      }
+    );
+    settleTimerRef.current = setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      scrollY.value = 0;
+    }, TRANSITION);
     if (debug) {
       // eslint-disable-next-line no-console
       console.log("[APP] transition ->", currentRoute.name, targets);
@@ -292,15 +318,15 @@ export function AppLayout({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRoute.name]);
 
-  const topStyle = useAnimatedStyle(() => ({ height: topHeight.value }));
+  const topStyle = useAnimatedStyle(() => ({ height: topDisplay.value }));
   const midStyle = useAnimatedStyle(() => ({
-    height: midHeight.value,
+    height: midDisplay.value,
     opacity:
       state.sections.mid?.fadeOnScroll && state.pageScroll
         ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
         : 1,
   }), [state, H]);
-  const bottomStyle = useAnimatedStyle(() => ({ height: bottomHeight.value }));
+  const bottomStyle = useAnimatedStyle(() => ({ height: bottomDisplay.value }));
 
   const stylesFor = {
     top: topStyle,
