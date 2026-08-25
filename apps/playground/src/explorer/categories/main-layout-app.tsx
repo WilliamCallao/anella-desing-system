@@ -41,8 +41,8 @@ function HomeHeader() {
         Inicio
       </Text>
       <Text variant="body" style={styles.screenSubtitle}>
-        Layout "bottom": el header se desvanece al scrollear y el body (abajo) tiene la
-        navegación encadenada a otras pantallas.
+        Layout "bottom": el footer (abajo) scrollea y arrastra la parte superior; el header
+        se desvanece al bajar.
       </Text>
     </View>
   );
@@ -61,6 +61,7 @@ function HomeFooter() {
       <Button label="Ir a Artículo (fullBottom)" onPress={() => navigate(routes.article)} />
       <Button label="Ir a Perfil (top)" onPress={() => navigate(routes.profile)} />
       <Button label="Ir a Ajustes (bottom)" onPress={() => navigate(routes.settings)} />
+      <Button label="Ir a TreeScreen (bottom)" onPress={() => navigate(routes.treescreen)} />
       <Button label="Ver Galería (onlyCenter)" onPress={() => navigate(routes.gallery)} />
       <Button label="Vista debug (stacked)" onPress={() => navigate(routes.stacked)} />
       <MockList n={12} label="Novedad" />
@@ -155,6 +156,36 @@ function StackedFooter() {
   return pad(<Text variant="caption">Footer (stacked)</Text>);
 }
 
+function TreeHeader() {
+  return pad(
+    <View style={styles.gap}>
+      <Text variant="heading" style={styles.treeTitle}>
+        Tree Screen
+      </Text>
+      <Text variant="body" style={styles.treeTextDark}>
+        Fila 1 de texto
+      </Text>
+      <Text variant="body" style={styles.treeTextDark}>
+        Fila 2 de texto
+      </Text>
+      <Text variant="body" style={styles.treeTextDark}>
+        Fila 3 de texto
+      </Text>
+      <Text variant="body" style={styles.treeTextDark}>
+        Fila 4 de texto
+      </Text>
+    </View>
+  );
+}
+
+function TreeFooter() {
+  return pad(
+    <Text variant="body" style={styles.treeTextLight}>
+      Una línea de texto simple al pie de la pantalla.
+    </Text>
+  );
+}
+
 const routes: Record<string, AppRoute> = {
   home: {
     name: "home",
@@ -185,6 +216,11 @@ const routes: Record<string, AppRoute> = {
     name: "stacked",
     state: "stacked",
     slots: { header: <StackedHeader />, body: <StackedBody />, footer: <StackedFooter /> },
+  },
+  treescreen: {
+    name: "treescreen",
+    state: "bottom",
+    slots: { header: <TreeHeader />, footer: <TreeFooter /> },
   },
 };
 
@@ -228,6 +264,17 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.35)",
+  },
+  treeTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1C1C1E",
+  },
+  treeTextDark: {
+    color: "#1C1C1E",
+  },
+  treeTextLight: {
+    color: "#FFFFFF",
   },
 });
 

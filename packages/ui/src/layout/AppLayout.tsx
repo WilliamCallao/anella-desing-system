@@ -201,6 +201,14 @@ export function AppLayout({
       : currentRoute.state;
   const slots = currentRoute.slots ?? {};
 
+  // Cuando el footer es visible, el fondo inferior toma su color para dar la
+  // ilusión de que la hoja oscura ocupa todo el alto disponible (aunque su
+  // contenido sea corto y la página scrollee).
+  const pageBg =
+    state.sections.bottom?.visible
+      ? state.sections.bottom.backgroundColor ?? DARK_BG
+      : DEFAULT_BG;
+
   const topVisible = !!state.sections.top?.visible;
   const midVisible = !!state.sections.mid?.visible;
   const bottomVisible = !!state.sections.bottom?.visible;
@@ -220,6 +228,7 @@ export function AppLayout({
   const animating = useSharedValue(0);
   const scrollY = useSharedValue(0);
   const scrollRef = useRef<Animated.ScrollView>(null);
+  const innerScrollRef = useRef<Animated.ScrollView>(null);
   const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Motor de transición: un solo driver `progress` (0 -> 1). Cada altura se
@@ -279,14 +288,14 @@ export function AppLayout({
     naturals[k].value = h;
     const b = state.sections[k];
     if (b?.height === "content") {
+      fromH[k].value = display[k].value;
       toH[k].value = h;
-      if (progress.value === 1) fromH[k].value = h;
     }
     for (const j of SECTION_KEYS) {
       const bj = state.sections[j];
       if (bj?.visible && bj.height === "fillRest" && bj.restsOn === k) {
+        fromH[j].value = display[j].value;
         toH[j].value = H - h;
-        if (progress.value === 1) fromH[j].value = H - h;
       }
     }
   };
@@ -296,6 +305,8 @@ export function AppLayout({
     animating.value = 1;
     if (!state.pageScroll) {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
+      innerScrollRef.current?.scrollTo({ y: 0, animated: false });
+      scrollY.value = 0;
     }
     const targets = computeTargets(state);
     for (const k of SECTION_KEYS) {
@@ -325,7 +336,7 @@ export function AppLayout({
   const midStyle = useAnimatedStyle(() => ({
     height: midDisplay.value,
     opacity:
-      state.sections.mid?.fadeOnScroll && state.pageScroll
+      state.sections.mid?.fadeOnScroll
         ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
         : 1,
   }), [state, H]);
@@ -363,6 +374,7 @@ export function AppLayout({
         )}
         {b.scroll ? (
           <Animated.ScrollView
+            ref={innerScrollRef}
             style={styles.innerScroll}
             showsVerticalScrollIndicator={false}
             scrollEventThrottle={16}
@@ -379,11 +391,11 @@ export function AppLayout({
 
   return (
     <AppNavigationContext.Provider value={navigationValue}>
-      <View style={[styles.root, { backgroundColor: DEFAULT_BG }]}>
+      <View style={[styles.root, { backgroundColor: pageBg }]}>
         <Animated.ScrollView
           ref={scrollRef}
           style={styles.pageScroll}
-          contentContainerStyle={styles.pageContent}
+          contentContainerStyle={[styles.pageContent, { backgroundColor: pageBg }]}
           scrollEnabled={!!state.pageScroll}
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={16}
