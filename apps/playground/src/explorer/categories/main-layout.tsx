@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { StyleSheet, View, Pressable, useWindowDimensions } from "react-native";
+import { StyleSheet, View, Pressable, ScrollView, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import Animated, {
   useSharedValue,
@@ -13,8 +13,7 @@ import { Button, MainLayout, Text } from "@antonella/ui";
 import type { ComponentCategory } from "../types";
 
 const COLLAPSE = 160;
-const APP_OPTIONS = ["TEST", "BOTTOM", "FULLBOTTOM"] as const;
-const MODE_INDEX = { TEST: 0, BOTTOM: 1, FULLBOTTOM: 2 } as const;
+const APP_OPTIONS = ["TEST", "BOTTOM", "FULLBOTTOM", "ONLYCENTER"] as const;
 
 function AppSelector({
   value,
@@ -24,7 +23,12 @@ function AppSelector({
   onChange: (v: string) => void;
 }) {
   return (
-    <View style={styles.selectorRow}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.selectorRow}
+      contentContainerStyle={styles.selectorRowContent}
+    >
       {APP_OPTIONS.map((opt) => (
         <Pressable
           key={opt}
@@ -46,7 +50,7 @@ function AppSelector({
           </Text>
         </Pressable>
       ))}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -71,18 +75,26 @@ export function MainLayoutDemo() {
 export function MainLayoutFullScreen() {
   const router = useRouter();
   const { height: H } = useWindowDimensions();
-  const [mode, setMode] = useState<"TEST" | "BOTTOM" | "FULLBOTTOM">("TEST");
+  const [mode, setMode] = useState<"TEST" | "BOTTOM" | "FULLBOTTOM" | "ONLYCENTER">(
+    "TEST"
+  );
   const [showLines, setShowLines] = useState(false);
 
   const isBottom = mode === "BOTTOM" || mode === "FULLBOTTOM";
   const isFullBottom = mode === "FULLBOTTOM";
-  const progress = useSharedValue(0);
-  const scrollY = useSharedValue(0);
-  const blueH = useSharedValue(0);
-  const yellowH = useSharedValue(0);
-  const scrollRef = useRef<Animated.ScrollView>(null);
+  const isOnlyCenter = mode === "ONLYCENTER";
 
-  // Animación de la transición TEST (0) <-> BOTTOM (1) <-> FULLBOTTOM (2).
+  const scrollRef = useRef<Animated.ScrollView>(null);
+  const scrollY = useSharedValue(0);
+  const animating = useSharedValue(0);
+  const redHeight = useSharedValue(H / 3);
+  const blueHeight = useSharedValue(H / 3);
+  const yellowHeight = useSharedValue(H / 3);
+  const blueNatural = useSharedValue(0);
+  const yellowNatural = useSharedValue(0);
+
+  // Alturas animadas DIRECTO al objetivo del modo (sin pasar por otros modos,
+  // evita que BOTTOM<->ONLYCENTER crucen por el 0 de FULLBOTTOM).
   useEffect(() => {
     console.log(
       "[MODE] transición ->",
@@ -91,26 +103,40 @@ export function MainLayoutFullScreen() {
       isBottom,
       "| isFullBottom:",
       isFullBottom,
-      "| progress target:",
-      MODE_INDEX[mode],
-      "| blueH:",
-      blueH.value,
-      "| yellowH:",
-      yellowH.value
+      "| isOnlyCenter:",
+      isOnlyCenter,
+      "| blueNatural:",
+      blueNatural.value,
+      "| yellowNatural:",
+      yellowNatural.value
     );
     scrollRef.current?.scrollTo({ y: 0, animated: false });
     scrollY.value = 0;
-    progress.value = withTiming(MODE_INDEX[mode], { duration: 320 }, () => {
-      console.log(
-        "[PROGRESS] completado ->",
-        mode,
-        "| blueH:",
-        blueH.value,
-        "| yellowH:",
-        yellowH.value
-      );
-    });
-  }, [mode, progress]);
+    animating.value = 1;
+    const targets = {
+      red: mode === "TEST" ? H / 3 : 0,
+      blue:
+        mode === "TEST"
+          ? H / 3
+          : mode === "BOTTOM"
+          ? blueNatural.value
+          : mode === "FULLBOTTOM"
+          ? 0
+          : H,
+      yellow:
+        mode === "TEST"
+          ? H / 3
+          : mode === "ONLYCENTER"
+          ? 0
+          : yellowNatural.value,
+    };
+    const done = () => {
+      animating.value = 0;
+    };
+    redHeight.value = withTiming(targets.red, { duration: 320 }, done);
+    blueHeight.value = withTiming(targets.blue, { duration: 320 }, done);
+    yellowHeight.value = withTiming(targets.yellow, { duration: 320 }, done);
+  }, [mode]);
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (e) => {
@@ -119,21 +145,22 @@ export function MainLayoutFullScreen() {
   });
 
   const redStyle = useAnimatedStyle(() => ({
-    height: interpolate(progress.value, [0, 1, 2], [H / 3, 0, 0]),
+    height: redHeight.value,
   }));
 
-  const blueStyle = useAnimatedStyle(() => ({
-    height: interpolate(progress.value, [0, 1, 2], [H / 3, blueH.value, 0]),
-    opacity: interpolate(
-      scrollY.value,
-      [0, COLLAPSE],
-      [1, 0],
-      Extrapolation.CLAMP
-    ),
-  }));
+  const blueStyle = useAnimatedStyle(
+    () => ({
+      height: blueHeight.value,
+      // El fade solo aplica en BOTTOM; en ONLYCENTER la azul scrollea a sí misma.
+      opacity: isBottom
+        ? interpolate(scrollY.value, [0, COLLAPSE], [1, 0], Extrapolation.CLAMP)
+        : 1,
+    }),
+    [isBottom, H]
+  );
 
   const yellowStyle = useAnimatedStyle(() => ({
-    height: interpolate(progress.value, [0, 1, 2], [H / 3, yellowH.value, yellowH.value]),
+    height: yellowHeight.value,
   }));
 
   const blueContent = (
@@ -144,7 +171,7 @@ export function MainLayoutFullScreen() {
       </Text>
       <AppSelector
         value={mode}
-        onChange={(v) => setMode(v as "TEST" | "BOTTOM" | "FULLBOTTOM")}
+        onChange={(v) => setMode(v as "TEST" | "BOTTOM" | "FULLBOTTOM" | "ONLYCENTER")}
       />
       <Button
         variant="secondary"
@@ -185,17 +212,45 @@ export function MainLayoutFullScreen() {
             blueStyle,
           ]}
         >
-          <View
-            onLayout={(e) => {
-              const h = e.nativeEvent.layout.height;
-              console.log("[BLUE] onLayout height =", h, "| mode:", mode);
-              // En FULLBOTTOM la azul colapsa y su onLayout reporta 0; no
-              // sobreescribimos la medida natural, si no BOTTOM no reaparece.
-              if (mode !== "FULLBOTTOM") blueH.value = h;
-            }}
-          >
-            {blueContent}
-          </View>
+          {isOnlyCenter ? (
+            <Animated.ScrollView
+              style={styles.blueScroll}
+              showsVerticalScrollIndicator={false}
+              scrollEventThrottle={16}
+              onScroll={onScroll}
+            >
+              <View style={styles.midBar}>{blueContent}</View>
+              {Array.from({ length: 30 }).map((_, i) => (
+                <View key={i} style={[styles.rect, { backgroundColor: "#E5E5EA" }]}>
+                  <Text variant="body" style={styles.rectText}>
+                    {`Item ${i + 1}`}
+                  </Text>
+                </View>
+              ))}
+            </Animated.ScrollView>
+          ) : (
+            <View
+              onLayout={(e) => {
+                const h = e.nativeEvent.layout.height;
+                console.log(
+                  "[BLUE] onLayout =",
+                  h,
+                  "| mode:",
+                  mode,
+                  "| animating:",
+                  animating.value
+                );
+                // Solo medimos la altura natural cuando el modo es estable
+                // (TEST/BOTTOM) y la animación terminó; si no, el onLayout
+                // reporta la altura recortada durante el colapso.
+                if ((mode === "TEST" || mode === "BOTTOM") && animating.value === 0) {
+                  blueNatural.value = h;
+                }
+              }}
+            >
+              {blueContent}
+            </View>
+          )}
         </Animated.View>
         <Animated.View
           style={[
@@ -207,8 +262,17 @@ export function MainLayoutFullScreen() {
           <View
             onLayout={(e) => {
               const h = e.nativeEvent.layout.height;
-              console.log("[YELLOW] onLayout height =", h, "| mode:", mode);
-              yellowH.value = h;
+              console.log(
+                "[YELLOW] onLayout =",
+                h,
+                "| mode:",
+                mode,
+                "| animating:",
+                animating.value
+              );
+              if (animating.value === 0 && mode !== "ONLYCENTER") {
+                yellowNatural.value = h;
+              }
             }}
           >
             {isFullBottom && (
@@ -218,7 +282,9 @@ export function MainLayoutFullScreen() {
                 </Text>
                 <AppSelector
                   value={mode}
-                  onChange={(v) => setMode(v as "TEST" | "BOTTOM" | "FULLBOTTOM")}
+                  onChange={(v) =>
+                    setMode(v as "TEST" | "BOTTOM" | "FULLBOTTOM" | "ONLYCENTER")
+                  }
                 />
               </View>
             )}
@@ -256,6 +322,9 @@ const styles = StyleSheet.create({
   colBlock: {
     width: "100%",
   },
+  blueScroll: {
+    flex: 1,
+  },
   midBar: {
     paddingTop: 12,
     paddingHorizontal: 12,
@@ -264,14 +333,12 @@ const styles = StyleSheet.create({
   selectorLabel: {
     color: "#FFFFFF",
   },
-  fullBar: {
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    gap: 12,
-  },
   selectorRow: {
-    flexDirection: "row",
+    flexGrow: 0,
+  },
+  selectorRowContent: {
     gap: 8,
+    paddingVertical: 2,
   },
   chip: {
     paddingHorizontal: 16,
@@ -307,6 +374,11 @@ const styles = StyleSheet.create({
   rectText: {
     color: "#000000",
   },
+  fullBar: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    gap: 12,
+  },
 });
 
 function FullScreenButton() {
@@ -329,7 +401,7 @@ export const mainLayout: ComponentCategory = {
       id: "main-layout",
       name: "MainLayout",
       description:
-        "TEST: tres secciones iguales sin scroll. BOTTOM: la roja colapsa, la azul pasa a su alto de contenido (y se desvanece al scrollear) y la amarilla muestra la lista. FULLBOTTOM: roja y azul a alto 0, solo queda la amarilla. La transición entre modos está animada con reanimated.",
+        "TEST: tres secciones iguales sin scroll. BOTTOM: la roja colapsa, la azul pasa a su alto de contenido (y se desvanece al scrollear) y la amarilla muestra la lista. FULLBOTTOM: roja y azul a 0, solo amarilla. ONLYCENTER: roja y amarilla a 0, la azul ocupa toda la pantalla y scrollea a sí misma. La transición entre modos está animada con reanimated.",
       variants: [
         {
           id: "preview",
