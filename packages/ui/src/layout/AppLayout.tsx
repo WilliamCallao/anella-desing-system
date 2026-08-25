@@ -21,12 +21,14 @@ import Animated, {
 } from "react-native-reanimated";
 import { Button } from "../components/Button";
 import { Text } from "../components/text";
+import { Divisor } from "./Divisor";
 import { resolveSemantic, lightSemantic } from "@antonella/theme";
 
 const _semantic = resolveSemantic(lightSemantic);
 const DEFAULT_BG = _semantic.default.bg.default;
+const DARK_BG = _semantic.darkness.bg.default;
 
-export type SectionKey = "red" | "blue" | "yellow";
+export type SectionKey = "top" | "mid" | "bottom";
 export type HeightSpec = "content" | "fill" | "fillRest" | "third" | number;
 export type SlotName = "header" | "body" | "footer";
 
@@ -85,50 +87,50 @@ export const layoutStates: Record<LayoutStateName, LayoutState> = {
   stacked: {
     pageScroll: false,
     sections: {
-      red: { visible: true, height: "third", slot: "header", backgroundColor: "#FF3B30" },
-      blue: { visible: true, height: "third", slot: "body", backgroundColor: "#007AFF" },
-      yellow: { visible: true, height: "third", slot: "footer", backgroundColor: "#FFCC00" },
+      top: { visible: true, height: "third", slot: "header", backgroundColor: DARK_BG },
+      mid: { visible: true, height: "third", slot: "body", backgroundColor: DEFAULT_BG },
+      bottom: { visible: true, height: "third", slot: "footer", backgroundColor: DARK_BG },
     },
   },
   bottom: {
     pageScroll: true,
     sections: {
-      red: { visible: false },
-      blue: { visible: true, height: "content", fadeOnScroll: true, slot: "header", backgroundColor: "#007AFF" },
-      yellow: { visible: true, height: "content", slot: "footer", backgroundColor: "#FFCC00" },
+      top: { visible: false },
+      mid: { visible: true, height: "content", fadeOnScroll: true, slot: "header", backgroundColor: DEFAULT_BG },
+      bottom: { visible: true, height: "content", slot: "footer", backgroundColor: DARK_BG },
     },
   },
   fullBottom: {
     pageScroll: true,
     sections: {
-      red: { visible: false },
-      blue: { visible: false },
-      yellow: { visible: true, height: "content", slot: "footer", backgroundColor: "#FFCC00" },
+      top: { visible: false },
+      mid: { visible: false },
+      bottom: { visible: true, height: "content", slot: "footer", backgroundColor: DARK_BG },
     },
   },
   onlyCenter: {
     pageScroll: false,
     sections: {
-      red: { visible: false },
-      blue: { visible: true, height: "fill", scroll: true, slot: "body", backgroundColor: "#007AFF" },
-      yellow: { visible: false },
+      top: { visible: false },
+      mid: { visible: true, height: "fill", scroll: true, slot: "body", backgroundColor: DEFAULT_BG },
+      bottom: { visible: false },
     },
   },
   top: {
     pageScroll: false,
     sections: {
-      red: { visible: true, height: "content", sticky: true, slot: "header", backgroundColor: "#FF3B30" },
-      blue: { visible: true, height: "fillRest", restsOn: "red", scroll: true, slot: "body", backgroundColor: "#007AFF" },
-      yellow: { visible: false },
+      top: { visible: true, height: "content", sticky: true, slot: "header", backgroundColor: DARK_BG },
+      mid: { visible: true, height: "fillRest", restsOn: "top", scroll: true, slot: "body", backgroundColor: DEFAULT_BG },
+      bottom: { visible: false },
     },
   },
 };
 
-const SECTION_KEYS: SectionKey[] = ["red", "blue", "yellow"];
+const SECTION_KEYS: SectionKey[] = ["top", "mid", "bottom"];
 const DEFAULT_COLORS: Record<SectionKey, string> = {
-  red: "#FF3B30",
-  blue: "#007AFF",
-  yellow: "#FFCC00",
+  top: DARK_BG,
+  mid: DEFAULT_BG,
+  bottom: DARK_BG,
 };
 const COLLAPSE_DISTANCE = 80;
 const TRANSITION = 320;
@@ -197,22 +199,28 @@ export function AppLayout({
       : currentRoute.state;
   const slots = currentRoute.slots ?? {};
 
-  const redHeight = useSharedValue(H / 3);
-  const blueHeight = useSharedValue(H / 3);
-  const yellowHeight = useSharedValue(H / 3);
-  const redNatural = useSharedValue(H / 3);
-  const blueNatural = useSharedValue(H / 3);
-  const yellowNatural = useSharedValue(H / 3);
+  const topVisible = !!state.sections.top?.visible;
+  const midVisible = !!state.sections.mid?.visible;
+  const bottomVisible = !!state.sections.bottom?.visible;
+  const showTopDivisor = topVisible && (midVisible || bottomVisible);
+  const showBottomDivisor = bottomVisible && (topVisible || midVisible);
+
+  const topHeight = useSharedValue(H / 3);
+  const midHeight = useSharedValue(H / 3);
+  const bottomHeight = useSharedValue(H / 3);
+  const topNatural = useSharedValue(H / 3);
+  const midNatural = useSharedValue(H / 3);
+  const bottomNatural = useSharedValue(H / 3);
 
   const heights: Record<SectionKey, SharedValue<number>> = {
-    red: redHeight,
-    blue: blueHeight,
-    yellow: yellowHeight,
+    top: topHeight,
+    mid: midHeight,
+    bottom: bottomHeight,
   };
   const naturals: Record<SectionKey, SharedValue<number>> = {
-    red: redNatural,
-    blue: blueNatural,
-    yellow: yellowNatural,
+    top: topNatural,
+    mid: midNatural,
+    bottom: bottomNatural,
   };
 
   const animating = useSharedValue(0);
@@ -224,7 +232,7 @@ export function AppLayout({
   });
 
   const computeTargets = (st: LayoutState): Record<SectionKey, number> => {
-    const base: Record<SectionKey, number> = { red: 0, blue: 0, yellow: 0 };
+    const base: Record<SectionKey, number> = { top: 0, mid: 0, bottom: 0 };
     for (const k of SECTION_KEYS) {
       const b = st.sections[k];
       if (!b?.visible) {
@@ -284,20 +292,20 @@ export function AppLayout({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRoute.name]);
 
-  const redStyle = useAnimatedStyle(() => ({ height: redHeight.value }));
-  const blueStyle = useAnimatedStyle(() => ({
-    height: blueHeight.value,
+  const topStyle = useAnimatedStyle(() => ({ height: topHeight.value }));
+  const midStyle = useAnimatedStyle(() => ({
+    height: midHeight.value,
     opacity:
-      state.sections.blue?.fadeOnScroll && state.pageScroll
+      state.sections.mid?.fadeOnScroll && state.pageScroll
         ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
         : 1,
   }), [state, H]);
-  const yellowStyle = useAnimatedStyle(() => ({ height: yellowHeight.value }));
+  const bottomStyle = useAnimatedStyle(() => ({ height: bottomHeight.value }));
 
   const stylesFor = {
-    red: redStyle,
-    blue: blueStyle,
-    yellow: yellowStyle,
+    top: topStyle,
+    mid: midStyle,
+    bottom: bottomStyle,
   };
 
   const renderSection = (k: SectionKey) => {
@@ -352,9 +360,11 @@ export function AppLayout({
           scrollEventThrottle={16}
           onScroll={onScroll}
         >
-          {renderSection("red")}
-          {renderSection("blue")}
-          {renderSection("yellow")}
+          {renderSection("top")}
+          {showTopDivisor && <Divisor position="top" />}
+          {renderSection("mid")}
+          {showBottomDivisor && <Divisor position="bottom" />}
+          {renderSection("bottom")}
         </Animated.ScrollView>
         {showBackButton && canGoBack && (
           <View style={styles.backBar} pointerEvents="box-none">
