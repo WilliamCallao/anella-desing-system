@@ -428,7 +428,7 @@ export function AppLayout({
           onScroll={onScroll}
         >
           {renderSection("top")}
-          {showTopDivisor && <Divisor position="top" />}
+          {showTopDivisor && <Divisor position="top" handle={currentRoute.state === "top"} />}
           {renderSection("mid")}
           {showBottomDivisor && (
             <Divisor position="bottom" handle={currentRoute.state === "bottom"} />
