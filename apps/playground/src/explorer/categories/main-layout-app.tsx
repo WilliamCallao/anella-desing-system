@@ -41,13 +41,29 @@ function HomeHeader() {
         Inicio
       </Text>
       <Text variant="body" style={styles.screenSubtitle}>
-        Layout "bottom": el header se desvanece al scrollear y el footer es la lista.
+        Layout "bottom": el header se desvanece al scrollear y el body (abajo) tiene la
+        navegación encadenada a otras pantallas.
+      </Text>
+    </View>
+  );
+}
+
+function HomeFooter() {
+  const { navigate } = useAppNavigation();
+  return pad(
+    <View style={styles.gap}>
+      <Text variant="heading" style={styles.screenTitle}>
+        Explorar
+      </Text>
+      <Text variant="body" style={styles.screenSubtitle}>
+        Navegación desde el body (encadenada, no desde un solo lugar):
       </Text>
       <Button label="Ir a Artículo (fullBottom)" onPress={() => navigate(routes.article)} />
       <Button label="Ir a Perfil (top)" onPress={() => navigate(routes.profile)} />
       <Button label="Ir a Ajustes (bottom)" onPress={() => navigate(routes.settings)} />
       <Button label="Ver Galería (onlyCenter)" onPress={() => navigate(routes.gallery)} />
       <Button label="Vista debug (stacked)" onPress={() => navigate(routes.stacked)} />
+      <MockList n={12} label="Novedad" />
     </View>
   );
 }
@@ -86,15 +102,28 @@ function ProfileHeader() {
 }
 
 function ProfileBody() {
-  return pad(<MockList n={30} label="Publicación" />, { paddingTop: 0 });
+  const { navigate } = useAppNavigation();
+  return pad(
+    <View style={styles.gap}>
+      <MockList n={20} label="Publicación" />
+      <Button label="Ver galería (onlyCenter)" onPress={() => navigate(routes.gallery)} />
+    </View>,
+    { paddingTop: 0 }
+  );
 }
 
 function GalleryBody() {
+  const { navigate } = useAppNavigation();
   return (
-    <View style={styles.gallery}>
-      {Array.from({ length: 40 }).map((_, i) => (
-        <View key={i} style={styles.tile} />
-      ))}
+    <View style={styles.gap}>
+      <View style={styles.gallery}>
+        {Array.from({ length: 40 }).map((_, i) => (
+          <View key={i} style={styles.tile} />
+        ))}
+      </View>
+      <View style={styles.screenPad}>
+        <Button label="Ir a Ajustes (bottom)" onPress={() => navigate(routes.settings)} />
+      </View>
     </View>
   );
 }
@@ -130,7 +159,7 @@ const routes: Record<string, AppRoute> = {
   home: {
     name: "home",
     state: "bottom",
-    slots: { header: <HomeHeader />, footer: <MockList n={30} label="Inicio" /> },
+    slots: { header: <HomeHeader />, footer: <HomeFooter /> },
   },
   article: {
     name: "article",
