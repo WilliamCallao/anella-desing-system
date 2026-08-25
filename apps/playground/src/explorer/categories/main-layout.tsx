@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useLayoutEffect, useRef } from "react";
 import { StyleSheet, View, Pressable, ScrollView, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import Animated, {
@@ -13,7 +13,7 @@ import { Button, MainLayout, Text } from "@antonella/ui";
 import type { ComponentCategory } from "../types";
 
 const COLLAPSE = 160;
-const APP_OPTIONS = ["TEST", "BOTTOM", "FULLBOTTOM", "ONLYCENTER"] as const;
+const APP_OPTIONS = ["TEST", "BOTTOM", "FULLBOTTOM", "ONLYCENTER", "TOP"] as const;
 
 function AppSelector({
   value,
@@ -75,7 +75,7 @@ export function MainLayoutDemo() {
 export function MainLayoutFullScreen() {
   const router = useRouter();
   const { height: H } = useWindowDimensions();
-  const [mode, setMode] = useState<"TEST" | "BOTTOM" | "FULLBOTTOM" | "ONLYCENTER">(
+  const [mode, setMode] = useState<"TEST" | "BOTTOM" | "FULLBOTTOM" | "ONLYCENTER" | "TOP">(
     "TEST"
   );
   const [showLines, setShowLines] = useState(false);
@@ -83,6 +83,8 @@ export function MainLayoutFullScreen() {
   const isBottom = mode === "BOTTOM" || mode === "FULLBOTTOM";
   const isFullBottom = mode === "FULLBOTTOM";
   const isOnlyCenter = mode === "ONLYCENTER";
+  const isTop = mode === "TOP";
+  const blueScrolls = isOnlyCenter || isTop;
 
   const scrollRef = useRef<Animated.ScrollView>(null);
   const scrollY = useSharedValue(0);
@@ -92,10 +94,11 @@ export function MainLayoutFullScreen() {
   const yellowHeight = useSharedValue(H / 3);
   const blueNatural = useSharedValue(0);
   const yellowNatural = useSharedValue(0);
+  const redNatural = useSharedValue(0);
 
   // Alturas animadas DIRECTO al objetivo del modo (sin pasar por otros modos,
   // evita que BOTTOM<->ONLYCENTER crucen por el 0 de FULLBOTTOM).
-  useEffect(() => {
+  useLayoutEffect(() => {
     console.log(
       "[MODE] transición ->",
       mode,
@@ -114,7 +117,7 @@ export function MainLayoutFullScreen() {
     scrollY.value = 0;
     animating.value = 1;
     const targets = {
-      red: mode === "TEST" ? H / 3 : 0,
+      red: mode === "TEST" ? H / 3 : mode === "TOP" ? redNatural.value : 0,
       blue:
         mode === "TEST"
           ? H / 3
@@ -122,16 +125,27 @@ export function MainLayoutFullScreen() {
           ? blueNatural.value
           : mode === "FULLBOTTOM"
           ? 0
-          : H,
+          : mode === "ONLYCENTER"
+          ? H
+          : H - redNatural.value,
       yellow:
         mode === "TEST"
           ? H / 3
-          : mode === "ONLYCENTER"
+          : mode === "TOP" || mode === "ONLYCENTER"
           ? 0
           : yellowNatural.value,
     };
     const done = () => {
       animating.value = 0;
+      // Al asentar, sincronizamos las secciones dinámicas con su contenido
+      // actual (por si hubo un cambio de contenido durante la entrada).
+      if (mode === "BOTTOM") {
+        blueHeight.value = blueNatural.value;
+        console.log("[DONE] BOTTOM blueHeight ->", blueNatural.value);
+      } else if (mode === "TOP") {
+        redHeight.value = redNatural.value;
+        blueHeight.value = H - redNatural.value;
+      }
     };
     redHeight.value = withTiming(targets.red, { duration: 320 }, done);
     blueHeight.value = withTiming(targets.blue, { duration: 320 }, done);
@@ -171,7 +185,7 @@ export function MainLayoutFullScreen() {
       </Text>
       <AppSelector
         value={mode}
-        onChange={(v) => setMode(v as "TEST" | "BOTTOM" | "FULLBOTTOM" | "ONLYCENTER")}
+        onChange={(v) => setMode(v as "TEST" | "BOTTOM" | "FULLBOTTOM" | "ONLYCENTER" | "TOP")}
       />
       <Button
         variant="secondary"
@@ -204,7 +218,26 @@ export function MainLayoutFullScreen() {
       >
         <Animated.View
           style={[styles.colBlock, { backgroundColor: "#FF3B30" }, redStyle]}
-        />
+        >
+          <View
+            style={styles.measureCopy}
+            onLayout={(e) => {
+              const h = e.nativeEvent.layout.height;
+              if (animating.value === 0) {
+                redNatural.value = h;
+                // En TOP la roja es el header dinámico: crece/encoge con su
+                // contenido y la azul se ajusta para llenar el resto (H - h).
+                if (animating.value === 0 && mode === "TOP") {
+                  redHeight.value = h;
+                  blueHeight.value = H - h;
+                }
+              }
+            }}
+          >
+            {blueContent}
+          </View>
+          {isTop && blueContent}
+        </Animated.View>
         <Animated.View
           style={[
             styles.colBlock,
@@ -212,44 +245,63 @@ export function MainLayoutFullScreen() {
             blueStyle,
           ]}
         >
-          {isOnlyCenter ? (
+          {/* Copia oculta y absoluta para medir la altura natural de la azul
+              sin el constraint del padre (que recorta el onLayout durante la
+              animación y al cambiar el contenido). */}
+          <View
+            style={styles.measureCopy}
+            onLayout={(e) => {
+              const h = e.nativeEvent.layout.height;
+              console.log(
+                "[BLUE] onLayout =",
+                h,
+                "| mode:",
+                mode,
+                "| animating:",
+                animating.value
+              );
+              // La copia es absoluta/unconstrained, así que reporta la altura
+              // natural real aunque el padre esté animando: la medimos siempre.
+              blueNatural.value = h;
+              if (animating.value === 0 && mode === "BOTTOM") {
+                // En BOTTOM la azul es dinámica: crece/encoge con su contenido.
+                blueHeight.value = h;
+                console.log("[BLUE] set blueHeight =", h);
+              }
+            }}
+          >
+            {blueContent}
+          </View>
+          {blueScrolls ? (
             <Animated.ScrollView
               style={styles.blueScroll}
               showsVerticalScrollIndicator={false}
               scrollEventThrottle={16}
               onScroll={onScroll}
             >
-              <View style={styles.midBar}>{blueContent}</View>
-              {Array.from({ length: 30 }).map((_, i) => (
-                <View key={i} style={[styles.rect, { backgroundColor: "#E5E5EA" }]}>
-                  <Text variant="body" style={styles.rectText}>
-                    {`Item ${i + 1}`}
-                  </Text>
-                </View>
-              ))}
+              {isTop ? (
+                Array.from({ length: 30 }).map((_, i) => (
+                  <View key={i} style={styles.rect}>
+                    <Text variant="body" style={styles.rectText}>
+                      {`Item ${i + 1}`}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                <>
+                  <View style={styles.midBar}>{blueContent}</View>
+                  {Array.from({ length: 30 }).map((_, i) => (
+                    <View key={i} style={[styles.rect, { backgroundColor: "#E5E5EA" }]}>
+                      <Text variant="body" style={styles.rectText}>
+                        {`Item ${i + 1}`}
+                      </Text>
+                    </View>
+                  ))}
+                </>
+              )}
             </Animated.ScrollView>
           ) : (
-            <View
-              onLayout={(e) => {
-                const h = e.nativeEvent.layout.height;
-                console.log(
-                  "[BLUE] onLayout =",
-                  h,
-                  "| mode:",
-                  mode,
-                  "| animating:",
-                  animating.value
-                );
-                // Solo medimos la altura natural cuando el modo es estable
-                // (TEST/BOTTOM) y la animación terminó; si no, el onLayout
-                // reporta la altura recortada durante el colapso.
-                if ((mode === "TEST" || mode === "BOTTOM") && animating.value === 0) {
-                  blueNatural.value = h;
-                }
-              }}
-            >
-              {blueContent}
-            </View>
+            <View>{blueContent}</View>
           )}
         </Animated.View>
         <Animated.View
@@ -270,7 +322,13 @@ export function MainLayoutFullScreen() {
                 "| animating:",
                 animating.value
               );
-              if (animating.value === 0 && mode !== "ONLYCENTER") {
+              // Solo medimos la altura natural cuando la amarilla es visible
+              // (TEST/BOTTOM/FULLBOTTOM). En TOP/ONLYCENTER la amarilla está a 0,
+              // y ese 0 no debe corromper yellowNatural.
+              if (
+                animating.value === 0 &&
+                (mode === "TEST" || mode === "BOTTOM" || mode === "FULLBOTTOM")
+              ) {
                 yellowNatural.value = h;
               }
             }}
@@ -283,7 +341,7 @@ export function MainLayoutFullScreen() {
                 <AppSelector
                   value={mode}
                   onChange={(v) =>
-                    setMode(v as "TEST" | "BOTTOM" | "FULLBOTTOM" | "ONLYCENTER")
+                    setMode(v as "TEST" | "BOTTOM" | "FULLBOTTOM" | "ONLYCENTER" | "TOP")
                   }
                 />
               </View>
@@ -321,6 +379,12 @@ const styles = StyleSheet.create({
   },
   colBlock: {
     width: "100%",
+  },
+  measureCopy: {
+    position: "absolute",
+    width: "100%",
+    opacity: 0,
+    pointerEvents: "none",
   },
   blueScroll: {
     flex: 1,
