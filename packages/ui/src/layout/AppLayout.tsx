@@ -333,19 +333,45 @@ export function AppLayout({
   }, [currentRoute.name]);
 
   const topStyle = useAnimatedStyle(() => ({ height: topDisplay.value }));
-  const midStyle = useAnimatedStyle(() => ({
-    height: midDisplay.value,
-    opacity:
-      state.sections.mid?.fadeOnScroll
-        ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
-        : 1,
-  }), [state, H]);
+  const midStyle = useAnimatedStyle(() => ({ height: midDisplay.value }));
   const bottomStyle = useAnimatedStyle(() => ({ height: bottomDisplay.value }));
 
   const stylesFor = {
     top: topStyle,
     mid: midStyle,
     bottom: bottomStyle,
+  };
+
+  // El fade se aplica solo al CONTENIDO de la sección (no a su fondo), para que
+  // al scrollear desaparezca el contenido pero el color de fondo permanezca.
+  const topFade = useAnimatedStyle(
+    () => ({
+      opacity: state.sections.top?.fadeOnScroll
+        ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
+        : 1,
+    }),
+    [state]
+  );
+  const midFade = useAnimatedStyle(
+    () => ({
+      opacity: state.sections.mid?.fadeOnScroll
+        ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
+        : 1,
+    }),
+    [state]
+  );
+  const bottomFade = useAnimatedStyle(
+    () => ({
+      opacity: state.sections.bottom?.fadeOnScroll
+        ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
+        : 1,
+    }),
+    [state]
+  );
+  const fadeFor: Record<SectionKey, ReturnType<typeof useAnimatedStyle>> = {
+    top: topFade,
+    mid: midFade,
+    bottom: bottomFade,
   };
 
   const renderSection = (k: SectionKey) => {
@@ -375,7 +401,7 @@ export function AppLayout({
         {b.scroll ? (
           <Animated.ScrollView
             ref={innerScrollRef}
-            style={styles.innerScroll}
+            style={[styles.innerScroll, fadeFor[k]]}
             showsVerticalScrollIndicator={false}
             scrollEventThrottle={16}
             onScroll={onScroll}
@@ -383,7 +409,7 @@ export function AppLayout({
             {content}
           </Animated.ScrollView>
         ) : (
-          <View style={styles.sectionContent}>{content}</View>
+          <Animated.View style={[styles.sectionContent, fadeFor[k]]}>{content}</Animated.View>
         )}
       </Animated.View>
     );
@@ -404,7 +430,9 @@ export function AppLayout({
           {renderSection("top")}
           {showTopDivisor && <Divisor position="top" />}
           {renderSection("mid")}
-          {showBottomDivisor && <Divisor position="bottom" />}
+          {showBottomDivisor && (
+            <Divisor position="bottom" handle={currentRoute.state === "bottom"} />
+          )}
           {renderSection("bottom")}
         </Animated.ScrollView>
         {showBackButton && canGoBack && (
