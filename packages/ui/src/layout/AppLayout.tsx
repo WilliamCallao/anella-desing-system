@@ -294,6 +294,9 @@ export function AppLayout({
   useLayoutEffect(() => {
     if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
     animating.value = 1;
+    if (!state.pageScroll) {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }
     const targets = computeTargets(state);
     for (const k of SECTION_KEYS) {
       fromH[k].value = display[k].value;
