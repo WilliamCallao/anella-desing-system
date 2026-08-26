@@ -353,11 +353,14 @@ export function AppLayout({
     [state]
   );
   const midFade = useAnimatedStyle(
-    () => ({
-      opacity: state.sections.mid?.fadeOnScroll
+    () => {
+      const scrollFade = state.sections.mid?.fadeOnScroll
         ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
-        : 1,
-    }),
+        : 1;
+      const full = naturals.mid.value || 1;
+      const collapseFade = interpolate(midDisplay.value, [0, full], [0, 1], Extrapolation.CLAMP);
+      return { opacity: Math.min(scrollFade, collapseFade) };
+    },
     [state]
   );
   const bottomFade = useAnimatedStyle(
