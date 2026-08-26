@@ -163,6 +163,7 @@ export function AppLayout({
   const { height: H } = useWindowDimensions();
 
   const [stack, setStack] = useState<AppRoute[]>([initialRoute]);
+  const [prevRoute, setPrevRoute] = useState<AppRoute | null>(null);
   const navigate = useCallback((route: AppRoute) => {
     setStack((s) => [...s, route]);
   }, []);
@@ -200,6 +201,12 @@ export function AppLayout({
       ? layoutStates[currentRoute.state]
       : currentRoute.state;
   const slots = currentRoute.slots ?? {};
+
+  const prevLayoutState: LayoutState | null = prevRoute
+    ? typeof prevRoute.state === "string"
+      ? layoutStates[prevRoute.state]
+      : prevRoute.state
+    : null;
 
   // Cuando el footer es visible, el fondo inferior toma su color para dar la
   // ilusión de que la hoja oscura ocupa todo el alto disponible (aunque su
@@ -324,6 +331,7 @@ export function AppLayout({
     settleTimerRef.current = setTimeout(() => {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       scrollY.value = 0;
+      setPrevRoute(currentRoute);
     }, TRANSITION);
     if (debug) {
       // eslint-disable-next-line no-console
@@ -378,19 +386,29 @@ export function AppLayout({
   };
 
   const renderSection = (k: SectionKey) => {
-    const b = state.sections[k];
-    if (!b?.visible) {
+    const cur = state.sections[k];
+    const prevB = prevLayoutState?.sections[k];
+    const prevVisible = !!prevB?.visible;
+    const visible = !!cur?.visible || prevVisible;
+    if (!visible) {
       return (
         <Animated.View key={k} style={[styles.colBlock, stylesFor[k]]}>
           <View style={styles.measureCopy} onLayout={makeOnMeasure(k)}>
-            {b.slot ? slots[b.slot] : null}
+            {cur?.slot ? slots[cur.slot] : null}
           </View>
         </Animated.View>
       );
     }
-    const bg = b.backgroundColor ?? DEFAULT_COLORS[k];
-    const isDynamic = b.height === "content";
-    const content = b.slot ? slots[b.slot] : null;
+    const usePrevContent = !cur?.visible && prevVisible;
+    const slot = usePrevContent ? prevB?.slot : cur?.slot;
+    const content = slot
+      ? usePrevContent
+        ? prevRoute?.slots?.[slot]
+        : slots[slot]
+      : null;
+    const bg = cur?.backgroundColor ?? prevB?.backgroundColor ?? DEFAULT_COLORS[k];
+    const isDynamic = (cur?.height ?? prevB?.height) === "content";
+    const scroll = cur?.scroll ?? prevB?.scroll ?? false;
     return (
       <Animated.View
         key={k}
@@ -401,7 +419,7 @@ export function AppLayout({
             {content}
           </View>
         )}
-        {b.scroll ? (
+        {scroll ? (
           <Animated.ScrollView
             ref={innerScrollRef}
             style={styles.innerScroll}
