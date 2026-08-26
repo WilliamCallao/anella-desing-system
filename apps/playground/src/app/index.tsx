@@ -19,6 +19,20 @@ export default function Index() {
 
         <Card>
           <View style={styles.cardHeader}>
+            <Icon name="git-network" size={24} color={cta1} />
+            <Text variant={TextType.Heading}>AppLayout (navegación)</Text>
+          </View>
+          <Text variant={TextType.Caption} color={text.secondary}>
+            Demo de navegación completa: 6 pantallas con AppLayout y stack interno.
+            El ejemplo más importante del sistema.
+          </Text>
+          <View style={styles.cta}>
+            <Button label="Abrir navegación" onPress={() => router.push("/explorer/main-layout-app")} />
+          </View>
+        </Card>
+
+        <Card>
+          <View style={styles.cardHeader}>
             <Icon name="clipboard" size={24} color={cta1} />
             <Text variant={TextType.Heading}>Explorador de componentes</Text>
           </View>
@@ -41,6 +55,19 @@ export default function Index() {
           </Text>
           <View style={styles.cta}>
             <Button label="Explorar animaciones" onPress={() => router.push("/explorer/animaciones")} />
+          </View>
+        </Card>
+
+        <Card>
+          <View style={styles.cardHeader}>
+            <Icon name="palette" size={24} color={cta1} />
+            <Text variant={TextType.Heading}>Explorador de íconos</Text>
+          </View>
+          <Text variant={TextType.Caption} color={text.secondary}>
+            Galería de todos los íconos de Antonella con su nombre de token.
+          </Text>
+          <View style={styles.cta}>
+            <Button label="Explorar íconos" onPress={() => router.push("/explorer/iconos")} />
           </View>
         </Card>
       </ScrollView>
