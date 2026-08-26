@@ -368,7 +368,7 @@ export function AppLayout({
     }),
     [state]
   );
-  const fadeFor: Record<SectionKey, ReturnType<typeof useAnimatedStyle>> = {
+  const fadeFor = {
     top: topFade,
     mid: midFade,
     bottom: bottomFade,
@@ -401,15 +401,17 @@ export function AppLayout({
         {b.scroll ? (
           <Animated.ScrollView
             ref={innerScrollRef}
-            style={[styles.innerScroll, fadeFor[k]]}
+            style={styles.innerScroll}
             showsVerticalScrollIndicator={false}
             scrollEventThrottle={16}
             onScroll={onScroll}
           >
-            {content}
+            <Animated.View style={fadeFor[k]}>{content}</Animated.View>
           </Animated.ScrollView>
         ) : (
-          <Animated.View style={[styles.sectionContent, fadeFor[k]]}>{content}</Animated.View>
+          <Animated.View style={styles.sectionContent}>
+            <Animated.View style={fadeFor[k]}>{content}</Animated.View>
+          </Animated.View>
         )}
       </Animated.View>
     );
