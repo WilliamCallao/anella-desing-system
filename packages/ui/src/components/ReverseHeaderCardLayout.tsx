@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
+  Animated,
   StyleSheet,
   View,
   type LayoutChangeEvent,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import Animated, {
+import Reanimated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -27,6 +28,7 @@ export type ReverseHeaderCardLayoutProps = {
 };
 
 const CARD_RADIUS = 32;
+const ANIM_DURATION = 250;
 
 export function ReverseHeaderCardLayout({
   headerBackgroundColor = _semantic.default.bg.default,
@@ -37,11 +39,23 @@ export function ReverseHeaderCardLayout({
 }: ReverseHeaderCardLayoutProps) {
   const insets = useSafeAreaInsets();
   const [headerHeight, setHeaderHeight] = useState(0);
+  const animatedTop = useRef(new Animated.Value(0)).current;
   const scrollY = useSharedValue(0);
 
-  const onHeaderLayout = (e: LayoutChangeEvent) => {
-    setHeaderHeight(e.nativeEvent.layout.height);
-  };
+  const onHeaderLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const newHeight = e.nativeEvent.layout.height;
+      if (newHeight === headerHeight) return;
+      Animated.timing(animatedTop, {
+        toValue: newHeight,
+        duration: ANIM_DURATION,
+        useNativeDriver: false,
+      }).start(() => {
+        setHeaderHeight(newHeight);
+      });
+    },
+    [headerHeight, animatedTop],
+  );
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (e) => {
@@ -65,34 +79,35 @@ export function ReverseHeaderCardLayout({
     return { opacity, transform: [{ translateY }] };
   });
 
-  const bodyTopStyle = useAnimatedStyle(() => {
-    const top = interpolate(
+  const bodyScrollStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
       scrollY.value,
       [0, headerHeight],
-      [headerHeight, 0],
+      [0, -headerHeight],
       Extrapolation.CLAMP
     );
-    return { top };
+    return { transform: [{ translateY }] };
   });
 
   return (
     <View style={[styles.root, { backgroundColor: headerBackgroundColor }, style]}>
-      {/* Body card — background layer, slides up behind content */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.bodyCard,
           {
+            top: animatedTop,
             backgroundColor: bodyBackgroundColor,
             borderTopLeftRadius: CARD_RADIUS,
             borderTopRightRadius: CARD_RADIUS,
           },
-          bodyTopStyle,
         ]}
-      />
+      >
+        <Reanimated.View style={[StyleSheet.absoluteFill, bodyScrollStyle]} />
+      </Animated.View>
 
-      <Animated.ScrollView
-        style={[styles.scroll, { zIndex: 10 }]}
+      <Reanimated.ScrollView
+        style={[styles.scroll, { zIndex: 5 }]}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingTop: headerHeight },
@@ -104,10 +119,9 @@ export function ReverseHeaderCardLayout({
         showsVerticalScrollIndicator={false}
       >
         {children}
-      </Animated.ScrollView>
+      </Reanimated.ScrollView>
 
-      {/* Header — fades out and translates up as user scrolls */}
-      <Animated.View
+      <View
         onLayout={onHeaderLayout}
         style={[
           styles.header,
@@ -115,11 +129,12 @@ export function ReverseHeaderCardLayout({
             backgroundColor: headerBackgroundColor,
             paddingTop: insets.top,
           },
-          headerStyle,
         ]}
       >
-        {header}
-      </Animated.View>
+        <Reanimated.View style={headerStyle}>
+          {header}
+        </Reanimated.View>
+      </View>
     </View>
   );
 }
@@ -139,7 +154,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 5,
+    zIndex: 10,
     overflow: "hidden",
   },
   bodyCard: {
@@ -148,5 +163,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 1,
+    overflow: "hidden",
   },
 });
