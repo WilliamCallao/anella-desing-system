@@ -1,11 +1,12 @@
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { Card, Icon, Text } from "@antonella/ui";
+import { Icon, Text } from "@antonella/ui";
 import { background, border, cta1, space, spacing, text, TextType } from "@antonella/theme";
-import { componentCategories, sectionCategories, type ComponentCategory } from "../../explorer/registry";
+import { getSections, type ComponentCategory, type SectionWithCategories } from "../../explorer/registry";
 
 export default function ExplorerScreen() {
   const router = useRouter();
+  const sections = getSections();
 
   const handleSelectCategory = (category: ComponentCategory) => {
     router.push(`/explorer/${category.id}`);
@@ -13,61 +14,40 @@ export default function ExplorerScreen() {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <Pressable
-        onPress={() => handleSelectCategory({ id: "colores" } as ComponentCategory)}
-        style={({ pressed }) => [styles.colorCard, pressed && styles.pressed]}
-        accessibilityRole="button"
-        accessibilityLabel="Explorar colores"
-      >
-        <View style={styles.colorIconBox}>
-          <Icon name="analytics" size={20} color="#FFFFFF" />
-        </View>
-        <View style={styles.colorBody}>
-          <Text variant={TextType.BodyMedium} color="#FFFFFF">
-            Explorar Colores
-          </Text>
-          <Text variant={TextType.Caption} color="rgba(255,255,255,0.7)">
-            Palette, tokens y escalas de color
-          </Text>
-        </View>
-        <Icon name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
-      </Pressable>
-
-      {sectionCategories.filter((c) => c.id !== "colores").map((section) => (
-        <Pressable
-          key={section.id}
-          onPress={() => handleSelectCategory(section)}
-          style={({ pressed }) => [styles.semanticCard, pressed && styles.pressed]}
-          accessibilityRole="button"
-          accessibilityLabel={section.title}
-        >
-          <View style={styles.semanticIconBox}>
-            <Icon name={section.icon} size={20} color="#FFFFFF" />
-          </View>
-          <View style={styles.colorBody}>
-            <Text variant={TextType.BodyMedium} color="#FFFFFF">
-              {section.title}
-            </Text>
-            <Text variant={TextType.Caption} color="rgba(255,255,255,0.7)">
-              {section.components[0]?.description?.slice(0, 60)}...
-            </Text>
-          </View>
-          <Icon name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
-        </Pressable>
+      {sections.map((section) => (
+        <SectionBlock
+          key={section.key}
+          section={section}
+          onSelect={handleSelectCategory}
+        />
       ))}
+    </ScrollView>
+  );
+}
 
-      <Card>
-        <Text variant={TextType.Heading}>Componentes App*</Text>
-        <Text variant={TextType.Caption} color={text.secondary}>
-          Tocá una categoría para ver cada componente con sus variantes.
-        </Text>
-      </Card>
+function SectionBlock({
+  section,
+  onSelect,
+}: {
+  section: SectionWithCategories;
+  onSelect: (category: ComponentCategory) => void;
+}) {
+  if (section.categories.length === 0) return null;
+
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionIconBox}>
+          <Icon name={section.icon} size={18} color={cta1} />
+        </View>
+        <Text variant={TextType.Heading}>{section.title}</Text>
+      </View>
 
       <View style={styles.legend}>
-        {componentCategories.map((category) => (
+        {section.categories.map((category) => (
           <Pressable
             key={category.id}
-            onPress={() => handleSelectCategory(category)}
+            onPress={() => onSelect(category)}
             style={({ pressed }) => [styles.legendRow, pressed && styles.pressed]}
             accessibilityRole="button"
             accessibilityLabel={category.title}
@@ -85,7 +65,7 @@ export default function ExplorerScreen() {
           </Pressable>
         ))}
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -96,51 +76,28 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: space.space4,
-    gap: space.space3,
+    gap: space.space5,
     paddingBottom: space.space12,
   },
   pressed: {
     opacity: 0.7,
   },
-  colorCard: {
+  section: {
+    gap: space.space3,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-    minHeight: 56,
-    paddingHorizontal: space.space3,
-    paddingVertical: space.space3,
-    borderRadius: 14,
-    backgroundColor: cta1,
+    gap: spacing.sm,
+    paddingHorizontal: space.space1,
   },
-  semanticCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    minHeight: 56,
-    paddingHorizontal: space.space3,
-    paddingVertical: space.space3,
-    borderRadius: 14,
-    backgroundColor: "#7C3AED",
-  },
-  colorBody: {
-    flex: 1,
-    gap: 2,
-  },
-  colorIconBox: {
-    width: 36,
-    height: 36,
+  sectionIconBox: {
+    width: 34,
+    height: 34,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.2)",
-  },
-  semanticIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(0,122,255,0.10)",
   },
   legend: {
     gap: space.space2,

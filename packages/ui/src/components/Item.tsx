@@ -108,7 +108,7 @@ const STYLE_COLORS: Record<
   },
   [ItemStyle.DARKNESS]: {
     rowBg: neutrals.N900,
-    rowPressedBg: "#2A2A2A",
+    rowPressedBg: neutrals.N800,
     iconCircleBg: neutrals.N950,
     iconColor: neutrals.N400,
     iconSelectedColor: neutrals.N0,
