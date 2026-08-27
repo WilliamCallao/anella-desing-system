@@ -38,8 +38,8 @@ export type TransitionViewProps = {
 export function TransitionView({
   children,
   contentKey,
-  duration = 200,
-  fadeDuration = 200,
+  duration = 150,
+  fadeDuration = 150,
   style,
 }: TransitionViewProps) {
   const animatedHeight = useSharedValue(0);

@@ -98,7 +98,7 @@ export const layoutStates: Record<LayoutStateName, LayoutState> = {
     pageScroll: true,
     sections: {
       top: { visible: false },
-      mid: { visible: true, height: "content", fadeOnScroll: true, slot: "header", backgroundColor: DEFAULT_BG },
+      mid: { visible: true, height: "content", slot: "header", backgroundColor: DEFAULT_BG },
       bottom: { visible: true, height: "content", slot: "footer", backgroundColor: DARK_BG },
     },
   },

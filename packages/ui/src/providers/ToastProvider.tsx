@@ -125,7 +125,7 @@ function ToastHost({ toast, onDismiss }: { toast: ActiveToast | null; onDismiss:
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: progress.value,
-    transform: [{ translateY: (1 - progress.value) * space.space5 }],
+    transform: [{ translateY: (1 - progress.value) * -space.space5 }],
   }));
 
   return (
@@ -133,11 +133,12 @@ function ToastHost({ toast, onDismiss }: { toast: ActiveToast | null; onDismiss:
       {current ? (
         <Animated.View
           pointerEvents="box-none"
-          style={[styles.host, { paddingBottom: insets.bottom + space.space4 }, animatedStyle]}
+          style={[styles.host, animatedStyle]}
         >
           <Toast
             message={current.message}
             tone={current.tone}
+            topInset={insets.top}
             onClose={current.duration <= 0 ? onDismiss : undefined}
           />
         </Animated.View>
@@ -149,8 +150,7 @@ function ToastHost({ toast, onDismiss }: { toast: ActiveToast | null; onDismiss:
 const styles = StyleSheet.create({
   host: {
     flexGrow: 1,
-    justifyContent: "flex-end",
-    alignItems: "center",
-    paddingHorizontal: space.space4,
+    justifyContent: "flex-start",
+    alignItems: "stretch",
   },
 });
