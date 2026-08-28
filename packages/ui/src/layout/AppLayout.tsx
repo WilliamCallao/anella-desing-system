@@ -164,6 +164,18 @@ export function AppLayout({
 
   const [stack, setStack] = useState<AppRoute[]>([initialRoute]);
   const [prevRoute, setPrevRoute] = useState<AppRoute | null>(null);
+
+  // Si la ruta inicial cambia desde afuera (por ejemplo, targetRoute del shell),
+  // hay que sincronizar el stack interno. Sin esto, AppLayout ignora el cambio
+  // de initialRoute y se queda en la pantalla anterior.
+  useEffect(() => {
+    setStack((s) => {
+      if (s[0]?.name !== initialRoute.name) {
+        return [initialRoute];
+      }
+      return s;
+    });
+  }, [initialRoute.name]);
   const navigate = useCallback((route: AppRoute) => {
     setStack((s) => [...s, route]);
   }, []);
