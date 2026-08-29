@@ -27,6 +27,8 @@ export type ToastProps = {
   /** Si se define, muestra botón de cerrar (toast manual). */
   onClose?: () => void;
   containerStyle?: StyleProp<ViewStyle>;
+  /** Padding superior (p. ej. insets.top) para que el fondo se extienda por detrás de la status bar. */
+  topInset?: number;
 };
 
 const TONE_ICONS: Record<ToastTone, IconName> = {
@@ -37,8 +39,8 @@ const TONE_ICONS: Record<ToastTone, IconName> = {
 };
 
 // ── Component ───────────────────────────────────────────────
-// Píldora flotante de feedback. Se muestra vía `useToast().showToast()`
-// (ver ToastProvider); también puede montarse a mano.
+// Barra superior de feedback (edge-to-edge). Se muestra vía
+// `useToast().showToast()` (ver ToastProvider); también puede montarse a mano.
 
 export function Toast({
   message,
@@ -46,11 +48,18 @@ export function Toast({
   style = ToastStyle.DEFAULT,
   onClose,
   containerStyle,
+  topInset = 0,
 }: ToastProps) {
   const c = STYLE_COLORS[style][tone];
 
   return (
-    <View style={[styles.toast, { backgroundColor: c.bg }, containerStyle]}>
+    <View
+      style={[
+        styles.toast,
+        { backgroundColor: c.bg, paddingTop: topInset + BASE_VPAD },
+        containerStyle,
+      ]}
+    >
       <Icon name={TONE_ICONS[tone]} size={18} color={c.content} />
       <Text variant={TextType.Caption} color={c.content} style={styles.message}>
         {message}
@@ -73,6 +82,7 @@ export function Toast({
 // ── Color maps per style/tone ───────────────────────────────
 
 const _white = neutrals.N0;
+const BASE_VPAD = space.space3 + 2;
 
 const STYLE_COLORS: Record<ToastStyle, Record<ToastTone, { bg: string; content: string }>> = {
   [ToastStyle.DEFAULT]: {
@@ -93,12 +103,13 @@ const STYLE_COLORS: Record<ToastStyle, Record<ToastTone, { bg: string; content: 
 
 const styles = StyleSheet.create({
   toast: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
     gap: space.space2,
-    minHeight: 44,
-    borderRadius: 14,
-    paddingVertical: space.space2 + 2,
+    minHeight: 52,
+    borderRadius: 0,
+    paddingVertical: space.space3 + 2,
     paddingHorizontal: space.space4,
     shadowColor: "#000000",
     shadowOpacity: 0.25,

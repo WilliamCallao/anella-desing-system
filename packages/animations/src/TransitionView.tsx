@@ -9,6 +9,7 @@ import {
 import Animated, {
   Easing,
   FadeIn,
+  FadeOut,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -30,16 +31,17 @@ export type TransitionViewProps = {
 
 /**
  * Envuelve contenido de altura variable: al cambiar, anima la altura del
- * contenedor (crece/encoge sin que lo de arriba/abajo salte) y hace fade in
- * del contenido nuevo. La altura se mide con onLayout y se anima en el UI
- * thread; el fade in lo maneja Reanimated (entering) desde el primer frame,
- * por lo que no hay parpadeos.
+ * contenedor (crece/encoge sin que lo de arriba/abajo salte) y hace fade out
+ * del contenido anterior al tiempo que hace fade in del nuevo (transición
+ * cruzada, sin parpadeos). La altura se mide con onLayout y se anima en el UI
+ * thread; el fade lo maneja Reanimated (layout animations entering/exiting)
+ * desde el primer frame.
  */
 export function TransitionView({
   children,
   contentKey,
-  duration = 200,
-  fadeDuration = 200,
+  duration = 150,
+  fadeDuration = 150,
   style,
 }: TransitionViewProps) {
   const animatedHeight = useSharedValue(0);
@@ -63,7 +65,11 @@ export function TransitionView({
   return (
     <Animated.View style={[styles.container, containerStyle, style]}>
       <View style={styles.content} onLayout={onContentLayout}>
-        <Animated.View key={contentKey} entering={FadeIn.duration(fadeDuration)}>
+        <Animated.View
+          key={contentKey}
+          entering={FadeIn.duration(fadeDuration)}
+          exiting={FadeOut.duration(fadeDuration)}
+        >
           {children}
         </Animated.View>
       </View>

@@ -8,16 +8,9 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { brand, card, cta1, neutrals, palette, radius, resolveSemantic, lightSemantic, space, text, TextType } from "@antonella/theme";
+import { brand, card, cta1, neutrals, radius, resolveSemantic, lightSemantic, space, text, TextType } from "@antonella/theme";
 import { Text } from "./text/Text";
-import { Icon, type IconName } from "./Icon";
-import { AppResponsiveDialog } from "./AppResponsiveDialog";
-import { CardStackSheet } from "./CardStackSheet";
-import { Card } from "./Card";
-import { OptionListItem, OptionListItemVariant } from "./OptionListItem";
-import { TransitionView } from "@antonella/animations";
-import { TextField } from "./TextField";
-import { AppButton } from "./card-form/AppButton";
+import { Icon } from "./Icon";
 import { AppIcon } from "../AppIcons";
 
 export type TreeNode = {
@@ -92,27 +85,27 @@ const VARIANT_TOKENS: Record<TreeEditorVariant, VariantTokens> = {
   },
   darkness: {
     containerBg: "transparent",
-    cardBg: "#1C1C1E",
-    lineColor: neutrals.N600,
+    cardBg: _semantic.darkness.bg.subtle,
+    lineColor: _semantic.darkness.text.subtlest,
     iconExpanded: brand.M300,
     chipBg: brand.M700,
-    chipText: neutrals.N0,
+    chipText: _semantic.darkness.text.default,
     neutralChipBg: "transparent",
-    neutralChipBorder: neutrals.N600,
-    neutralChipText: _semantic.darkness.text.default,
+    neutralChipBorder: _semantic.darkness.text.subtlest,
+    neutralChipText: _semantic.darkness.text.subtle,
     activeCardBg: brand.M700,
-    activeTextPrimary: neutrals.N0,
-    activeTextSecondary: "rgba(255,255,255,0.72)",
-    activeIconColor: neutrals.N0,
+    activeTextPrimary: _semantic.darkness.text.default,
+    activeTextSecondary: _semantic.darkness.text.subtle,
+    activeIconColor: _semantic.darkness.icon.default,
     activeChipBg: "rgba(255,255,255,0.18)",
-    activeChipText: neutrals.N0,
+    activeChipText: _semantic.darkness.text.default,
     activePressedBg: "rgba(255,255,255,0.10)",
-    textPrimary: "#F2F2F7",
-    textSecondary: "#98989F",
-    codeColor: "#AEAEB2",
-    chevronColor: "#98989F",
-    addRootText: "#64A4D7",
-    actionsColor: "#98989F",
+    textPrimary: _semantic.darkness.text.default,
+    textSecondary: _semantic.darkness.text.subtle,
+    codeColor: _semantic.darkness.text.subtle,
+    chevronColor: _semantic.darkness.icon.subtle,
+    addRootText: brand.M400,
+    actionsColor: _semantic.darkness.icon.subtle,
     pressedBg: "rgba(255,255,255,0.06)",
   },
 };
@@ -386,7 +379,10 @@ function TreeNodeItem({
 
   const subtreeRows: FlatRow[] = [];
   buildRows(node.children, depth + 1, ctx.collapsed, subtreeRows);
-  const expandedHeight = subtreeRows.length * (ROW_HEIGHT + CARD_MARGIN) + 2;
+  const expandedHeight = useMemo(
+    () => subtreeRows.length * (ROW_HEIGHT + CARD_MARGIN) + 2,
+    [subtreeRows.length],
+  );
 
   const heightAnim = useRef(new Animated.Value(isCollapsed ? 0 : expandedHeight)).current;
   const contentOpacity = useRef(new Animated.Value(isCollapsed ? 0 : 1)).current;
@@ -399,9 +395,10 @@ function TreeNodeItem({
       contentOpacity.setValue(isCollapsed ? 0 : 1);
       return;
     }
+    const toHeight = isCollapsed ? 0 : expandedHeight;
     const animation = Animated.parallel([
       Animated.timing(heightAnim, {
-        toValue: isCollapsed ? 0 : expandedHeight,
+        toValue: toHeight,
         duration: EXPAND_DURATION,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: false,
@@ -414,7 +411,7 @@ function TreeNodeItem({
     ]);
     animation.start();
     return () => animation.stop();
-  }, [isCollapsed, expandedHeight, heightAnim, contentOpacity]);
+  }, [isCollapsed, expandedHeight]);
 
   // Fila 1: icono + título. Fila 2: descripción alineada con el título.
   // Grupos: folder cerrado/abierto según colapso; hojas: file.
@@ -526,22 +523,9 @@ function TreeNodeItem({
 // Componente
 // ----------------------------------------------------------------
 
-type DialogMode = "add-root" | "add-child" | "add-sibling" | "edit";
-
-type DialogState = {
-  mode: DialogMode;
-  nodeId?: string;
-  parentId?: string;
-} | null;
-
-type FormErrors = { code?: string; name?: string };
-
 export function TreeEditor({ value, onChange, mode = "view", variant = "default", collapsed: collapsedProp, onCollapsedChange, rootLabel = "Agregar raíz", renderNode, onRequestAdd, onRequestEdit, onRequestDelete, style }: TreeEditorProps) {
+  const t0 = performance.now();
   const [internalCollapsed, setInternalCollapsed] = useState<Record<string, boolean>>({});
-  // Estado inicial implícito: mientras el mapa de colapso esté vacío y haya
-  // datos, se muestra solo la primera rama expandida. Se deriva DURANTE el
-  // render para que el primer frame ya salga correcto (sin flash del árbol
-  // completo), funcione o no el componente sea controlado.
   const source = collapsedProp ?? internalCollapsed;
   const needsImplicitInit = value.length > 0 && Object.keys(source).length === 0;
   const implicitInit = useMemo(
@@ -550,7 +534,6 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
   );
   const collapsed = implicitInit ?? source;
 
-  // Sincroniza el estado inicial con el dueño del estado.
   useEffect(() => {
     if (implicitInit == null) return;
     if (collapsedProp != null) {
@@ -560,24 +543,18 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [implicitInit]);
-  const [actionsNodeId, setActionsNodeId] = useState<string | null>(null);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [dialog, setDialog] = useState<DialogState>(null);
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const [errors, setErrors] = useState<FormErrors>({});
 
   const vt = VARIANT_TOKENS[variant];
   const isEdit = mode === "edit";
-  const actionsNode = actionsNodeId ? findNode(value, actionsNodeId) : undefined;
-  const dialogNode = dialog?.nodeId ? findNode(value, dialog.nodeId) : undefined;
-  const dialogParent = dialog?.parentId ? findNode(value, dialog.parentId) : undefined;
 
   const ctx: TreeRenderContext = {
     isEdit,
     collapsed,
     onToggle: toggleCollapse,
-    onOpenActions: openActions,
+    onOpenActions: (nodeId) => {
+      const node = findNode(value, nodeId);
+      if (node) onRequestEdit?.(node);
+    },
     renderNode,
     vt,
   };
@@ -586,19 +563,16 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
     const collapsing = !collapsed[id];
     let next: Record<string, boolean>;
     if (collapsing) {
-      // Al colapsar un nivel se colapsan también todos sus descendientes,
-      // así al re-expandirlo sus hijos vuelven contraídos.
       next = { ...collapsed, [id]: true };
       const node = findNode(value, id);
       if (node) markBranchCollapsed(node.children, next);
     } else {
-      // Acordeón por nivel: al expandir un nodo se colapsan sus hermanos
-      // (y las ramas de estos) para que solo uno quede desplegado por nivel.
       next = { ...collapsed, [id]: false };
       const siblings = findSiblingGroup(value, id);
+      const rootId = value.length > 0 ? value[0].id : null;
       if (siblings) {
         for (const s of siblings) {
-          if (s.id !== id && s.children.length > 0) {
+          if (s.id !== id && s.id !== rootId && s.children.length > 0) {
             next[s.id] = true;
             markBranchCollapsed(s.children, next);
           }
@@ -612,114 +586,12 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
     }
   }
 
-  function openActions(nodeId: string) {
-    setActionsNodeId(nodeId);
-  }
-
-  function openDialog(mode: DialogMode, opts: { nodeId?: string; parentId?: string } = {}) {
-    setActionsNodeId(null);
-    const node = opts.nodeId ? findNode(value, opts.nodeId) : undefined;
-    const isEdit = mode === "edit";
-    setCode(isEdit ? (node?.code ?? "") : "");
-    setName(isEdit ? node?.name ?? "" : "");
-    setErrors({});
-    setDialog({ mode, nodeId: opts.nodeId, parentId: opts.parentId });
-  }
-
-  function openLevelAdd() {
-    if (onRequestAdd) {
-      onRequestAdd(null);
-      setActionsNodeId(null);
-      return;
-    }
-    openDialog("add-root");
-  }
-
-  function closeActions() {
-    setActionsNodeId(null);
-    setConfirmingDelete(false);
-  }
-
-  function handleAddChild(node: TreeNode) {
-    if (onRequestAdd) {
-      closeActions();
-      onRequestAdd(node.id);
-    } else {
-      openDialog("add-child", { parentId: node.id });
-    }
-  }
-
-  function handleEditNode(node: TreeNode) {
-    if (onRequestEdit) {
-      closeActions();
-      onRequestEdit(node);
-    } else {
-      openDialog("edit", { nodeId: node.id });
-    }
-  }
-
-  function performDelete() {
-    const node = actionsNode;
-    closeActions();
-    if (!node) return;
-    if (onRequestDelete) {
-      onRequestDelete(node);
-      return;
-    }
-    onChange(removeNode(value, node.id));
-  }
-
-  function save() {
-    if (!dialog) return;
-    const nextErrors: FormErrors = {};
-    const trimmedCode = code.trim();
-
-    if (!trimmedCode) {
-      nextErrors.code = "El código es obligatorio";
-    } else if (hasCode(value, trimmedCode, dialog.mode === "edit" ? dialog.nodeId : undefined)) {
-      nextErrors.code = "El código ya existe en el árbol";
-    }
-
-    if (!name.trim()) {
-      nextErrors.name = "El nombre es obligatorio";
-    }
-
-    if (nextErrors.code || nextErrors.name) {
-      setErrors(nextErrors);
-      return;
-    }
-
-    const node = createNode(trimmedCode, name.trim());
-    const apply = (nodes: TreeNode[]): TreeNode[] => {
-      switch (dialog.mode) {
-        case "add-root":
-          return [...nodes, node];
-        case "add-child":
-          return dialog.parentId ? addChild(nodes, dialog.parentId, node) : nodes;
-        case "add-sibling":
-          return dialog.nodeId ? addSibling(nodes, dialog.nodeId, node) : nodes;
-        case "edit":
-          return dialog.nodeId ? updateNode(nodes, dialog.nodeId, { code: trimmedCode, name: name.trim() }) : nodes;
-      }
-    };
-    onChange(apply(value));
-    setDialog(null);
-  }
-
-  const dialogTitle = (() => {
-    switch (dialog?.mode) {
-      case "add-root":
-        return "Nueva raíz";
-      case "add-child":
-        return `Nuevo hijo de ${dialogParent?.name ?? ""}`;
-      case "add-sibling":
-        return `Nuevo al lado de ${dialogNode?.name ?? ""}`;
-      case "edit":
-        return `Editar ${dialogNode?.name ?? ""}`;
-      default:
-        return "";
-    }
-  })();
+  console.log("[TreeEditor] render", Math.round(performance.now() - t0), "ms", {
+    valueLen: value.length,
+    mode,
+    variant,
+    collapsedKeys: Object.keys(collapsed).length,
+  });
 
   return (
     <View style={[styles.container, { backgroundColor: vt.containerBg }, style]}>
@@ -729,7 +601,7 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
 
       {isEdit ? (
         <Pressable
-          onPress={openLevelAdd}
+          onPress={() => onRequestAdd?.(null)}
           style={({ pressed }) => [
             styles.addRoot,
             pressed && { backgroundColor: vt.pressedBg },
@@ -744,100 +616,6 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
           </Text>
         </Pressable>
       ) : null}
-
-      <CardStackSheet visible={actionsNodeId !== null} onClose={closeActions}>
-        <Card>
-          {actionsNode ? (
-            <>
-              <OptionListItem
-                icon={AppIcon.Add}
-                title="Agregar hijo"
-                description="Creá una cuenta dependiente de esta."
-                onPress={() => handleAddChild(actionsNode)}
-                showSeparator
-              />
-              <OptionListItem
-                icon={AppIcon.Pencil}
-                title="Editar"
-                description="Modificá el código y el nombre."
-                onPress={() => handleEditNode(actionsNode)}
-                showSeparator
-              />
-              <OptionListItem
-                icon={AppIcon.Trash}
-                title="Eliminar"
-                description="Borrá la cuenta y sus subcuentas."
-                variant={OptionListItemVariant.Destructive}
-                onPress={() => setConfirmingDelete(true)}
-              />
-            </>
-          ) : null}
-        </Card>
-        <TransitionView contentKey={confirmingDelete ? "confirm" : "none"}>
-          {confirmingDelete && actionsNode ? (
-            <Card>
-              <Text variant={TextType.BodyMedium} color={palette.danger}>
-                {countNodes(actionsNode.children) > 0
-                  ? `¿Eliminar "${actionsNode.name}" y sus ${countNodes(actionsNode.children)} subitem${countNodes(actionsNode.children) === 1 ? "" : "s"}?`
-                  : `¿Eliminar "${actionsNode.name}"?`}
-              </Text>
-              <Text variant={TextType.Caption} color={vt.textSecondary}>
-                Esta acción no se puede deshacer.
-              </Text>
-              <View style={styles.confirmActions}>
-                <AppButton
-                  label="Cancelar"
-                  variant="ghost"
-                  style={styles.confirmButton}
-                  onPress={() => setConfirmingDelete(false)}
-                />
-                <AppButton
-                  label="Eliminar"
-                  backgroundColor={palette.danger}
-                  textColor="#FFFFFF"
-                  style={styles.confirmButton}
-                  onPress={performDelete}
-                />
-              </View>
-            </Card>
-          ) : null}
-        </TransitionView>
-      </CardStackSheet>
-
-      <AppResponsiveDialog
-        visible={dialog !== null}
-        onClose={() => setDialog(null)}
-        title={dialogTitle}
-        caption="El código debe ser único en todo el árbol"
-        snapPoints={["60%"]}
-      >
-        <View style={styles.dialogBody}>
-          <TextField
-            label="Código"
-            value={code}
-            onChangeText={(v) => {
-              setCode(v);
-              if (errors.code) setErrors((prev) => ({ ...prev, code: undefined }));
-            }}
-            placeholder="Ej: 1.1.1.1"
-            error={errors.code}
-          />
-          <TextField
-            label="Nombre"
-            value={name}
-            onChangeText={(v) => {
-              setName(v);
-              if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
-            }}
-            placeholder="Ej: Activo fijo"
-            error={errors.name}
-          />
-          <View style={styles.dialogActions}>
-            <AppButton label="Cancelar" variant="ghost" onPress={() => setDialog(null)} style={styles.dialogButton} />
-            <AppButton label="Guardar" onPress={save} style={styles.dialogButton} />
-          </View>
-        </View>
-      </AppResponsiveDialog>
     </View>
   );
 }
@@ -845,9 +623,6 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
 const styles = StyleSheet.create({
   container: {
     gap: space.space2,
-  },
-  pressed: {
-    opacity: 0.6,
   },
   addRoot: {
     flexDirection: "row",
@@ -929,24 +704,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderRadius: 11,
-  },
-  confirmActions: {
-    flexDirection: "row",
-    gap: space.space3,
-    marginTop: space.space4,
-  },
-  confirmButton: {
-    flex: 1,
-  },
-  dialogBody: {
-    gap: space.space4,
-  },
-  dialogActions: {
-    flexDirection: "row",
-    gap: space.space3,
-    marginTop: space.space2,
-  },
-  dialogButton: {
-    flex: 1,
   },
 });

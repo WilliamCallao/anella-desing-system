@@ -98,7 +98,7 @@ export const layoutStates: Record<LayoutStateName, LayoutState> = {
     pageScroll: true,
     sections: {
       top: { visible: false },
-      mid: { visible: true, height: "content", fadeOnScroll: true, slot: "header", backgroundColor: DEFAULT_BG },
+      mid: { visible: true, height: "content", slot: "header", backgroundColor: DEFAULT_BG },
       bottom: { visible: true, height: "content", slot: "footer", backgroundColor: DARK_BG },
     },
   },
@@ -164,6 +164,18 @@ export function AppLayout({
 
   const [stack, setStack] = useState<AppRoute[]>([initialRoute]);
   const [prevRoute, setPrevRoute] = useState<AppRoute | null>(null);
+
+  // Si la ruta inicial cambia desde afuera (por ejemplo, targetRoute del shell),
+  // hay que sincronizar el stack interno. Sin esto, AppLayout ignora el cambio
+  // de initialRoute y se queda en la pantalla anterior.
+  useEffect(() => {
+    setStack((s) => {
+      if (s[0]?.name !== initialRoute.name) {
+        return [initialRoute];
+      }
+      return s;
+    });
+  }, [initialRoute.name]);
   const navigate = useCallback((route: AppRoute) => {
     setStack((s) => [...s, route]);
   }, []);
@@ -243,6 +255,9 @@ export function AppLayout({
   // con la medición del contenido, de modo que ninguna sección salta a 0 de
   // golpe: todo es interpolación continua y coordinada.
   const progress = useSharedValue(1);
+  // El fade de entrada del contenido de una ruta no se maneja aquí: cada
+  // pantalla (slot) aplica su propia animación de entrada (p. ej. TransitionView).
+  // AppLayout solo coordina la transición de alturas entre secciones.
   const fromH: Record<SectionKey, SharedValue<number>> = {
     top: useSharedValue(H / 3),
     mid: useSharedValue(H / 3),
@@ -350,14 +365,16 @@ export function AppLayout({
     bottom: bottomStyle,
   };
 
-  // El fade se aplica solo al CONTENIDO de la sección (no a su fondo), para que
-  // al scrollear desaparezca el contenido pero el color de fondo permanezca.
+  // El fade de contenido aquí es solo el de scroll (fadeOnScroll) y el de
+  // colapso de altura del mid. El fade de entrada de cada pantalla lo aplica el
+  // propio slot (por ejemplo con TransitionView), no este valor.
   const topFade = useAnimatedStyle(
-    () => ({
-      opacity: state.sections.top?.fadeOnScroll
+    () => {
+      const scrollFade = state.sections.top?.fadeOnScroll
         ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
-        : 1,
-    }),
+        : 1;
+      return { opacity: scrollFade };
+    },
     [state]
   );
   const midFade = useAnimatedStyle(
@@ -372,11 +389,12 @@ export function AppLayout({
     [state]
   );
   const bottomFade = useAnimatedStyle(
-    () => ({
-      opacity: state.sections.bottom?.fadeOnScroll
+    () => {
+      const scrollFade = state.sections.bottom?.fadeOnScroll
         ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
-        : 1,
-    }),
+        : 1;
+      return { opacity: scrollFade };
+    },
     [state]
   );
   const fadeFor = {
