@@ -136,6 +136,9 @@ const DEFAULT_COLORS: Record<SectionKey, string> = {
 };
 const COLLAPSE_DISTANCE = 80;
 const TRANSITION = 320;
+// Duración del fade de entrada del contenido de una nueva ruta. Más lento que
+// la transición de alturas para que la aparición se perciba suave y gradual.
+const ENTER_FADE = 1000;
 
 const AppNavigationContext = createContext<AppNavigation | null>(null);
 
@@ -255,6 +258,10 @@ export function AppLayout({
   // con la medición del contenido, de modo que ninguna sección salta a 0 de
   // golpe: todo es interpolación continua y coordinada.
   const progress = useSharedValue(1);
+  // Opacidad del contenido de la ruta actual: arranca en 1 (primer render sin
+  // fade) y se anima de 0 a 1 cada vez que cambia la ruta, para que el contenido
+  // nuevo "aparezca" gradualmente.
+  const contentOpacity = useSharedValue(1);
   const fromH: Record<SectionKey, SharedValue<number>> = {
     top: useSharedValue(H / 3),
     mid: useSharedValue(H / 3),
@@ -340,6 +347,11 @@ export function AppLayout({
         animating.value = 0;
       }
     );
+    contentOpacity.value = 0;
+    contentOpacity.value = withTiming(1, {
+      duration: ENTER_FADE,
+      easing: Easing.inOut(Easing.cubic),
+    });
     settleTimerRef.current = setTimeout(() => {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       scrollY.value = 0;
@@ -364,12 +376,16 @@ export function AppLayout({
 
   // El fade se aplica solo al CONTENIDO de la sección (no a su fondo), para que
   // al scrollear desaparezca el contenido pero el color de fondo permanezca.
+  // Se combinan con Math.min (y no multiplicando) para que el fade de entrada
+  // (contentOpacity, lento) domine y no se acumulen dos curvas de opacidad que
+  // se percibirían como una doble animación de fade.
   const topFade = useAnimatedStyle(
-    () => ({
-      opacity: state.sections.top?.fadeOnScroll
+    () => {
+      const scrollFade = state.sections.top?.fadeOnScroll
         ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
-        : 1,
-    }),
+        : 1;
+      return { opacity: Math.min(scrollFade, contentOpacity.value) };
+    },
     [state]
   );
   const midFade = useAnimatedStyle(
@@ -379,16 +395,17 @@ export function AppLayout({
         : 1;
       const full = naturals.mid.value || 1;
       const collapseFade = interpolate(midDisplay.value, [0, full], [0, 1], Extrapolation.CLAMP);
-      return { opacity: Math.min(scrollFade, collapseFade) };
+      return { opacity: Math.min(scrollFade, collapseFade, contentOpacity.value) };
     },
     [state]
   );
   const bottomFade = useAnimatedStyle(
-    () => ({
-      opacity: state.sections.bottom?.fadeOnScroll
+    () => {
+      const scrollFade = state.sections.bottom?.fadeOnScroll
         ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
-        : 1,
-    }),
+        : 1;
+      return { opacity: Math.min(scrollFade, contentOpacity.value) };
+    },
     [state]
   );
   const fadeFor = {
