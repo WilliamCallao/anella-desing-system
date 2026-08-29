@@ -136,9 +136,6 @@ const DEFAULT_COLORS: Record<SectionKey, string> = {
 };
 const COLLAPSE_DISTANCE = 80;
 const TRANSITION = 320;
-// Duración del fade de entrada del contenido de una nueva ruta. Más lento que
-// la transición de alturas para que la aparición se perciba suave y gradual.
-const ENTER_FADE = 1000;
 
 const AppNavigationContext = createContext<AppNavigation | null>(null);
 
@@ -258,10 +255,9 @@ export function AppLayout({
   // con la medición del contenido, de modo que ninguna sección salta a 0 de
   // golpe: todo es interpolación continua y coordinada.
   const progress = useSharedValue(1);
-  // Opacidad del contenido de la ruta actual: arranca en 1 (primer render sin
-  // fade) y se anima de 0 a 1 cada vez que cambia la ruta, para que el contenido
-  // nuevo "aparezca" gradualmente.
-  const contentOpacity = useSharedValue(1);
+  // El fade de entrada del contenido de una ruta no se maneja aquí: cada
+  // pantalla (slot) aplica su propia animación de entrada (p. ej. TransitionView).
+  // AppLayout solo coordina la transición de alturas entre secciones.
   const fromH: Record<SectionKey, SharedValue<number>> = {
     top: useSharedValue(H / 3),
     mid: useSharedValue(H / 3),
@@ -347,11 +343,6 @@ export function AppLayout({
         animating.value = 0;
       }
     );
-    contentOpacity.value = 0;
-    contentOpacity.value = withTiming(1, {
-      duration: ENTER_FADE,
-      easing: Easing.inOut(Easing.cubic),
-    });
     settleTimerRef.current = setTimeout(() => {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       scrollY.value = 0;
@@ -374,17 +365,15 @@ export function AppLayout({
     bottom: bottomStyle,
   };
 
-  // El fade se aplica solo al CONTENIDO de la sección (no a su fondo), para que
-  // al scrollear desaparezca el contenido pero el color de fondo permanezca.
-  // Se combinan con Math.min (y no multiplicando) para que el fade de entrada
-  // (contentOpacity, lento) domine y no se acumulen dos curvas de opacidad que
-  // se percibirían como una doble animación de fade.
+  // El fade de contenido aquí es solo el de scroll (fadeOnScroll) y el de
+  // colapso de altura del mid. El fade de entrada de cada pantalla lo aplica el
+  // propio slot (por ejemplo con TransitionView), no este valor.
   const topFade = useAnimatedStyle(
     () => {
       const scrollFade = state.sections.top?.fadeOnScroll
         ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
         : 1;
-      return { opacity: Math.min(scrollFade, contentOpacity.value) };
+      return { opacity: scrollFade };
     },
     [state]
   );
@@ -395,7 +384,7 @@ export function AppLayout({
         : 1;
       const full = naturals.mid.value || 1;
       const collapseFade = interpolate(midDisplay.value, [0, full], [0, 1], Extrapolation.CLAMP);
-      return { opacity: Math.min(scrollFade, collapseFade, contentOpacity.value) };
+      return { opacity: Math.min(scrollFade, collapseFade) };
     },
     [state]
   );
@@ -404,7 +393,7 @@ export function AppLayout({
       const scrollFade = state.sections.bottom?.fadeOnScroll
         ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
         : 1;
-      return { opacity: Math.min(scrollFade, contentOpacity.value) };
+      return { opacity: scrollFade };
     },
     [state]
   );
