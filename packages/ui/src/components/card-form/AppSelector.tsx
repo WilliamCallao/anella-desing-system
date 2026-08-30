@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, TouchableOpacity, View } from "react-native";
-import { appInputCard, cta1, space, spacing, text, TextType } from "@antonella/theme";
+import { appInputCard, cta1, space, spacing, text, TextType } from "@william-callao/antonella-theme";
 import { Icon } from "../Icon";
 import { Text } from "../text/Text";
 import type { AppInputProps } from "./AppInput";

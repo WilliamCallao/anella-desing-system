@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet } from "react-native";
-import { brand, radius, space, TextType, resolveSemantic, lightSemantic } from "@antonella/theme";
+import { brand, radius, space, TextType, resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 import { Text } from "./text/Text";
 import { Icon, type IconName } from "./Icon";
 

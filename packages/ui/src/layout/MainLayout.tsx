@@ -6,7 +6,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { resolveSemantic, lightSemantic } from "@antonella/theme";
+import { resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 
 const _semantic = resolveSemantic(lightSemantic);
 const DEFAULT_BG = _semantic.darkness.bg.default;

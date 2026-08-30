@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, View, type ViewProps } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { neutrals } from "@antonella/theme";
+import { neutrals } from "@william-callao/antonella-theme";
 
 export type DonutSegment = {
   /** Fracción del anillo (0-1) que ocupa el segmento. */

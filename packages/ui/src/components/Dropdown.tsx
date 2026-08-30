@@ -10,7 +10,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { Icon, Text, type IconName } from "../";
-import { background, card, cta1, cta1Contrast, spacing, texts } from "@antonella/theme";
+import { background, card, cta1, cta1Contrast, spacing, texts } from "@william-callao/antonella-theme";
 
 export type DropdownOption = {
   label: string;

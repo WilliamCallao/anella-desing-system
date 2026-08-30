@@ -1,17 +1,19 @@
 {
-  "name": "@antonella/utils",
-  "version": "0.0.0",
+  "name": "@william-callao/antonella-utils",
+  "version": "1.0.0",
   "description": "Utilidades puras compartidas de Antonella.",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "react-native": "dist/index.js",
   "sideEffects": false,
   "scripts": {
+    "build": "tsup",
     "typecheck": "tsc --noEmit"
   },
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
-  },
-  "files": [
-    "src"
-  ]
+  }
 }

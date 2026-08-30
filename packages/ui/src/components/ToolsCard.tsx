@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
-import { appInputCard, background, card, palette, radius, space, TextType } from "@antonella/theme";
+import { appInputCard, background, card, palette, radius, space, TextType } from "@william-callao/antonella-theme";
 import { Text } from "./text/Text";
 import { Icon, type IconName } from "./Icon";
 

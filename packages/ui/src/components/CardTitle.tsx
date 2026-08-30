@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, type ViewStyle } from "react-native";
-import { card, space } from "@antonella/theme";
+import { card, space } from "@william-callao/antonella-theme";
 import { Text } from "./text/Text";
 
 export interface CardTitleProps {

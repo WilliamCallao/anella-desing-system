@@ -17,7 +17,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { space } from "@antonella/theme";
+import { space } from "@william-callao/antonella-theme";
 import { useModalKeyboardHeight } from "./useModalKeyboard";
 
 const ANIM_IN_TIMING = 260;

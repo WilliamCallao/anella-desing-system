@@ -1,6 +1,6 @@
 import React, { createContext, useContext, type ReactNode } from "react";
 import { ScrollView, useWindowDimensions, View, type ViewProps, type ViewStyle } from "react-native";
-import { LayoutRowSize } from "@antonella/theme";
+import { LayoutRowSize } from "@william-callao/antonella-theme";
 
 type LayoutRowContextValue = { debug: boolean; isSmall: boolean };
 const LayoutRowContext = createContext<LayoutRowContextValue>({ debug: false, isSmall: false });

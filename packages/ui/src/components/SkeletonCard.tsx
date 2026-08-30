@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, type ViewProps } from "react-native";
-import { background, card, radius, space } from "@antonella/theme";
+import { background, card, radius, space } from "@william-callao/antonella-theme";
 
 export interface SkeletonCardProps extends ViewProps {
   /** Altura mínima del frame (útil cuando el esqueleto aún no define contenido). */

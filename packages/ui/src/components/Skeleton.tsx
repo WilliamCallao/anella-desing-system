@@ -12,7 +12,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
-import { background, radius } from "@antonella/theme";
+import { background, radius } from "@william-callao/antonella-theme";
 
 export type SkeletonShape = "rect" | "circle";
 

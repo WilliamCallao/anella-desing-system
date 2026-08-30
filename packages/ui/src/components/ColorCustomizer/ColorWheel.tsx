@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { cta1 } from "@antonella/theme";
+import { cta1 } from "@william-callao/antonella-theme";
 
 type ColorWheelProps = {
   onPress: () => void;

@@ -7,7 +7,7 @@ import {
   type NativeSyntheticEvent,
   type TextInputContentSizeChangeEventData,
 } from "react-native";
-import { spacing, text, texts, TextType, space } from "@antonella/theme";
+import { spacing, text, texts, TextType, space } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
 import type { AppInputProps } from "./AppInput";
 

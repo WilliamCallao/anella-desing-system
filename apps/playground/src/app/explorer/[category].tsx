@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { EmptyState } from "@antonella/ui";
-import { background, space } from "@antonella/theme";
+import { EmptyState } from "@william-callao/antonella-ui";
+import { background, space } from "@william-callao/antonella-theme";
 import { ComponentShowcase } from "../../explorer/ComponentShowcase";
 import { findCategory } from "../../explorer/registry";
 

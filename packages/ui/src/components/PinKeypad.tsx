@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { background, border, card, cta1, space, text, texts, TextType } from "@antonella/theme";
+import { background, border, card, cta1, space, text, texts, TextType } from "@william-callao/antonella-theme";
 import { Icon } from "./Icon";
 import { Text } from "./text/Text";
 

@@ -8,7 +8,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { brand, card, cta1, neutrals, radius, resolveSemantic, lightSemantic, space, text, TextType } from "@antonella/theme";
+import { brand, card, cta1, neutrals, radius, resolveSemantic, lightSemantic, space, text, TextType } from "@william-callao/antonella-theme";
 import { Text } from "./text/Text";
 import { Icon } from "./Icon";
 import { AppIcon } from "../AppIcons";

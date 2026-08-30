@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from "react-native";
-import { appInput, spacing, text, texts } from "@antonella/theme";
+import { appInput, spacing, text, texts } from "@william-callao/antonella-theme";
 import { Icon, type IconName } from "./Icon";
 
 export interface InputProps extends TextInputProps {

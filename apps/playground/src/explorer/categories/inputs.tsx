@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { Input, TextField } from "@antonella/ui";
-import { background, radius, spacing } from "@antonella/theme";
+import { Input, TextField } from "@william-callao/antonella-ui";
+import { background, radius, spacing } from "@william-callao/antonella-theme";
 import type { ComponentCategory } from "../types";
 
 function DemoSurface({ children }: { children: React.ReactNode }) {

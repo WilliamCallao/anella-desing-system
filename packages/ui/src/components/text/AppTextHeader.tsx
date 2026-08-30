@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, type ViewStyle } from "react-native";
-import { card, TextType } from "@antonella/theme";
+import { card, TextType } from "@william-callao/antonella-theme";
 import { Text } from "./Text";
 
 export interface AppTextHeaderProps {

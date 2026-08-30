@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { TextType, space, text } from "@antonella/theme";
+import { TextType, space, text } from "@william-callao/antonella-theme";
 import { Icon, type IconName } from "./Icon";
 import { Text } from "./text/Text";
 

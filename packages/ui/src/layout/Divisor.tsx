@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, type ViewStyle } from "react-native";
-import { resolveSemantic, lightSemantic } from "@antonella/theme";
+import { resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 
 const _semantic = resolveSemantic(lightSemantic);
 const BASE_BG = _semantic.default.bg.default;

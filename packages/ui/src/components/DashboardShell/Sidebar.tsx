@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import type { DashboardShellTokens } from "@antonella/theme";
-import { texts } from "@antonella/theme";
+import type { DashboardShellTokens } from "@william-callao/antonella-theme";
+import { texts } from "@william-callao/antonella-theme";
 import { Icon } from "../Icon";
 import type { SidebarItem, SidebarSection } from "./types";
 

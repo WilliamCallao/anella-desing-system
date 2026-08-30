@@ -17,7 +17,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { background, radius, space } from "@antonella/theme";
+import { background, radius, space } from "@william-callao/antonella-theme";
 import { DialogHeader } from "./DialogHeader";
 import type { IconName } from "./Icon";
 import { useModalKeyboardHeight } from "./useModalKeyboard";

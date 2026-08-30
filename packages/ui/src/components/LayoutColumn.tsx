@@ -1,6 +1,6 @@
 import React, { createContext, useContext, type ReactNode } from "react";
 import { ScrollView, View, type ViewProps, type ViewStyle } from "react-native";
-import { LayoutColumnSize } from "@antonella/theme";
+import { LayoutColumnSize } from "@william-callao/antonella-theme";
 
 type LayoutColumnContextValue = { debug: boolean };
 const LayoutColumnContext = createContext<LayoutColumnContextValue>({ debug: false });

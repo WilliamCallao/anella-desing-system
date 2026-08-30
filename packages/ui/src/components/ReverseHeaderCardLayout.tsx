@@ -15,7 +15,7 @@ import Reanimated, {
   Extrapolation,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { resolveSemantic, lightSemantic } from "@antonella/theme";
+import { resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 
 const _semantic = resolveSemantic(lightSemantic);
 

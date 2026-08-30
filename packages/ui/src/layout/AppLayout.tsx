@@ -24,7 +24,7 @@ import Animated, {
 import { Button } from "../components/Button";
 import { Text } from "../components/text";
 import { Divisor } from "./Divisor";
-import { resolveSemantic, lightSemantic } from "@antonella/theme";
+import { resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 
 const _semantic = resolveSemantic(lightSemantic);
 const DEFAULT_BG = _semantic.default.bg.default;

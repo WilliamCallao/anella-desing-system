@@ -1,8 +1,8 @@
 import { useRouter } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button, Card, Icon, Text } from "@antonella/ui";
-import { background, cta1, space, spacing, text, TextType } from "@antonella/theme";
+import { Button, Card, Icon, Text } from "@william-callao/antonella-ui";
+import { background, cta1, space, spacing, text, TextType } from "@william-callao/antonella-theme";
 
 export default function Index() {
   const router = useRouter();

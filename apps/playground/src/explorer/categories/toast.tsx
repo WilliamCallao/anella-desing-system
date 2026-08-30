@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, useToast, ToastTone } from "@antonella/ui";
+import { Button, useToast, ToastTone } from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 
 function ToastDemo() {

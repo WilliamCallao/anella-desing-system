@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet, TouchableOpacity, View } from "react-native";
-import { cta1, space, spacing, text, TextType } from "@antonella/theme";
+import { cta1, space, spacing, text, TextType } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
 import type { AppInputProps } from "./AppInput";
 

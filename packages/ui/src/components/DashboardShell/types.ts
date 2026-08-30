@@ -1,5 +1,5 @@
 import React from "react";
-import type { DashboardShellTokens } from "@antonella/theme";
+import type { DashboardShellTokens } from "@william-callao/antonella-theme";
 import type { IconName } from "../Icon";
 
 export type SidebarItem = {

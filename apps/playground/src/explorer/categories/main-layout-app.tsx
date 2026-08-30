@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, Text, AppLayout, useAppNavigation, type AppRoute } from "@antonella/ui";
+import { Button, Text, AppLayout, useAppNavigation, type AppRoute } from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 
 const pad = (children: React.ReactNode, style?: object) => (

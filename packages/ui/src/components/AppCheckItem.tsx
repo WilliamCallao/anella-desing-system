@@ -10,7 +10,7 @@ import {
   success,
   text,
   TextType,
-} from "@antonella/theme";
+} from "@william-callao/antonella-theme";
 import { Icon } from "./Icon";
 import { Text } from "./text/Text";
 

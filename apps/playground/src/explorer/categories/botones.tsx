@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { AppButton, Button } from "@antonella/ui";
+import { AppButton, Button } from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 import { demoStyles, noop } from "./shared";
 

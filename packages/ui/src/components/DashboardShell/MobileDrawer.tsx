@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Animated, Modal, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
-import type { DashboardShellTokens } from "@antonella/theme";
+import type { DashboardShellTokens } from "@william-callao/antonella-theme";
 import { SidebarContent } from "./Sidebar";
 import type { SidebarItem, SidebarSection } from "./types";
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, type ViewStyle } from "react-native";
-import { card, space, TextType } from "@antonella/theme";
+import { card, space, TextType } from "@william-callao/antonella-theme";
 import { Text } from "./Text";
 import { Icon, type IconName } from "../Icon";
 

@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { spacing } from "@antonella/theme";
+import { spacing } from "@william-callao/antonella-theme";
 
 export const noop = () => {};
 

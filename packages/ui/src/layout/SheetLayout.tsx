@@ -14,7 +14,7 @@ import Animated, {
   interpolateColor,
   type SharedValue,
 } from "react-native-reanimated";
-import { resolveSemantic, lightSemantic } from "@antonella/theme";
+import { resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 import { SheetSlot } from "./SheetSlot";
 import { resolveComposition, type HostKey } from "./composition";
 import type { Route, SheetLayoutProps } from "./types";

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { space } from "@antonella/theme";
+import { space } from "@william-callao/antonella-theme";
 import { Item } from "./Item";
 import { ItemStyle } from "./Item";
 import type { ItemProps } from "./Item";

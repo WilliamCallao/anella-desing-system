@@ -7,7 +7,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { appInput, spacing, texts, TextType } from "@antonella/theme";
+import { appInput, spacing, texts, TextType } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
 
 export interface TextFieldProps {

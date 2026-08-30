@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { space, cta1, texts, resolveText, lightText } from "@antonella/theme";
+import { space, cta1, texts, resolveText, lightText } from "@william-callao/antonella-theme";
 import { Text } from "./text";
 
 export type AvatarSize = "sm" | "md" | "lg";

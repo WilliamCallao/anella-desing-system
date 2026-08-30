@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
-import { background, card, palette, texts } from "@antonella/theme";
+import { background, card, palette, texts } from "@william-callao/antonella-theme";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";

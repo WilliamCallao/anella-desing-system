@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { TreeEditor, type TreeEditorMode, type TreeEditorVariant, type TreeNode } from "@antonella/ui";
-import { radius, space } from "@antonella/theme";
+import { TreeEditor, type TreeEditorMode, type TreeEditorVariant, type TreeNode } from "@william-callao/antonella-ui";
+import { radius, space } from "@william-callao/antonella-theme";
 import type { ComponentCategory } from "../types";
 
 const SAMPLE_TREE: TreeNode[] = [

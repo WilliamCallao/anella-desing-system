@@ -7,7 +7,7 @@ import {
   SheetLayout,
   useSheetLayout,
   type Route,
-} from "@antonella/ui";
+} from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 
 const palette = {

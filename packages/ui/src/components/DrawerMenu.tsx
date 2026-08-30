@@ -15,8 +15,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { radius, space } from "@antonella/theme";
-import { neutrals, brand, danger as dangerPalette } from "@antonella/theme";
+import { radius, space } from "@william-callao/antonella-theme";
+import { neutrals, brand, danger as dangerPalette } from "@william-callao/antonella-theme";
 import { Text } from "./text";
 import { DrawerMenuItem } from "./DrawerMenuItem";
 import { DrawerMenuItemStyle } from "./DrawerMenuItem";

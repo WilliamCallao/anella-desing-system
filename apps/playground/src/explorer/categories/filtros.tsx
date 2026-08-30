@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AppFilterChips } from "@antonella/ui";
+import { AppFilterChips } from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 import { FILTER_OPTIONS } from "./shared";
 

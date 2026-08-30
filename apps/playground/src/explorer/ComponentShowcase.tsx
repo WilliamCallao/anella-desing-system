@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { Text } from "@antonella/ui";
-import { space, text, TextType } from "@antonella/theme";
+import { Text } from "@william-callao/antonella-ui";
+import { space, text, TextType } from "@william-callao/antonella-theme";
 import type { ComponentEntry } from "./types";
 
 type ComponentShowcaseProps = {

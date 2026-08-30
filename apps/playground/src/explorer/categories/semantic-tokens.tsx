@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { StyleSheet, View, TouchableOpacity } from "react-native";
-import { Text, ColorCustomizerDialog } from "@antonella/ui";
-import type { ColorToken } from "@antonella/ui";
+import { Text, ColorCustomizerDialog } from "@william-callao/antonella-ui";
+import type { ColorToken } from "@william-callao/antonella-ui";
 import {
   lightSemantic,
   darkSemantic,
@@ -9,7 +9,7 @@ import {
   type SemanticMap,
   type ContextMap,
   type ContextTokens,
-} from "@antonella/theme";
+} from "@william-callao/antonella-theme";
 import type { ComponentCategory } from "../types";
 import { demoStyles } from "./shared";
 

@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { texts } from "@antonella/theme";
+import { texts } from "@william-callao/antonella-theme";
 import { Icon } from "../Icon";
 
 export type MobileHeaderProps = {

@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, View, TextInput } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { Text, HeaderCardLayout, Button } from "@antonella/ui";
+import { Text, HeaderCardLayout, Button } from "@william-callao/antonella-ui";
 
 export default function HeaderCardFullScreen() {
   const router = useRouter();

@@ -1,6 +1,7 @@
 {
-  "name": "@antonella/api",
+  "name": "@william-callao/antonella-api",
   "version": "0.0.0",
+  "private": true,
   "description": "Cliente API de Antonella. Implementación pendiente (Axios + TanStack Query).",
   "main": "src/index.ts",
   "types": "src/index.ts",

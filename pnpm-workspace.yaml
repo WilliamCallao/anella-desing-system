@@ -10,3 +10,8 @@ nodeLinker: hoisted
 # (^0.0.0) para que npm/apps externas puedan instalarlos por file:.
 linkWorkspacePackages: true
 preferWorkspacePackages: true
+
+# pnpm 10 bloquea los build scripts por defecto. esbuild lo necesita para
+# instalar su binario nativo (lo usa tsup para el build de los paquetes).
+onlyBuiltDependencies:
+  - esbuild

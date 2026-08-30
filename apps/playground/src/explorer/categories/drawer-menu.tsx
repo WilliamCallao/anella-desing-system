@@ -8,10 +8,10 @@ import {
   DrawerMenu,
   type DrawerMenuItemType,
   Text,
-} from "@antonella/ui";
+} from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 import { demoStyles } from "./shared";
-import { background, radius, spacing, text, space } from "@antonella/theme";
+import { background, radius, spacing, text, space } from "@william-callao/antonella-theme";
 
 function DrawerLeftDemo() {
   const [open, setOpen] = useState(false);

@@ -49,4 +49,4 @@ export * from "./components/text";
 export * from "./components/card-form";
 export * from "./layout";
 export { AppIcon } from "./AppIcons";
-export { LayoutColumnSize, LayoutRowSize } from "@antonella/theme";
+export { LayoutColumnSize, LayoutRowSize } from "@william-callao/antonella-theme";

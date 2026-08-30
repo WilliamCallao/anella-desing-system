@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { IconName } from "@antonella/ui";
+import type { IconName } from "@william-callao/antonella-ui";
 
 export type SectionKey =
   | "componentes"

@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, type ViewStyle } from "react-native";
-import { appInputCard, radius, background, border } from "@antonella/theme";
+import { appInputCard, radius, background, border } from "@william-callao/antonella-theme";
 import type { AppInputElement, AppInputProps } from "./AppInput";
 
 export type AppFormCardProps = {

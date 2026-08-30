@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { SearchBar, SearchBarStyle } from "@antonella/ui";
-import { resolveSemantic, lightSemantic } from "@antonella/theme";
+import { SearchBar, SearchBarStyle } from "@william-callao/antonella-ui";
+import { resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 import type { ComponentCategory } from "../types";
 
 const _s = resolveSemantic(lightSemantic);

@@ -8,8 +8,8 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { background, border, radius, space, text } from "@antonella/theme";
-import { neutrals, brand, success, warning, danger } from "@antonella/theme";
+import { background, border, radius, space, text } from "@william-callao/antonella-theme";
+import { neutrals, brand, success, warning, danger } from "@william-callao/antonella-theme";
 import { Text } from "../text";
 import { AppResponsiveDialog, AppDialogMode } from "../AppResponsiveDialog";
 import type { ColorToken } from "./types";

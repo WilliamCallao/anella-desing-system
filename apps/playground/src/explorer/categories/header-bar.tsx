@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { HeaderBar, HeaderBarStyle } from "@antonella/ui";
-import { resolveSemantic, lightSemantic } from "@antonella/theme";
+import { HeaderBar, HeaderBarStyle } from "@william-callao/antonella-ui";
+import { resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 import type { ComponentCategory } from "../types";
 
 const _s = resolveSemantic(lightSemantic);

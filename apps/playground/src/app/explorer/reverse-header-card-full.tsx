@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { Text, ReverseHeaderCardLayout, Button } from "@antonella/ui";
+import { Text, ReverseHeaderCardLayout, Button } from "@william-callao/antonella-ui";
 
 export default function ReverseHeaderCardFullScreen() {
   const router = useRouter();

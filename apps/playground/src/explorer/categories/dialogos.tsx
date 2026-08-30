@@ -9,11 +9,11 @@ import {
   OptionListItem,
   OptionListItemVariant,
   Text,
-} from "@antonella/ui";
+} from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 import { demoStyles } from "./shared";
-import { palette, spacing } from "@antonella/theme";
-import { TransitionView } from "@antonella/animations";
+import { palette, spacing } from "@william-callao/antonella-theme";
+import { TransitionView } from "@william-callao/antonella-animations";
 
 function ResponsiveDialogDemo() {
   const [open, setOpen] = useState(false);

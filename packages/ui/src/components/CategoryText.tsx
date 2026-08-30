@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "./text";
-import { TextType, resolveSemantic, lightSemantic } from "@antonella/theme";
+import { TextType, resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 
 // ── Style enum ──────────────────────────────────────────────
 

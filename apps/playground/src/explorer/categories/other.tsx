@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Calendar, Text } from "@antonella/ui";
-import { TextType } from "@antonella/theme";
+import { Calendar, Text } from "@william-callao/antonella-ui";
+import { TextType } from "@william-callao/antonella-theme";
 import type { ComponentCategory } from "../types";
 
 // --- Calendar ---

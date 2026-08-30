@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { AppIcon } from "../AppIcons";
 import { Icon } from "./Icon";
-import { cta1, cta1Contrast } from "@antonella/theme";
+import { cta1, cta1Contrast } from "@william-callao/antonella-theme";
 import type { IconName } from "./Icon";
 
 export type FloatingActionButtonPosition = "bottom-right" | "bottom-left";

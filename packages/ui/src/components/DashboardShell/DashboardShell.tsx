@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { ScrollView, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { resolveShellTokens, texts } from "@antonella/theme";
-import type { DashboardShellTokens } from "@antonella/theme";
+import { resolveShellTokens, texts } from "@william-callao/antonella-theme";
+import type { DashboardShellTokens } from "@william-callao/antonella-theme";
 import { Icon } from "../Icon";
 import { Sidebar } from "./Sidebar";
 import { MobileHeader } from "./MobileHeader";

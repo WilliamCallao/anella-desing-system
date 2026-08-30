@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
-import { space, neutrals, brand as brandPalette } from "@antonella/theme";
+import { space, neutrals, brand as brandPalette } from "@william-callao/antonella-theme";
 import { Icon } from "./Icon";
 import type { IconName } from "./Icon";
 

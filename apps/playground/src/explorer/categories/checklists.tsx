@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AppCheckItem } from "@antonella/ui";
+import { AppCheckItem } from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 
 type CheckItemDemoProps = {

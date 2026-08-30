@@ -1,6 +1,6 @@
 import { StyleSheet, View } from "react-native";
-import { AppTextHeader, Text } from "@antonella/ui";
-import { text, texts, TextType } from "@antonella/theme";
+import { AppTextHeader, Text } from "@william-callao/antonella-ui";
+import { text, texts, TextType } from "@william-callao/antonella-theme";
 import type { ComponentCategory } from "../types";
 
 const TYPE_ENTRIES: {

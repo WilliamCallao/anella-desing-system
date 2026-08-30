@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, type ViewProps } from "react-native";
-import { background, card, palette, spacing } from "@antonella/theme";
+import { background, card, palette, spacing } from "@william-callao/antonella-theme";
 import { Skeleton } from "./Skeleton";
 
 export type CardVariant = "default" | "line";

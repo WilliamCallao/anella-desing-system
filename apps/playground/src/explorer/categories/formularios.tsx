@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { View } from "react-native";
-import { AppButton, AppFormCard, AppSelector, AppTextArea, AppTextInput } from "@antonella/ui";
+import { AppButton, AppFormCard, AppSelector, AppTextArea, AppTextInput } from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 import { PROVINCE_OPTIONS, noop } from "./shared";
-import { spacing } from "@antonella/theme";
+import { spacing } from "@william-callao/antonella-theme";
 
 // --- AppTextInput ---
 

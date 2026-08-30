@@ -1,9 +1,9 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Item, ItemStyle, ChipRow, AppIcon } from "@antonella/ui";
-import { resolveSemantic, lightSemantic } from "@antonella/theme";
+import { Item, ItemStyle, ChipRow, AppIcon } from "@william-callao/antonella-ui";
+import { resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 import type { ComponentCategory } from "../types";
-import type { IconName } from "@antonella/ui";
+import type { IconName } from "@william-callao/antonella-ui";
 
 const _s = resolveSemantic(lightSemantic);
 

@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, TextInput, View } from "react-native";
-import { Icon, Text } from "@antonella/ui";
-import { background, border, cta1, space, spacing, text, TextType } from "@antonella/theme";
-import type { IconName } from "@antonella/ui";
-import { iconMap } from "@antonella/ui";
+import { Icon, Text } from "@william-callao/antonella-ui";
+import { background, border, cta1, space, spacing, text, TextType } from "@william-callao/antonella-theme";
+import type { IconName } from "@william-callao/antonella-ui";
+import { iconMap } from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 
 const ALL_ICONS = Object.keys(iconMap).sort() as IconName[];

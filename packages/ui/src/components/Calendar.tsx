@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, type ViewProps } from "react-native";
-import { card, palette, space, text, texts } from "@antonella/theme";
+import { card, palette, space, text, texts } from "@william-callao/antonella-theme";
 import { Text } from "./text/Text";
 
 const MONTHS = [

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
-import { danger, space, TextType, resolveSemantic, lightSemantic } from "@antonella/theme";
+import { danger, space, TextType, resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 import Animated, {
   cancelAnimation,
   Easing,
@@ -53,7 +53,7 @@ const STATE_DEFAULTS: Record<StateMessageType, { icon: IconName; title: string }
 // ── Component ───────────────────────────────────────────────
 // Mensaje centrado de icono + texto para estados de carga o vacío.
 // Para intercambiarlo animado con el contenido real, envolverlo en un
-// `TransitionView` (de @antonella/animations) usando `contentKey`.
+// `TransitionView` (de @william-callao/antonella-animations) usando `contentKey`.
 
 export function StateMessage({
   state,

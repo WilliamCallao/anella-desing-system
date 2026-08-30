@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, type ViewStyle } from "react-native";
-import { appButton, border, radius, text } from "@antonella/theme";
+import { appButton, border, radius, text } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
 
 export type AppButtonVariant = "solid" | "outline" | "ghost";

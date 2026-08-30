@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Text } from "@antonella/ui";
+import { Text } from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 import { demoStyles } from "./shared";
 import {
@@ -20,7 +20,7 @@ import {
   success,
   warning,
   danger,
-} from "@antonella/theme";
+} from "@william-callao/antonella-theme";
 
 type ColorSwatch = {
   name: string;

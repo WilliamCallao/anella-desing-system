@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { AppButton, AppIcon, Dock, type DockItem, Text } from "@antonella/ui";
+import { AppButton, AppIcon, Dock, type DockItem, Text } from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 import { demoStyles } from "./shared";
-import { background, radius, spacing } from "@antonella/theme";
+import { background, radius, spacing } from "@william-callao/antonella-theme";
 
 const DOCK_ITEMS: DockItem[] = [
   { icon: AppIcon.Home, label: "Inicio" },

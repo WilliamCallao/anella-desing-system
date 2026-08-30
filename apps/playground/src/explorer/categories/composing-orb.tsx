@@ -1,9 +1,9 @@
 import React, { useCallback, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { AppButton, ComposingOrb, Text } from "@antonella/ui";
+import { AppButton, ComposingOrb, Text } from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 import { demoStyles } from "./shared";
-import { radius, spacing } from "@antonella/theme";
+import { radius, spacing } from "@william-callao/antonella-theme";
 import { useFocusEffect } from "expo-router";
 
 function useFocused(): boolean {

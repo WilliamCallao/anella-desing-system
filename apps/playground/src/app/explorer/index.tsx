@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { Icon, Text } from "@antonella/ui";
-import { background, border, cta1, space, spacing, text, TextType } from "@antonella/theme";
+import { Icon, Text } from "@william-callao/antonella-ui";
+import { background, border, cta1, space, spacing, text, TextType } from "@william-callao/antonella-theme";
 import { getSections, type ComponentCategory, type SectionWithCategories } from "../../explorer/registry";
 
 export default function ExplorerScreen() {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { background, border, cta1, cta1Contrast, space, text, TextType } from "@antonella/theme";
+import { background, border, cta1, cta1Contrast, space, text, TextType } from "@william-callao/antonella-theme";
 import { Text } from "./text/Text";
 
 export type AppFilterChipOption = {

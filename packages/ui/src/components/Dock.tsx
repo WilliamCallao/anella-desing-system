@@ -21,7 +21,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { background, border, cta1, space, text } from "@antonella/theme";
+import { background, border, cta1, space, text } from "@william-callao/antonella-theme";
 import { iconMap, type IconName } from "./Icon";
 
 export type DockItem = {

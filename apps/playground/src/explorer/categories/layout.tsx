@@ -5,7 +5,7 @@ import {
   Text,
   HeaderCardLayout,
   ReverseHeaderCardLayout,
-} from "@antonella/ui";
+} from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 
 function HeaderCardDemo() {

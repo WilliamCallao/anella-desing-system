@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { TransitionView } from "@antonella/animations";
-import { Button, Card, Text } from "@antonella/ui";
-import { palette, spacing, text, TextType } from "@antonella/theme";
+import { TransitionView } from "@william-callao/antonella-animations";
+import { Button, Card, Text } from "@william-callao/antonella-ui";
+import { palette, spacing, text, TextType } from "@william-callao/antonella-theme";
 import type { ComponentCategory } from "../types";
 
 // --- TransitionView ---
