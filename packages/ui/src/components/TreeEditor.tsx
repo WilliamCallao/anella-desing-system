@@ -258,6 +258,25 @@ const EXPAND_DURATION = 220;
 const EXPAND_FADE = 180;
 const COLLAPSE_FADE = 120;
 
+/**
+ * Rastreo del despliegue de un hijo: `toggleCollapse` (padre) guarda el momento
+ * en que se pide expandir un nodo; la animación (hijo) registra cuánto tardó en
+ * terminar, para medir el tiempo de despliegue de un subárbol.
+ */
+type ExpandTrace = { id: string; t0: number } | null;
+let lastExpandTrace: ExpandTrace = null;
+const trace = {
+  beginExpand(id: string) {
+    lastExpandTrace = { id, t0: Date.now() };
+  },
+  commitExpand(id: string, name: string) {
+    if (!lastExpandTrace || lastExpandTrace.id !== id) return;
+    const ms = Date.now() - lastExpandTrace.t0;
+    console.log(`[TreeEditor] desplegado hijo "${name}" en ${ms} ms`);
+    lastExpandTrace = null;
+  },
+};
+
 /** Icono de nodo (folder/file) alineado con el título. */
 const NODE_ICON_SIZE = 18;
 
@@ -409,7 +428,11 @@ function TreeNodeItem({
         useNativeDriver: false,
       }),
     ]);
-    animation.start();
+    animation.start(({ finished }) => {
+      if (finished && !isCollapsed) {
+        trace.commitExpand(node.id, node.name);
+      }
+    });
     return () => animation.stop();
   }, [isCollapsed, expandedHeight]);
 
@@ -525,6 +548,8 @@ function TreeNodeItem({
 
 export function TreeEditor({ value, onChange, mode = "view", variant = "default", collapsed: collapsedProp, onCollapsedChange, rootLabel = "Agregar raíz", renderNode, onRequestAdd, onRequestEdit, onRequestDelete, style }: TreeEditorProps) {
   const t0 = performance.now();
+  const renderStamp = useRef(t0);
+  renderStamp.current = t0;
   const [internalCollapsed, setInternalCollapsed] = useState<Record<string, boolean>>({});
   const source = collapsedProp ?? internalCollapsed;
   const needsImplicitInit = value.length > 0 && Object.keys(source).length === 0;
@@ -561,6 +586,9 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
 
   function toggleCollapse(id: string) {
     const collapsing = !collapsed[id];
+    if (!collapsing) {
+      trace.beginExpand(id);
+    }
     let next: Record<string, boolean>;
     if (collapsing) {
       next = { ...collapsed, [id]: true };
@@ -586,15 +614,23 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
     }
   }
 
-  console.log("[TreeEditor] render", Math.round(performance.now() - t0), "ms", {
+  console.log("[TreeEditor] render JS", Math.round(performance.now() - t0), "ms", {
     valueLen: value.length,
     mode,
     variant,
     collapsedKeys: Object.keys(collapsed).length,
   });
 
+  const handleLayout = () => {
+    const ms = Math.round(performance.now() - renderStamp.current);
+    console.log(`[TreeEditor] layout/pintado del arbol en ${ms} ms`);
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: vt.containerBg }, style]}>
+    <View
+      style={[styles.container, { backgroundColor: vt.containerBg }, style]}
+      onLayout={handleLayout}
+    >
       <View>
         {renderForest(ctx, value, 0)}
       </View>
