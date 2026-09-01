@@ -549,6 +549,8 @@ function TreeNodeItem({
 export function TreeEditor({ value, onChange, mode = "view", variant = "default", collapsed: collapsedProp, onCollapsedChange, rootLabel = "Agregar raíz", renderNode, onRequestAdd, onRequestEdit, onRequestDelete, style }: TreeEditorProps) {
   const t0 = performance.now();
   const renderStamp = useRef(t0);
+  const layoutEvents = useRef(0);
+  const lastLayoutLoggedStamp = useRef(-1);
   renderStamp.current = t0;
   const [internalCollapsed, setInternalCollapsed] = useState<Record<string, boolean>>({});
   const source = collapsedProp ?? internalCollapsed;
@@ -619,11 +621,19 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
     mode,
     variant,
     collapsedKeys: Object.keys(collapsed).length,
+    layoutEvents: layoutEvents.current,
   });
 
   const handleLayout = () => {
-    const ms = Math.round(performance.now() - renderStamp.current);
-    console.log(`[TreeEditor] layout/pintado del arbol en ${ms} ms`);
+    const stamp = renderStamp.current;
+    layoutEvents.current += 1;
+    if (lastLayoutLoggedStamp.current !== stamp) {
+      lastLayoutLoggedStamp.current = stamp;
+      const ms = Math.round(performance.now() - stamp);
+      console.log(
+        `[TreeEditor] primer pintado del arbol en ${ms} ms (layout events acumulados: ${layoutEvents.current})`
+      );
+    }
   };
 
   return (
