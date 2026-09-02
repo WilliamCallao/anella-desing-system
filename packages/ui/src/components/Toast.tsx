@@ -56,12 +56,12 @@ export function Toast({
     <View
       style={[
         styles.toast,
-        { backgroundColor: c.bg, paddingTop: topInset + BASE_VPAD },
+        { backgroundColor: c.bg, marginTop: (topInset || 0) + BASE_VPAD },
         containerStyle,
       ]}
     >
-      <Icon name={TONE_ICONS[tone]} size={18} color={c.content} />
-      <Text variant={TextType.Caption} color={c.content} style={styles.message}>
+      <Icon name={TONE_ICONS[tone]} size={20} color={c.content} />
+      <Text variant={TextType.Body} color={c.content} style={styles.message}>
         {message}
       </Text>
       {onClose ? (
@@ -72,7 +72,7 @@ export function Toast({
           accessibilityLabel="Cerrar aviso"
           style={({ pressed }) => [styles.close, pressed && styles.closePressed]}
         >
-          <Icon name="close" size={15} color={c.content} />
+          <Icon name="close" size={16} color={c.content} />
         </Pressable>
       ) : null}
     </View>
@@ -103,14 +103,14 @@ const STYLE_COLORS: Record<ToastStyle, Record<ToastTone, { bg: string; content: 
 
 const styles = StyleSheet.create({
   toast: {
-    width: "100%",
+    minHeight: 52,
     flexDirection: "row",
     alignItems: "center",
     gap: space.space2,
-    minHeight: 52,
-    borderRadius: 0,
-    paddingVertical: space.space3 + 2,
+    borderRadius: 16,
+    paddingVertical: space.space3,
     paddingHorizontal: space.space4,
+    marginHorizontal: space.space4,
     shadowColor: "#000000",
     shadowOpacity: 0.25,
     shadowRadius: 10,

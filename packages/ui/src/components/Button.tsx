@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 import { background, card, palette, texts } from "@william-callao/antonella-theme";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
@@ -10,6 +10,8 @@ export interface ButtonProps extends Omit<PressableProps, "style"> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   style?: StyleProp<ViewStyle>;
+  /** Muestra un spinner centrado en lugar del label (y deshabilita el botón). */
+  loading?: boolean;
 }
 
 const labelColors: Record<ButtonVariant, string> = {
@@ -25,45 +27,52 @@ export function Button({
   size = "md",
   style,
   disabled,
+  loading = false,
   android_ripple,
   ...rest
 }: ButtonProps) {
   const defaultRipple = android_ripple ?? {
     color: variant === "primary" || variant === "danger" ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.08)",
   };
+  const isDisabled = disabled === true || loading;
 
   return (
     <Pressable
       accessibilityRole="button"
-      disabled={disabled}
-      android_ripple={disabled ? undefined : defaultRipple}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
+      disabled={isDisabled}
+      android_ripple={isDisabled ? undefined : defaultRipple}
       style={({ pressed }) => [
         styles.base,
         sizeStyles[size],
         variantStyles[variant],
-        pressed && !disabled && styles.pressed,
+        pressed && !isDisabled && styles.pressed,
         disabled && styles.disabled,
         style,
       ]}
       {...rest}
     >
-      <Text
-        style={[
-          styles.label,
-          size === "sm" && styles.labelSm,
-          { color: labelColors[variant] },
-          disabled && styles.labelDisabled,
-        ]}
-      >
-        {label}
-      </Text>
+      {loading ? (
+        <ActivityIndicator color={labelColors[variant]} size="small" />
+      ) : (
+        <Text
+          style={[
+            styles.label,
+            size === "sm" && styles.labelSm,
+            { color: labelColors[variant] },
+            disabled && styles.labelDisabled,
+          ]}
+        >
+          {label}
+        </Text>
+      )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: 10,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -75,9 +84,9 @@ const styles = StyleSheet.create({
 });
 
 const sizeStyles = StyleSheet.create({
-  sm: { paddingVertical: 6, paddingHorizontal: 12 },
-  md: { paddingVertical: 10, paddingHorizontal: 16 },
-  lg: { paddingVertical: 14, paddingHorizontal: 20 },
+  sm: { height: 36, paddingHorizontal: 12 },
+  md: { height: 44, paddingHorizontal: 16 },
+  lg: { height: 54, paddingHorizontal: 20 },
 });
 
 const variantStyles = StyleSheet.create({
