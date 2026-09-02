@@ -198,16 +198,6 @@ function markBranchCollapsed(nodes: TreeNode[], acc: Record<string, boolean>) {
   }
 }
 
-/** Grupo de hermanos al que pertenece `nodeId` (o null si es raíz del bosque). */
-function findSiblingGroup(nodes: TreeNode[], id: string): TreeNode[] | null {
-  if (nodes.some((n) => n.id === id)) return nodes;
-  for (const n of nodes) {
-    const found = findSiblingGroup(n.children, id);
-    if (found) return found;
-  }
-  return null;
-}
-
 export function hasCode(nodes: TreeNode[], code: string, excludeId?: string): boolean {
   for (const n of nodes) {
     if (n.code === code && n.id !== excludeId) return true;
@@ -260,13 +250,20 @@ const EXPAND_FADE = 180;
 const NODE_ICON_SIZE = 18;
 
 // Contexto compartido entre el render recursivo y las filas.
+// No incluye mapas mutables (`collapsed`/versiones): se leen por referencia vía
+// `getCollapsed()`/`getVersion()` para que el objeto ctx sea estable.
+// La memoización por RAMA usa una VERSIÓN numérica (no un flag booleano):
+// `branchVersion` cambia solo para los nodos afectados por el toggle, de modo
+// que el React.memo re-renderiza SOLO la rama tocada y jamás queda "atascado"
+// (un número siempre es comparable; un booleano sucio se queda en true).
 type TreeRenderContext = {
   isEdit: boolean;
-  collapsed: Record<string, boolean>;
   onToggle: (id: string) => void;
   onOpenActions: (id: string) => void;
   renderNode?: (node: TreeNode, defaultContent: React.ReactNode) => React.ReactNode;
   vt: VariantTokens;
+  getCollapsed: () => Record<string, boolean>;
+  getVersion: (id: string) => number;
 };
 
 // Columnas de conectores tipo file-explorer ("│/├/└"). Cada nivel es un item
@@ -318,6 +315,7 @@ function renderForest(
   depth: number,
   parentName?: string,
 ): React.ReactNode {
+  const collapsed = ctx.getCollapsed();
   return (
     <>
       {nodes.map((node, i) => (
@@ -327,11 +325,28 @@ function renderForest(
           depth={depth}
           isLast={i === nodes.length - 1}
           parentName={parentName}
+          isCollapsed={!!collapsed[node.id]}
+          branchVersion={ctx.getVersion(node.id)}
           ctx={ctx}
         />
       ))}
     </>
   );
+}
+
+/** Marca en `acc` el nodo y todos sus ancestros hasta la raíz (camino afectado). */
+function markDirtyPath(id: string, parentMap: Map<string, string>, acc: Set<string>) {
+  let curr: string | undefined = id;
+  while (curr) {
+    acc.add(curr);
+    curr = parentMap.get(curr);
+  }
+}
+
+/** Marca en `acc` el nodo y TODOS sus descendientes (subárbol entero). */
+function markSubtreeDirty(node: TreeNode, acc: Set<string>) {
+  acc.add(node.id);
+  for (const child of node.children) markSubtreeDirty(child, acc);
 }
 
 // Nodo del árbol: fila clickeable (colapsa/expande en toda la fila) + contenedor
@@ -345,16 +360,19 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
   depth,
   isLast,
   parentName,
+  isCollapsed,
+  branchVersion,
   ctx,
 }: {
   node: TreeNode;
   depth: number;
   isLast: boolean;
   parentName?: string;
+  isCollapsed: boolean;
+  branchVersion: number;
   ctx: TreeRenderContext;
 }) {
   const hasChildren = node.children.length > 0;
-  const isCollapsed = !!ctx.collapsed[node.id];
   // Activo: grupo expandido. Pinta el card de brand con textos contrastados.
   const isActive = hasChildren && !isCollapsed;
 
@@ -496,6 +514,65 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
   );
   const collapsed = implicitInit ?? source;
 
+  // Mapa hijo -> padre, para propagar hacia arriba (camino afectado) los cambios
+  // de colapso. Se reconstruye solo cuando cambia el árbol (raro).
+  const parentMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const walk = (list: TreeNode[], parent?: string) => {
+      for (const n of list) {
+        if (parent) map.set(n.id, parent);
+        walk(n.children, n.id);
+      }
+    };
+    walk(value);
+    return map;
+  }, [value]);
+
+  // Refs "latest value" para que callbacks estables (toggle/actions) lean el
+  // estado vigente sin recrear su identidad en cada cambio.
+  const collapsedRef = useRef(collapsed);
+  collapsedRef.current = collapsed;
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const onCollapsedChangeRef = useRef(onCollapsedChange);
+  onCollapsedChangeRef.current = onCollapsedChange;
+  const onRequestEditRef = useRef(onRequestEdit);
+  onRequestEditRef.current = onRequestEdit;
+  const controlledRef = useRef(collapsedProp !== undefined);
+
+  // Memoización por RAMA basada en versión numérica (no en un flag booleano).
+  // `versions` mapea id -> última renderSeq en la que ese nodo fue afectado por
+  // un toggle. Como `branchVersion` es un number, React.memo lo compara bien y
+  // NO se queda atascado: cada toggle que toca un nodo le asigna una versión
+  // nueva, y los nodos de otras ramas conservan la suya (no re-renderizan).
+  const versionRef = useRef(new Map<string, number>());
+  const renderSeqRef = useRef(0);
+  const prevCollapsedRef = useRef(collapsed);
+  const parentMapRef = useRef(parentMap);
+  parentMapRef.current = parentMap;
+  {
+    const versions = versionRef.current;
+    const dirty = new Set<string>();
+    const prev = prevCollapsedRef.current;
+    const markChange = (id: string) => {
+      markDirtyPath(id, parentMapRef.current, dirty);
+      const node = findNode(value, id);
+      if (node) markSubtreeDirty(node, dirty);
+    };
+    for (const id of Object.keys(collapsed)) {
+      if (prev[id] !== collapsed[id]) markChange(id);
+    }
+    for (const id of Object.keys(prev)) {
+      if (prev[id] === true && !(id in collapsed)) markChange(id);
+    }
+    prevCollapsedRef.current = collapsed;
+    if (dirty.size > 0) {
+      renderSeqRef.current += 1;
+      const seq = renderSeqRef.current;
+      for (const id of dirty) versions.set(id, seq);
+    }
+  }
+
   useEffect(() => {
     if (implicitInit == null) return;
     if (collapsedProp != null) {
@@ -509,54 +586,48 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
   const vt = VARIANT_TOKENS[variant];
   const isEdit = mode === "edit";
 
-  const toggleCollapse = useCallback(
-    (id: string) => {
-      const collapsing = !collapsed[id];
-      let next: Record<string, boolean>;
-      if (collapsing) {
-        next = { ...collapsed, [id]: true };
-        const node = findNode(value, id);
-        if (node) markBranchCollapsed(node.children, next);
-      } else {
-        next = { ...collapsed, [id]: false };
-        const siblings = findSiblingGroup(value, id);
-        const rootId = value.length > 0 ? value[0].id : null;
-        if (siblings) {
-          for (const s of siblings) {
-            if (s.id !== id && s.id !== rootId && s.children.length > 0) {
-              next[s.id] = true;
-              markBranchCollapsed(s.children, next);
-            }
-          }
-        }
-      }
-      if (collapsedProp != null) {
-        onCollapsedChange?.(next);
-      } else {
-        setInternalCollapsed(next);
-      }
-    },
-    [collapsed, collapsedProp, value, onCollapsedChange],
-  );
+  const getCollapsed = useCallback(() => collapsedRef.current, []);
 
-  const onOpenActions = useCallback(
-    (nodeId: string) => {
-      const node = findNode(value, nodeId);
-      if (node) onRequestEdit?.(node);
-    },
-    [value, onRequestEdit],
-  );
+  const getVersion = useCallback((id: string) => versionRef.current.get(id) ?? 0, []);
+
+  const toggleCollapse = useCallback((id: string) => {
+    const collapseMap = collapsedRef.current;
+    const tree = valueRef.current;
+    const collapsing = !collapseMap[id];
+    let next: Record<string, boolean>;
+    if (collapsing) {
+      // Colapsar: el nodo + su subárbol entero.
+      next = { ...collapseMap, [id]: true };
+      const node = findNode(tree, id);
+      if (node) markBranchCollapsed(node.children, next);
+    } else {
+      // Expandir: solo el nodo, sin colapsar a sus hermanos (se pueden abrir
+      // varios hijos del mismo padre a la vez).
+      next = { ...collapseMap, [id]: false };
+    }
+    if (controlledRef.current) {
+      onCollapsedChangeRef.current?.(next);
+    } else {
+      setInternalCollapsed(next);
+    }
+  }, []);
+
+  const onOpenActions = useCallback((nodeId: string) => {
+    const node = findNode(valueRef.current, nodeId);
+    if (node) onRequestEditRef.current?.(node);
+  }, []);
 
   const ctx: TreeRenderContext = useMemo(
     () => ({
       isEdit,
-      collapsed,
       onToggle: toggleCollapse,
       onOpenActions,
       renderNode,
       vt,
+      getCollapsed,
+      getVersion,
     }),
-    [isEdit, collapsed, toggleCollapse, onOpenActions, renderNode, vt],
+    [isEdit, toggleCollapse, onOpenActions, renderNode, vt, getCollapsed, getVersion],
   );
 
   return (
