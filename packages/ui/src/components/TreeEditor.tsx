@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -254,30 +254,10 @@ const CARD_RADIUS = 24;
 /** Offset del riel vertical dentro de su columna de indentación. */
 const LINE_X = 10;
 
-const EXPAND_DURATION = 220;
 const EXPAND_FADE = 180;
-const COLLAPSE_FADE = 120;
 
 /** Icono de nodo (folder/file) alineado con el título. */
 const NODE_ICON_SIZE = 18;
-
-type FlatRow = { node: TreeNode; depth: number };
-
-function buildRows(
-  nodes: TreeNode[],
-  depth: number,
-  collapsed: Record<string, boolean>,
-  out: FlatRow[],
-): FlatRow[] {
-  nodes.forEach((node) => {
-    out.push({ node, depth });
-    const isCollapsed = !!collapsed[node.id];
-    if (node.children.length > 0 && !isCollapsed) {
-      buildRows(node.children, depth + 1, collapsed, out);
-    }
-  });
-  return out;
-}
 
 // Contexto compartido entre el render recursivo y las filas.
 type TreeRenderContext = {
@@ -295,7 +275,7 @@ type TreeRenderContext = {
 // sobre la fila ni padding intermedio), la alineación entre filas es exacta por
 // construcción. `terminal` cierra el codo en el centro de la fila: es el "└"
 // del último item visible del nivel.
-function NodeGutter({
+const NodeGutter = React.memo(function NodeGutter({
   depth,
   lineColor,
   terminal,
@@ -328,7 +308,7 @@ function NodeGutter({
     );
   }
   return <>{columns}</>;
-}
+});
 
 // Fila compacta "+ Agregar" de un nivel. El riel del padre termina en el chip,
 // así el botón se lee como el último item del nivel y queda conectado.
@@ -356,7 +336,11 @@ function renderForest(
 
 // Nodo del árbol: fila clickeable (colapsa/expande en toda la fila) + contenedor
 // animado del subárbol (altura/opacidad/chevron, patrón de AppSelector).
-function TreeNodeItem({
+//
+// Memoizado: solo re-renderiza si realmente cambió su nodo/estado. Esto evita
+// que renders ajenos del padre (transiciones de pantalla, renders dobles) o el
+// colapso de OTRO nodo hermano re-pinte el subárbol entero.
+const TreeNodeItem = React.memo(function TreeNodeItem({
   node,
   depth,
   isLast,
@@ -377,41 +361,22 @@ function TreeNodeItem({
   // El "└" del riel cierra en el último hijo visible del nivel.
   const terminalElbow = isLast;
 
-  const subtreeRows: FlatRow[] = [];
-  buildRows(node.children, depth + 1, ctx.collapsed, subtreeRows);
-  const expandedHeight = useMemo(
-    () => subtreeRows.length * (ROW_HEIGHT + CARD_MARGIN) + 2,
-    [subtreeRows.length],
-  );
-
-  const heightAnim = useRef(new Animated.Value(isCollapsed ? 0 : expandedHeight)).current;
-  const contentOpacity = useRef(new Animated.Value(isCollapsed ? 0 : 1)).current;
-  const measured = useRef(false);
+  const contentOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (!measured.current) {
-      measured.current = true;
-      heightAnim.setValue(isCollapsed ? 0 : expandedHeight);
-      contentOpacity.setValue(isCollapsed ? 0 : 1);
-      return;
-    }
-    const toHeight = isCollapsed ? 0 : expandedHeight;
-    const animation = Animated.parallel([
-      Animated.timing(heightAnim, {
-        toValue: toHeight,
-        duration: EXPAND_DURATION,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }),
-      Animated.timing(contentOpacity, {
-        toValue: isCollapsed ? 0 : 1,
-        duration: isCollapsed ? COLLAPSE_FADE : EXPAND_FADE,
-        useNativeDriver: false,
-      }),
-    ]);
+    // El subárbol solo existe en el tree cuando está expandido; al montarlo se
+    // hace un fade-in (native driver, sin tocar layout). No hay fade-out: al
+    // colapsar se desmonta al instante para no dejar hueco ni animar altura.
+    if (isCollapsed) return;
+    const animation = Animated.timing(contentOpacity, {
+      toValue: 1,
+      duration: EXPAND_FADE,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    });
     animation.start();
     return () => animation.stop();
-  }, [isCollapsed, expandedHeight]);
+  }, [isCollapsed, node.id, node.name, contentOpacity]);
 
   // Fila 1: icono + título. Fila 2: descripción alineada con el título.
   // Grupos: folder cerrado/abierto según colapso; hojas: file.
@@ -508,23 +473,20 @@ function TreeNodeItem({
             </Pressable>
           ) : null}
       </View>
-      {hasChildren ? (
-        <Animated.View style={[styles.subtree, { height: heightAnim }]}>
-          <Animated.View style={{ opacity: contentOpacity }}>
-            {renderForest(ctx, node.children, depth + 1, node.name)}
-          </Animated.View>
+      {hasChildren && !isCollapsed ? (
+        <Animated.View style={[styles.subtreeFade, { opacity: contentOpacity }]}>
+          {renderForest(ctx, node.children, depth + 1, node.name)}
         </Animated.View>
       ) : null}
     </>
   );
-}
+});
 
 // ----------------------------------------------------------------
 // Componente
 // ----------------------------------------------------------------
 
 export function TreeEditor({ value, onChange, mode = "view", variant = "default", collapsed: collapsedProp, onCollapsedChange, rootLabel = "Agregar raíz", renderNode, onRequestAdd, onRequestEdit, onRequestDelete, style }: TreeEditorProps) {
-  const t0 = performance.now();
   const [internalCollapsed, setInternalCollapsed] = useState<Record<string, boolean>>({});
   const source = collapsedProp ?? internalCollapsed;
   const needsImplicitInit = value.length > 0 && Object.keys(source).length === 0;
@@ -547,54 +509,60 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
   const vt = VARIANT_TOKENS[variant];
   const isEdit = mode === "edit";
 
-  const ctx: TreeRenderContext = {
-    isEdit,
-    collapsed,
-    onToggle: toggleCollapse,
-    onOpenActions: (nodeId) => {
-      const node = findNode(value, nodeId);
-      if (node) onRequestEdit?.(node);
-    },
-    renderNode,
-    vt,
-  };
-
-  function toggleCollapse(id: string) {
-    const collapsing = !collapsed[id];
-    let next: Record<string, boolean>;
-    if (collapsing) {
-      next = { ...collapsed, [id]: true };
-      const node = findNode(value, id);
-      if (node) markBranchCollapsed(node.children, next);
-    } else {
-      next = { ...collapsed, [id]: false };
-      const siblings = findSiblingGroup(value, id);
-      const rootId = value.length > 0 ? value[0].id : null;
-      if (siblings) {
-        for (const s of siblings) {
-          if (s.id !== id && s.id !== rootId && s.children.length > 0) {
-            next[s.id] = true;
-            markBranchCollapsed(s.children, next);
+  const toggleCollapse = useCallback(
+    (id: string) => {
+      const collapsing = !collapsed[id];
+      let next: Record<string, boolean>;
+      if (collapsing) {
+        next = { ...collapsed, [id]: true };
+        const node = findNode(value, id);
+        if (node) markBranchCollapsed(node.children, next);
+      } else {
+        next = { ...collapsed, [id]: false };
+        const siblings = findSiblingGroup(value, id);
+        const rootId = value.length > 0 ? value[0].id : null;
+        if (siblings) {
+          for (const s of siblings) {
+            if (s.id !== id && s.id !== rootId && s.children.length > 0) {
+              next[s.id] = true;
+              markBranchCollapsed(s.children, next);
+            }
           }
         }
       }
-    }
-    if (collapsedProp != null) {
-      onCollapsedChange?.(next);
-    } else {
-      setInternalCollapsed(next);
-    }
-  }
+      if (collapsedProp != null) {
+        onCollapsedChange?.(next);
+      } else {
+        setInternalCollapsed(next);
+      }
+    },
+    [collapsed, collapsedProp, value, onCollapsedChange],
+  );
 
-  console.log("[TreeEditor] render", Math.round(performance.now() - t0), "ms", {
-    valueLen: value.length,
-    mode,
-    variant,
-    collapsedKeys: Object.keys(collapsed).length,
-  });
+  const onOpenActions = useCallback(
+    (nodeId: string) => {
+      const node = findNode(value, nodeId);
+      if (node) onRequestEdit?.(node);
+    },
+    [value, onRequestEdit],
+  );
+
+  const ctx: TreeRenderContext = useMemo(
+    () => ({
+      isEdit,
+      collapsed,
+      onToggle: toggleCollapse,
+      onOpenActions,
+      renderNode,
+      vt,
+    }),
+    [isEdit, collapsed, toggleCollapse, onOpenActions, renderNode, vt],
+  );
 
   return (
-    <View style={[styles.container, { backgroundColor: vt.containerBg }, style]}>
+    <View
+      style={[styles.container, { backgroundColor: vt.containerBg }, style]}
+    >
       <View>
         {renderForest(ctx, value, 0)}
       </View>
@@ -694,8 +662,9 @@ const styles = StyleSheet.create({
     marginBottom: CARD_MARGIN,
     borderRadius: radius.sm,
   },
-  subtree: {
-    overflow: "hidden",
+  subtreeFade: {
+    // Fade puro (native driver): sin medir/animar altura, evita el layout en
+    // cascada al expandir/colapsar subárboles anidados.
   },
   addChip: {
     width: 22,

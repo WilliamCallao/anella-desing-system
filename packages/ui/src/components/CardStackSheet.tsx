@@ -33,6 +33,8 @@ export type CardStackSheetProps = {
   children: React.ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
   snapPoints?: Array<string | number>;
+  /** Color del área semitransparente del sheet (fondo entre y bajo las cards). */
+  areaColor?: string;
 };
 
 export function CardStackSheet({
@@ -42,11 +44,11 @@ export function CardStackSheet({
   children,
   contentStyle,
   snapPoints,
+  areaColor,
 }: CardStackSheetProps) {
   const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const keyboardHeight = useModalKeyboardHeight();
-
   const [mounted, setMounted] = useState(visible);
   const progress = useSharedValue(0);
 
@@ -141,7 +143,11 @@ export function CardStackSheet({
             <ScrollView
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={[styles.content, contentStyle]}
+              contentContainerStyle={[
+                styles.content,
+                contentStyle,
+                areaColor ? { backgroundColor: areaColor } : undefined,
+              ]}
             >
               {children}
             </ScrollView>

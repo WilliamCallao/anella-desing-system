@@ -22,6 +22,8 @@ export type HeaderBarProps = {
   /** Acción del botón de menú (hamburguesa, lado izquierdo). */
   onMenuPress?: () => void;
   menuIcon?: IconName;
+  /** Label de accesibilidad del botón izquierdo. */
+  accessibilityLabel?: string;
 };
 
 // El alto de los botones redondos matchea el minHeight del SearchBar (54)
@@ -39,6 +41,7 @@ export function HeaderBar({
   style = HeaderBarStyle.DEFAULT,
   onMenuPress,
   menuIcon = "menu",
+  accessibilityLabel = "Abrir menú",
 }: HeaderBarProps) {
   const c = STYLE_COLORS[style];
 
@@ -52,7 +55,7 @@ export function HeaderBar({
             { backgroundColor: pressed ? c.buttonPressedBg : c.buttonBg },
           ]}
           accessibilityRole="button"
-          accessibilityLabel="Abrir menú"
+          accessibilityLabel={accessibilityLabel}
         >
           <Icon name={menuIcon} size={22} color={c.iconColor} />
         </Pressable>

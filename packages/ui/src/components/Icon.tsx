@@ -20,6 +20,8 @@ import {
   Delete,
   Ellipsis,
   EllipsisVertical,
+  Eye,
+  EyeOff,
   File,
   FileText,
   Folder,
@@ -114,7 +116,9 @@ export type IconName =
   | "file"
   | "loader"
   | "inbox"
-  | "triangle-alert";
+  | "triangle-alert"
+  | "eye"
+  | "eye-off";
 
 export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: string; strokeWidth?: number }>> = {
   home: Home,
@@ -180,6 +184,8 @@ export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: st
   loader: LoaderCircle,
   inbox: Inbox,
   "triangle-alert": TriangleAlert,
+  eye: Eye,
+  "eye-off": EyeOff,
 };
 
 export type IconProps = {
