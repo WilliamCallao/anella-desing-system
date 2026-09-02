@@ -260,13 +260,18 @@ const EXPAND_FADE = 180;
 const NODE_ICON_SIZE = 18;
 
 // Contexto compartido entre el render recursivo y las filas.
+// No incluye mapas mutables (`collapsed`/dirty): se leen por referencia vía
+// `getCollapsed()`/`getDirty()` para que el objeto ctx sea estable y React.memo
+// de TreeNodeItem cumpla su función (colapsar/expandir un nodo NO re-renderiza
+// las ramas ajenas al camino afectado).
 type TreeRenderContext = {
   isEdit: boolean;
-  collapsed: Record<string, boolean>;
   onToggle: (id: string) => void;
   onOpenActions: (id: string) => void;
   renderNode?: (node: TreeNode, defaultContent: React.ReactNode) => React.ReactNode;
   vt: VariantTokens;
+  getCollapsed: () => Record<string, boolean>;
+  getDirty: () => Set<string>;
 };
 
 // Columnas de conectores tipo file-explorer ("│/├/└"). Cada nivel es un item
@@ -318,6 +323,16 @@ function renderForest(
   depth: number,
   parentName?: string,
 ): React.ReactNode {
+  const collapsed = ctx.getCollapsed();
+  const dirty = ctx.getDirty();
+  // DEBUG(tree): traza qué filas renderiza y su estado de colapso.
+  // eslint-disable-next-line no-console
+  console.log("[TREE:renderForest]", {
+    depth,
+    parentName: parentName ?? null,
+    nodes: nodes.map((n) => ({ id: n.id, code: n.code, collapsed: !!collapsed[n.id], children: n.children.length })),
+    dirty: [...dirty],
+  });
   return (
     <>
       {nodes.map((node, i) => (
@@ -327,11 +342,22 @@ function renderForest(
           depth={depth}
           isLast={i === nodes.length - 1}
           parentName={parentName}
+          isCollapsed={!!collapsed[node.id]}
+          subtreeDirty={dirty.has(node.id)}
           ctx={ctx}
         />
       ))}
     </>
   );
+}
+
+/** Marca en `acc` el nodo y todos sus ancestros hasta la raíz (camino afectado). */
+function markDirtyPath(id: string, parentMap: Map<string, string>, acc: Set<string>) {
+  let curr: string | undefined = id;
+  while (curr) {
+    acc.add(curr);
+    curr = parentMap.get(curr);
+  }
 }
 
 // Nodo del árbol: fila clickeable (colapsa/expande en toda la fila) + contenedor
@@ -345,18 +371,25 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
   depth,
   isLast,
   parentName,
+  isCollapsed,
+  subtreeDirty,
   ctx,
 }: {
   node: TreeNode;
   depth: number;
   isLast: boolean;
   parentName?: string;
+  isCollapsed: boolean;
+  subtreeDirty: boolean;
   ctx: TreeRenderContext;
 }) {
   const hasChildren = node.children.length > 0;
-  const isCollapsed = !!ctx.collapsed[node.id];
   // Activo: grupo expandido. Pinta el card de brand con textos contrastados.
   const isActive = hasChildren && !isCollapsed;
+
+  // DEBUG(tree): estado final con el que renderiza cada fila.
+  // eslint-disable-next-line no-console
+  console.log(`[TREE:item] id=${node.id} code=${node.code} depth=${depth} isCollapsed=${isCollapsed} subtreeDirty=${subtreeDirty} hasChildren=${hasChildren}`);
 
   // El "└" del riel cierra en el último hijo visible del nivel.
   const terminalElbow = isLast;
@@ -496,6 +529,50 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
   );
   const collapsed = implicitInit ?? source;
 
+  // Mapa hijo -> padre, para propagar hacia arriba (camino afectado) los cambios
+  // de colapso. Se reconstruye solo cuando cambia el árbol (raro).
+  const parentMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const walk = (list: TreeNode[], parent?: string) => {
+      for (const n of list) {
+        if (parent) map.set(n.id, parent);
+        walk(n.children, n.id);
+      }
+    };
+    walk(value);
+    return map;
+  }, [value]);
+
+  // Refs "latest value" para que callbacks estables (toggle/actions) lean el
+  // estado vigente sin recrear su identidad en cada cambio.
+  const collapsedRef = useRef(collapsed);
+  collapsedRef.current = collapsed;
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const onCollapsedChangeRef = useRef(onCollapsedChange);
+  onCollapsedChangeRef.current = onCollapsedChange;
+  const onRequestEditRef = useRef(onRequestEdit);
+  onRequestEditRef.current = onRequestEdit;
+  const controlledRef = useRef(collapsedProp !== undefined);
+
+  // Camino afectado del render: ids cuyo estado de colapso (propio o de algún
+  // descendiente) cambió respecto al render anterior. Por eso un toggle solo
+  // re-renderiza el nodo tocado y sus ancestros, no todo el árbol.
+  const dirtyRef = useRef(new Set<string>());
+  const prevCollapsedRef = useRef(collapsed);
+  {
+    const dirty = dirtyRef.current;
+    const prev = prevCollapsedRef.current;
+    dirty.clear();
+    for (const id of Object.keys(collapsed)) {
+      if (prev[id] !== collapsed[id]) markDirtyPath(id, parentMap, dirty);
+    }
+    for (const id of Object.keys(prev)) {
+      if (prev[id] === true && !(id in collapsed)) markDirtyPath(id, parentMap, dirty);
+    }
+    prevCollapsedRef.current = collapsed;
+  }
+
   useEffect(() => {
     if (implicitInit == null) return;
     if (collapsedProp != null) {
@@ -509,54 +586,58 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
   const vt = VARIANT_TOKENS[variant];
   const isEdit = mode === "edit";
 
-  const toggleCollapse = useCallback(
-    (id: string) => {
-      const collapsing = !collapsed[id];
-      let next: Record<string, boolean>;
-      if (collapsing) {
-        next = { ...collapsed, [id]: true };
-        const node = findNode(value, id);
-        if (node) markBranchCollapsed(node.children, next);
-      } else {
-        next = { ...collapsed, [id]: false };
-        const siblings = findSiblingGroup(value, id);
-        const rootId = value.length > 0 ? value[0].id : null;
-        if (siblings) {
-          for (const s of siblings) {
-            if (s.id !== id && s.id !== rootId && s.children.length > 0) {
-              next[s.id] = true;
-              markBranchCollapsed(s.children, next);
-            }
+  const getCollapsed = useCallback(() => collapsedRef.current, []);
+
+  const getDirty = useCallback(() => dirtyRef.current, []);
+
+  const toggleCollapse = useCallback((id: string) => {
+    const collapseMap = collapsedRef.current;
+    const tree = valueRef.current;
+    const collapsing = !collapseMap[id];
+    // DEBUG(tree): qué nodo se presiona y hacia dónde (colapsar/expandir).
+    // eslint-disable-next-line no-console
+    console.log(`[TREE:toggle] id=${id} (prev collapsed=${collapseMap[id]}) -> ${collapsing ? "COLLAPSE" : "EXPAND"}`);
+    let next: Record<string, boolean>;
+    if (collapsing) {
+      next = { ...collapseMap, [id]: true };
+      const node = findNode(tree, id);
+      if (node) markBranchCollapsed(node.children, next);
+    } else {
+      next = { ...collapseMap, [id]: false };
+      const siblings = findSiblingGroup(tree, id);
+      const rootId = tree.length > 0 ? tree[0].id : null;
+      if (siblings) {
+        for (const s of siblings) {
+          if (s.id !== id && s.id !== rootId && s.children.length > 0) {
+            next[s.id] = true;
+            markBranchCollapsed(s.children, next);
           }
         }
       }
-      if (collapsedProp != null) {
-        onCollapsedChange?.(next);
-      } else {
-        setInternalCollapsed(next);
-      }
-    },
-    [collapsed, collapsedProp, value, onCollapsedChange],
-  );
+    }
+    if (controlledRef.current) {
+      onCollapsedChangeRef.current?.(next);
+    } else {
+      setInternalCollapsed(next);
+    }
+  }, []);
 
-  const onOpenActions = useCallback(
-    (nodeId: string) => {
-      const node = findNode(value, nodeId);
-      if (node) onRequestEdit?.(node);
-    },
-    [value, onRequestEdit],
-  );
+  const onOpenActions = useCallback((nodeId: string) => {
+    const node = findNode(valueRef.current, nodeId);
+    if (node) onRequestEditRef.current?.(node);
+  }, []);
 
   const ctx: TreeRenderContext = useMemo(
     () => ({
       isEdit,
-      collapsed,
       onToggle: toggleCollapse,
       onOpenActions,
       renderNode,
       vt,
+      getCollapsed,
+      getDirty,
     }),
-    [isEdit, collapsed, toggleCollapse, onOpenActions, renderNode, vt],
+    [isEdit, toggleCollapse, onOpenActions, renderNode, vt, getCollapsed, getDirty],
   );
 
   return (
