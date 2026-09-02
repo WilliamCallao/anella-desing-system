@@ -198,16 +198,6 @@ function markBranchCollapsed(nodes: TreeNode[], acc: Record<string, boolean>) {
   }
 }
 
-/** Grupo de hermanos al que pertenece `nodeId` (o null si es raíz del bosque). */
-function findSiblingGroup(nodes: TreeNode[], id: string): TreeNode[] | null {
-  if (nodes.some((n) => n.id === id)) return nodes;
-  for (const n of nodes) {
-    const found = findSiblingGroup(n.children, id);
-    if (found) return found;
-  }
-  return null;
-}
-
 export function hasCode(nodes: TreeNode[], code: string, excludeId?: string): boolean {
   for (const n of nodes) {
     if (n.code === code && n.id !== excludeId) return true;
@@ -326,13 +316,6 @@ function renderForest(
   parentName?: string,
 ): React.ReactNode {
   const collapsed = ctx.getCollapsed();
-  // DEBUG(tree): traza qué filas renderiza y su estado de colapso.
-  // eslint-disable-next-line no-console
-  console.log("[TREE:renderForest]", {
-    depth,
-    parentName: parentName ?? null,
-    nodes: nodes.map((n) => ({ id: n.id, code: n.code, collapsed: !!collapsed[n.id], children: n.children.length })),
-  });
   return (
     <>
       {nodes.map((node, i) => (
@@ -392,10 +375,6 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
   const hasChildren = node.children.length > 0;
   // Activo: grupo expandido. Pinta el card de brand con textos contrastados.
   const isActive = hasChildren && !isCollapsed;
-
-  // DEBUG(tree): estado final con el que renderiza cada fila.
-  // eslint-disable-next-line no-console
-  console.log(`[TREE:item] id=${node.id} code=${node.code} depth=${depth} isCollapsed=${isCollapsed} branchVersion=${branchVersion} hasChildren=${hasChildren}`);
 
   // El "└" del riel cierra en el último hijo visible del nivel.
   const terminalElbow = isLast;
@@ -615,26 +594,16 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
     const collapseMap = collapsedRef.current;
     const tree = valueRef.current;
     const collapsing = !collapseMap[id];
-    // DEBUG(tree): qué nodo se presiona y hacia dónde (colapsar/expandir).
-    // eslint-disable-next-line no-console
-    console.log(`[TREE:toggle] id=${id} (prev collapsed=${collapseMap[id]}) -> ${collapsing ? "COLLAPSE" : "EXPAND"}`);
     let next: Record<string, boolean>;
     if (collapsing) {
+      // Colapsar: el nodo + su subárbol entero.
       next = { ...collapseMap, [id]: true };
       const node = findNode(tree, id);
       if (node) markBranchCollapsed(node.children, next);
     } else {
+      // Expandir: solo el nodo, sin colapsar a sus hermanos (se pueden abrir
+      // varios hijos del mismo padre a la vez).
       next = { ...collapseMap, [id]: false };
-      const siblings = findSiblingGroup(tree, id);
-      const rootId = tree.length > 0 ? tree[0].id : null;
-      if (siblings) {
-        for (const s of siblings) {
-          if (s.id !== id && s.id !== rootId && s.children.length > 0) {
-            next[s.id] = true;
-            markBranchCollapsed(s.children, next);
-          }
-        }
-      }
     }
     if (controlledRef.current) {
       onCollapsedChangeRef.current?.(next);
