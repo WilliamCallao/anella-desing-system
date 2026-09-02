@@ -260,10 +260,12 @@ const EXPAND_FADE = 180;
 const NODE_ICON_SIZE = 18;
 
 // Contexto compartido entre el render recursivo y las filas.
-// No incluye mapas mutables (`collapsed`/dirty): se leen por referencia vía
-// `getCollapsed()`/`getDirty()` para que el objeto ctx sea estable y React.memo
-// de TreeNodeItem cumpla su función (colapsar/expandir un nodo NO re-renderiza
-// las ramas ajenas al camino afectado).
+// No incluye mapas mutables (`collapsed`/versiones): se leen por referencia vía
+// `getCollapsed()`/`getVersion()` para que el objeto ctx sea estable.
+// La memoización por RAMA usa una VERSIÓN numérica (no un flag booleano):
+// `branchVersion` cambia solo para los nodos afectados por el toggle, de modo
+// que el React.memo re-renderiza SOLO la rama tocada y jamás queda "atascado"
+// (un número siempre es comparable; un booleano sucio se queda en true).
 type TreeRenderContext = {
   isEdit: boolean;
   onToggle: (id: string) => void;
@@ -271,7 +273,7 @@ type TreeRenderContext = {
   renderNode?: (node: TreeNode, defaultContent: React.ReactNode) => React.ReactNode;
   vt: VariantTokens;
   getCollapsed: () => Record<string, boolean>;
-  getDirty: () => Set<string>;
+  getVersion: (id: string) => number;
 };
 
 // Columnas de conectores tipo file-explorer ("│/├/└"). Cada nivel es un item
@@ -324,14 +326,12 @@ function renderForest(
   parentName?: string,
 ): React.ReactNode {
   const collapsed = ctx.getCollapsed();
-  const dirty = ctx.getDirty();
   // DEBUG(tree): traza qué filas renderiza y su estado de colapso.
   // eslint-disable-next-line no-console
   console.log("[TREE:renderForest]", {
     depth,
     parentName: parentName ?? null,
     nodes: nodes.map((n) => ({ id: n.id, code: n.code, collapsed: !!collapsed[n.id], children: n.children.length })),
-    dirty: [...dirty],
   });
   return (
     <>
@@ -343,7 +343,7 @@ function renderForest(
           isLast={i === nodes.length - 1}
           parentName={parentName}
           isCollapsed={!!collapsed[node.id]}
-          subtreeDirty={dirty.has(node.id)}
+          branchVersion={ctx.getVersion(node.id)}
           ctx={ctx}
         />
       ))}
@@ -378,7 +378,7 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
   isLast,
   parentName,
   isCollapsed,
-  subtreeDirty,
+  branchVersion,
   ctx,
 }: {
   node: TreeNode;
@@ -386,7 +386,7 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
   isLast: boolean;
   parentName?: string;
   isCollapsed: boolean;
-  subtreeDirty: boolean;
+  branchVersion: number;
   ctx: TreeRenderContext;
 }) {
   const hasChildren = node.children.length > 0;
@@ -395,7 +395,7 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
 
   // DEBUG(tree): estado final con el que renderiza cada fila.
   // eslint-disable-next-line no-console
-  console.log(`[TREE:item] id=${node.id} code=${node.code} depth=${depth} isCollapsed=${isCollapsed} subtreeDirty=${subtreeDirty} hasChildren=${hasChildren}`);
+  console.log(`[TREE:item] id=${node.id} code=${node.code} depth=${depth} isCollapsed=${isCollapsed} branchVersion=${branchVersion} hasChildren=${hasChildren}`);
 
   // El "└" del riel cierra en el último hijo visible del nivel.
   const terminalElbow = isLast;
@@ -561,24 +561,22 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
   onRequestEditRef.current = onRequestEdit;
   const controlledRef = useRef(collapsedProp !== undefined);
 
-  // Camino afectado del render: ids cuyo estado de colapso (propio o de algún
-  // descendiente) cambió respecto al render anterior. Por eso un toggle solo
-  // re-renderiza el nodo tocado y sus ancestros, no todo el árbol.
-  //
-  // IMPORTANTE: cuando un nodo cambia de colapso, su subárbol entero pasa a
-  // montarse/desmontarse (renderForest anida `hasChildren && !isCollapsed`).
-  // Si solo marcamos el camino a raíz, los descendientes re-montados quedan con
-  // un `React.memo` que conserva el isCollapsed viejo y dejan de responder al
-  // tap (el bug de "no se puede expandir los hijos tras colapsar el padre").
-  // Por eso marcamos dirty el nodo cambiado + TODO su subárbol + el camino.
-  const dirtyRef = useRef(new Set<string>());
+  // Memoización por RAMA basada en versión numérica (no en un flag booleano).
+  // `versions` mapea id -> última renderSeq en la que ese nodo fue afectado por
+  // un toggle. Como `branchVersion` es un number, React.memo lo compara bien y
+  // NO se queda atascado: cada toggle que toca un nodo le asigna una versión
+  // nueva, y los nodos de otras ramas conservan la suya (no re-renderizan).
+  const versionRef = useRef(new Map<string, number>());
+  const renderSeqRef = useRef(0);
   const prevCollapsedRef = useRef(collapsed);
+  const parentMapRef = useRef(parentMap);
+  parentMapRef.current = parentMap;
   {
-    const dirty = dirtyRef.current;
+    const versions = versionRef.current;
+    const dirty = new Set<string>();
     const prev = prevCollapsedRef.current;
-    dirty.clear();
     const markChange = (id: string) => {
-      markDirtyPath(id, parentMap, dirty);
+      markDirtyPath(id, parentMapRef.current, dirty);
       const node = findNode(value, id);
       if (node) markSubtreeDirty(node, dirty);
     };
@@ -589,6 +587,11 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
       if (prev[id] === true && !(id in collapsed)) markChange(id);
     }
     prevCollapsedRef.current = collapsed;
+    if (dirty.size > 0) {
+      renderSeqRef.current += 1;
+      const seq = renderSeqRef.current;
+      for (const id of dirty) versions.set(id, seq);
+    }
   }
 
   useEffect(() => {
@@ -606,7 +609,7 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
 
   const getCollapsed = useCallback(() => collapsedRef.current, []);
 
-  const getDirty = useCallback(() => dirtyRef.current, []);
+  const getVersion = useCallback((id: string) => versionRef.current.get(id) ?? 0, []);
 
   const toggleCollapse = useCallback((id: string) => {
     const collapseMap = collapsedRef.current;
@@ -653,9 +656,9 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
       renderNode,
       vt,
       getCollapsed,
-      getDirty,
+      getVersion,
     }),
-    [isEdit, toggleCollapse, onOpenActions, renderNode, vt, getCollapsed, getDirty],
+    [isEdit, toggleCollapse, onOpenActions, renderNode, vt, getCollapsed, getVersion],
   );
 
   return (
