@@ -360,6 +360,12 @@ function markDirtyPath(id: string, parentMap: Map<string, string>, acc: Set<stri
   }
 }
 
+/** Marca en `acc` el nodo y TODOS sus descendientes (subárbol entero). */
+function markSubtreeDirty(node: TreeNode, acc: Set<string>) {
+  acc.add(node.id);
+  for (const child of node.children) markSubtreeDirty(child, acc);
+}
+
 // Nodo del árbol: fila clickeable (colapsa/expande en toda la fila) + contenedor
 // animado del subárbol (altura/opacidad/chevron, patrón de AppSelector).
 //
@@ -558,17 +564,29 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
   // Camino afectado del render: ids cuyo estado de colapso (propio o de algún
   // descendiente) cambió respecto al render anterior. Por eso un toggle solo
   // re-renderiza el nodo tocado y sus ancestros, no todo el árbol.
+  //
+  // IMPORTANTE: cuando un nodo cambia de colapso, su subárbol entero pasa a
+  // montarse/desmontarse (renderForest anida `hasChildren && !isCollapsed`).
+  // Si solo marcamos el camino a raíz, los descendientes re-montados quedan con
+  // un `React.memo` que conserva el isCollapsed viejo y dejan de responder al
+  // tap (el bug de "no se puede expandir los hijos tras colapsar el padre").
+  // Por eso marcamos dirty el nodo cambiado + TODO su subárbol + el camino.
   const dirtyRef = useRef(new Set<string>());
   const prevCollapsedRef = useRef(collapsed);
   {
     const dirty = dirtyRef.current;
     const prev = prevCollapsedRef.current;
     dirty.clear();
+    const markChange = (id: string) => {
+      markDirtyPath(id, parentMap, dirty);
+      const node = findNode(value, id);
+      if (node) markSubtreeDirty(node, dirty);
+    };
     for (const id of Object.keys(collapsed)) {
-      if (prev[id] !== collapsed[id]) markDirtyPath(id, parentMap, dirty);
+      if (prev[id] !== collapsed[id]) markChange(id);
     }
     for (const id of Object.keys(prev)) {
-      if (prev[id] === true && !(id in collapsed)) markDirtyPath(id, parentMap, dirty);
+      if (prev[id] === true && !(id in collapsed)) markChange(id);
     }
     prevCollapsedRef.current = collapsed;
   }
