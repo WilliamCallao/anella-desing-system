@@ -50,6 +50,7 @@ export function CardStackSheet({
   const insets = useSafeAreaInsets();
   const keyboardHeight = useModalKeyboardHeight();
   const [mounted, setMounted] = useState(visible);
+  const [contentReady, setContentReady] = useState(false);
   const progress = useSharedValue(0);
 
   const maxHeightRatio = useMemo(() => {
@@ -66,6 +67,18 @@ export function CardStackSheet({
   useEffect(() => {
     if (visible) setMounted(true);
   }, [visible]);
+
+  // Deferred content: el contenido pesado (children) se monta recién en el
+  // segundo frame, para que el frame inicial de la animación de entrada no
+  // compita con el render JS del árbol del sheet (evita el jank de apertura).
+  // El contenido aparece casi al instante junto con el slider.
+  useEffect(() => {
+    if (mounted && visible) {
+      const raf = requestAnimationFrame(() => setContentReady(true));
+      return () => cancelAnimationFrame(raf);
+    }
+    if (!mounted) setContentReady(false);
+  }, [mounted, visible]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -149,7 +162,7 @@ export function CardStackSheet({
                 areaColor ? { backgroundColor: areaColor } : undefined,
               ]}
             >
-              {children}
+              {contentReady ? children : <View style={styles.deferredPlaceholder} />}
             </ScrollView>
           </Animated.View>
         </Animated.View>
@@ -178,5 +191,8 @@ const styles = StyleSheet.create({
   content: {
     gap: space.space3,
     paddingBottom: Math.max(space.space3, 24),
+  },
+  deferredPlaceholder: {
+    minHeight: space.space16,
   },
 });
