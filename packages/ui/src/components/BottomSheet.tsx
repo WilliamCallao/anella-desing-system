@@ -57,6 +57,7 @@ export function BottomSheet({
   const keyboardHeight = useModalKeyboardHeight();
 
   const [mounted, setMounted] = useState(visible);
+  const [contentReady, setContentReady] = useState(false);
   const progress = useSharedValue(0);
 
   const maxHeightRatio = useMemo(() => {
@@ -73,6 +74,18 @@ export function BottomSheet({
   useEffect(() => {
     if (visible) setMounted(true);
   }, [visible]);
+
+  // Deferred content: el contenido pesado (children) se monta recién en el
+  // segundo frame, para que el frame inicial de la animación de entrada no
+  // compita con el render JS del árbol del sheet (evita el jank de apertura).
+  // El contenido aparece casi al instante junto con el slider.
+  useEffect(() => {
+    if (mounted && visible) {
+      const raf = requestAnimationFrame(() => setContentReady(true));
+      return () => cancelAnimationFrame(raf);
+    }
+    if (!mounted) setContentReady(false);
+  }, [mounted, visible]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -143,7 +156,9 @@ export function BottomSheet({
           <Animated.View style={[styles.backdrop, backdropStyle]} />
         </Pressable>
         <Animated.View style={[styles.panelWrapper, containerAnimatedStyle]} pointerEvents="box-none">
-          <Animated.View style={[styles.panel, panelHeightStyle, panelStyle]}>
+          <Animated.View
+            style={[styles.panel, panelHeightStyle, panelStyle]}
+          >
             <View style={styles.handleBar} />
             {title || icon || caption || showCloseButton ? (
               <DialogHeader
@@ -159,7 +174,7 @@ export function BottomSheet({
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={[styles.content, contentStyle]}
             >
-              {children}
+              {contentReady ? children : <View style={styles.deferredPlaceholder} />}
             </ScrollView>
           </Animated.View>
         </Animated.View>
@@ -199,5 +214,8 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: space.space2,
     paddingBottom: Math.max(space.space3, 24),
+  },
+  deferredPlaceholder: {
+    minHeight: space.space16,
   },
 });
