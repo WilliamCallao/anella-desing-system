@@ -8,19 +8,14 @@ import React, {
   useState,
   type ReactNode,
 } from "react";
-import { BackHandler, StyleSheet, View, type LayoutChangeEvent } from "react-native";
+import {
+  BackHandler,
+  ScrollView,
+  StyleSheet,
+  View,
+  type LayoutChangeEvent,
+} from "react-native";
 import { useWindowDimensions } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  useAnimatedScrollHandler,
-  useDerivedValue,
-  withTiming,
-  interpolate,
-  Extrapolation,
-  Easing,
-  type SharedValue,
-} from "react-native-reanimated";
 import { Button } from "../components/Button";
 import { Text } from "../components/text";
 import { Divisor } from "./Divisor";
@@ -134,8 +129,6 @@ const DEFAULT_COLORS: Record<SectionKey, string> = {
   mid: DEFAULT_BG,
   bottom: DARK_BG,
 };
-const COLLAPSE_DISTANCE = 80;
-const TRANSITION = 320;
 
 const AppNavigationContext = createContext<AppNavigation | null>(null);
 
@@ -147,18 +140,36 @@ export function useAppNavigation(): AppNavigation {
   return ctx;
 }
 
+// Diagnóstico: permite a cualquier slot pedir un snapshot del estado actual del
+// motor (alturas, opacidades de fade, scrollY) en un momento puntual.
+export type AppLayoutDebugSnapshot = {
+  route: string;
+  anchors: string[];
+  anim: Record<string, number>;
+  naturals: Record<SectionKey, number>;
+  lastMeasured: Record<SectionKey, number>;
+  windowH: number;
+};
+
+const AppLayoutDebugContext = createContext<{ snapshot: () => AppLayoutDebugSnapshot } | null>(null);
+
+export function useAppLayoutDebug(): { snapshot: () => AppLayoutDebugSnapshot } {
+  const ctx = useContext(AppLayoutDebugContext);
+  if (!ctx) {
+    throw new Error("useAppLayoutDebug debe usarse dentro de <AppLayout>");
+  }
+  return ctx;
+}
+
 export type AppLayoutProps = {
   initialRoute: AppRoute;
   /** Muestra un botón de volver global cuando canGoBack. Default true. */
   showBackButton?: boolean;
-  /** Logs de debug en consola. Default false. */
-  debug?: boolean;
 };
 
 export function AppLayout({
   initialRoute,
   showBackButton = true,
-  debug = false,
 }: AppLayoutProps) {
   const { height: H } = useWindowDimensions();
 
@@ -234,58 +245,34 @@ export function AppLayout({
   const showTopDivisor = topVisible && (midVisible || bottomVisible);
   const showBottomDivisor = bottomVisible && (topVisible || midVisible);
 
-  const topNatural = useSharedValue(H / 3);
-  const midNatural = useSharedValue(H / 3);
-  const bottomNatural = useSharedValue(H / 3);
-
-  const naturals: Record<SectionKey, SharedValue<number>> = {
-    top: topNatural,
-    mid: midNatural,
-    bottom: bottomNatural,
-  };
-
-  const animating = useSharedValue(0);
-  const scrollY = useSharedValue(0);
-  const scrollRef = useRef<Animated.ScrollView>(null);
-  const innerScrollRef = useRef<Animated.ScrollView>(null);
-  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Motor de transición: un solo driver `progress` (0 -> 1). Cada altura se
-  // deriva como interpolate(progress, [fromH, toH]). `toH` se actualiza en vivo
-  // con la medición del contenido, de modo que ninguna sección salta a 0 de
-  // golpe: todo es interpolación continua y coordinada.
-  const progress = useSharedValue(1);
-  // El fade de entrada del contenido de una ruta no se maneja aquí: cada
-  // pantalla (slot) aplica su propia animación de entrada (p. ej. TransitionView).
-  // AppLayout solo coordina la transición de alturas entre secciones.
-  const fromH: Record<SectionKey, SharedValue<number>> = {
-    top: useSharedValue(H / 3),
-    mid: useSharedValue(H / 3),
-    bottom: useSharedValue(H / 3),
-  };
-  const toH: Record<SectionKey, SharedValue<number>> = {
-    top: useSharedValue(H / 3),
-    mid: useSharedValue(H / 3),
-    bottom: useSharedValue(H / 3),
-  };
-  const topDisplay = useDerivedValue(() =>
-    interpolate(progress.value, [0, 1], [fromH.top.value, toH.top.value])
-  );
-  const midDisplay = useDerivedValue(() =>
-    interpolate(progress.value, [0, 1], [fromH.mid.value, toH.mid.value])
-  );
-  const bottomDisplay = useDerivedValue(() =>
-    interpolate(progress.value, [0, 1], [fromH.bottom.value, toH.bottom.value])
-  );
-  const display: Record<SectionKey, SharedValue<number>> = {
-    top: topDisplay,
-    mid: midDisplay,
-    bottom: bottomDisplay,
-  };
-
-  const onScroll = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y;
+  // Motor ESTÁTICO de layout: las alturas se derivan de las medidas naturales y
+  // se aplican de forma inmediata, sin animación.
+  //
+  // IMPORTANTE (historia del bug "texto que desaparece" en Android): animar
+  // `height` sobre secciones con árboles de texto complejos — con Reanimated
+  // (useAnimatedStyle) y con el driver clásico de RN (Animated.timing,
+  // useNativeDriver:false) — deja nodos de texto sin repintar en SDK 54 / New
+  // Architecture (Fabric) cuando se regresa a la pantalla anterior: el layout
+  // se mueve pero las letras no vuelven a pintarse. El único modo estable es
+  // aplicar las alturas como estilos planos (el layout se recalcula por el
+  // camino estándar de Fabric y los textos se repintan siempre).
+  const [layoutHeights, setLayoutHeights] = useState<Record<SectionKey, number>>({
+    top: H / 3,
+    mid: H / 3,
+    bottom: H / 3,
   });
+  const scrollRef = useRef<ScrollView>(null);
+  const innerScrollRef = useRef<ScrollView>(null);
+
+  // Alto natural (medido) de cada sección + último alto aceptado por el guard.
+  // Se mantienen en refs simples (cambios no re-renderizan; la animación los
+  // lee en cada render por vía de `naturalsRef`).
+  const naturalsRef = useRef<Record<SectionKey, number>>({
+    top: H / 3,
+    mid: H / 3,
+    bottom: H / 3,
+  });
+  const lastMeasured = useRef<Record<SectionKey, number>>({ top: 0, mid: 0, bottom: 0 });
 
   const computeTargets = (st: LayoutState): Record<SectionKey, number> => {
     const base: Record<SectionKey, number> = { top: 0, mid: 0, bottom: 0 };
@@ -296,125 +283,88 @@ export function AppLayout({
         continue;
       }
       const h = b.height ?? "content";
-      if (h === "content") base[k] = naturals[k].value;
+      if (h === "content") base[k] = naturalsRef.current[k];
       else if (h === "third") base[k] = H / 3;
       else if (h === "fill") base[k] = H;
-      else if (h === "fillRest") base[k] = b.restsOn ? H - naturals[b.restsOn].value : 0;
+      else if (h === "fillRest") base[k] = b.restsOn ? H - naturalsRef.current[b.restsOn] : 0;
       else base[k] = h;
     }
     return base;
   };
 
+  // Último alto natural aceptado por sección. Protege el layout de un artefacto
+  // del doble-montaje del slot: al volver a una ruta (p. ej. desde
+  // producto-detalle) el contenido se remonta y, si es un árbol con "flex:1",
+  // su medición intrínseca puede devolver solo el padding (~32px) en vez del
+  // alto real (~290px). Commitear ese valor a la sección hacía que la altura
+  // colapsara (bug de "items comprimidos"). Solo se acepta una medida si es la
+  // primera para la sección o alcanza la mitad del último alto aceptado (con
+  // piso de 100px), de modo que una caída puntual colapsada no contamine el
+  // valor natural.
+  const applyTargets = useCallback((next: Record<SectionKey, number>) => {
+    setLayoutHeights((prev) =>
+      SECTION_KEYS.every((k) => prev[k] === next[k]) ? prev : next
+    );
+  }, []);
+
   const makeOnMeasure = (k: SectionKey) => (e: LayoutChangeEvent) => {
     const h = e.nativeEvent.layout.height;
-    naturals[k].value = h;
-    const b = state.sections[k];
-    if (b?.height === "content") {
-      fromH[k].value = display[k].value;
-      toH[k].value = h;
-    }
-    for (const j of SECTION_KEYS) {
-      const bj = state.sections[j];
-      if (bj?.visible && bj.height === "fillRest" && bj.restsOn === k) {
-        fromH[j].value = display[j].value;
-        toH[j].value = H - h;
-      }
-    }
+    const prev = lastMeasured.current[k];
+    const collapsed = prev > 0 && h < Math.min(prev * 0.5, 100);
+    if (collapsed) return;
+    naturalsRef.current[k] = h;
+    lastMeasured.current[k] = h;
+    applyTargets(computeTargets(state));
   };
 
   useLayoutEffect(() => {
-    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
-    animating.value = 1;
+    const targets = computeTargets(state);
     if (!state.pageScroll) {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       innerScrollRef.current?.scrollTo({ y: 0, animated: false });
-      scrollY.value = 0;
     }
-    const targets = computeTargets(state);
-    for (const k of SECTION_KEYS) {
-      fromH[k].value = display[k].value;
-      toH[k].value = targets[k];
-    }
-    progress.value = 0;
-    progress.value = withTiming(
-      1,
-      { duration: TRANSITION, easing: Easing.inOut(Easing.cubic) },
-      () => {
-        animating.value = 0;
-      }
-    );
-    settleTimerRef.current = setTimeout(() => {
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
-      scrollY.value = 0;
-      setPrevRoute(currentRoute);
-    }, TRANSITION);
-    if (debug) {
-      // eslint-disable-next-line no-console
-      console.log("[APP] transition ->", currentRoute.name, targets);
-    }
+    applyTargets(targets);
+    setPrevRoute(currentRoute);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRoute.name]);
 
-  const topStyle = useAnimatedStyle(() => ({ height: topDisplay.value }));
-  const midStyle = useAnimatedStyle(() => ({ height: midDisplay.value }));
-  const bottomStyle = useAnimatedStyle(() => ({ height: bottomDisplay.value }));
-
-  const stylesFor = {
-    top: topStyle,
-    mid: midStyle,
-    bottom: bottomStyle,
-  };
-
-  // El fade de contenido aquí es solo el de scroll (fadeOnScroll) y el de
-  // colapso de altura del mid. El fade de entrada de cada pantalla lo aplica el
-  // propio slot (por ejemplo con TransitionView), no este valor.
-  const topFade = useAnimatedStyle(
-    () => {
-      const scrollFade = state.sections.top?.fadeOnScroll
-        ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
-        : 1;
-      return { opacity: scrollFade };
+  const snapshot = useCallback(
+    (): AppLayoutDebugSnapshot => {
+      const midNatural = naturalsRef.current.mid || 1;
+      return {
+        route: currentRoute.name,
+        anchors: stack.map((r) => r.name),
+        anim: {
+          scrollY: 0,
+          animating: 0,
+          top: Math.round(layoutHeights.top),
+          mid: Math.round(layoutHeights.mid),
+          bottom: Math.round(layoutHeights.bottom),
+          topFade: 1,
+          midFade: Math.min(layoutHeights.mid / midNatural, 1),
+          bottomFade: 1,
+        },
+        naturals: { ...naturalsRef.current },
+        lastMeasured: { ...lastMeasured.current },
+        windowH: H,
+      };
     },
-    [state]
+    [currentRoute.name, stack, H, layoutHeights]
   );
-  const midFade = useAnimatedStyle(
-    () => {
-      const scrollFade = state.sections.mid?.fadeOnScroll
-        ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
-        : 1;
-      const full = naturals.mid.value || 1;
-      const collapseFade = interpolate(midDisplay.value, [0, full], [0, 1], Extrapolation.CLAMP);
-      return { opacity: Math.min(scrollFade, collapseFade) };
-    },
-    [state]
-  );
-  const bottomFade = useAnimatedStyle(
-    () => {
-      const scrollFade = state.sections.bottom?.fadeOnScroll
-        ? interpolate(scrollY.value, [0, COLLAPSE_DISTANCE], [1, 0], Extrapolation.CLAMP)
-        : 1;
-      return { opacity: scrollFade };
-    },
-    [state]
-  );
-  const fadeFor = {
-    top: topFade,
-    mid: midFade,
-    bottom: bottomFade,
-  };
 
   const renderSection = (k: SectionKey) => {
     const cur = state.sections[k];
     const prevB = prevLayoutState?.sections[k];
     const prevVisible = !!prevB?.visible;
     const visible = !!cur?.visible || prevVisible;
+    const height = layoutHeights[k];
     if (!visible) {
       return (
-        <Animated.View key={k} style={[styles.colBlock, stylesFor[k]]}>
+        <View key={k} style={[styles.colBlock, { height }]}>
           <View style={styles.measureCopy} onLayout={makeOnMeasure(k)}>
             {cur?.slot ? slots[cur.slot] : null}
           </View>
-        </Animated.View>
+        </View>
       );
     }
     const usePrevContent = !cur?.visible && prevVisible;
@@ -428,61 +378,58 @@ export function AppLayout({
     const isDynamic = (cur?.height ?? prevB?.height) === "content";
     const scroll = cur?.scroll ?? prevB?.scroll ?? false;
     return (
-      <Animated.View
-        key={k}
-        style={[styles.colBlock, { backgroundColor: bg, overflow: "hidden" }, stylesFor[k]]}
-      >
+      <View key={k} style={[styles.colBlock, { backgroundColor: bg, height }]}>
         {isDynamic && (
-          <View style={styles.measureCopy} onLayout={makeOnMeasure(k)}>
-            {content}
+          <View
+            pointerEvents="none"
+            style={styles.measureOuter}
+            onLayout={makeOnMeasure(k)}
+          >
+            <View style={styles.measureCopy}>{content}</View>
           </View>
         )}
         {scroll ? (
-          <Animated.ScrollView
+          <ScrollView
             ref={innerScrollRef}
             style={styles.innerScroll}
             showsVerticalScrollIndicator={false}
-            scrollEventThrottle={16}
-            onScroll={onScroll}
           >
-            <Animated.View style={fadeFor[k]}>{content}</Animated.View>
-          </Animated.ScrollView>
+            {content}
+          </ScrollView>
         ) : (
-          <Animated.View style={styles.sectionContent}>
-            <Animated.View style={fadeFor[k]}>{content}</Animated.View>
-          </Animated.View>
+          <View style={styles.sectionContent}>{content}</View>
         )}
-      </Animated.View>
+      </View>
     );
   };
 
   return (
-    <AppNavigationContext.Provider value={navigationValue}>
-      <View style={[styles.root, { backgroundColor: pageBg }]}>
-        <Animated.ScrollView
-          ref={scrollRef}
-          style={styles.pageScroll}
-          contentContainerStyle={[styles.pageContent, { backgroundColor: pageBg }]}
-          scrollEnabled={!!state.pageScroll}
-          showsVerticalScrollIndicator={false}
-          scrollEventThrottle={16}
-          onScroll={onScroll}
-        >
-          {renderSection("top")}
-          {showTopDivisor && <Divisor position="top" handle={currentRoute.state === "top"} />}
-          {renderSection("mid")}
-          {showBottomDivisor && (
-            <Divisor position="bottom" handle={currentRoute.state === "bottom"} />
+    <AppLayoutDebugContext.Provider value={{ snapshot }}>
+      <AppNavigationContext.Provider value={navigationValue}>
+        <View style={[styles.root, { backgroundColor: pageBg }]}>
+          <ScrollView
+            ref={scrollRef}
+            style={styles.pageScroll}
+            contentContainerStyle={[styles.pageContent, { backgroundColor: pageBg }]}
+            scrollEnabled={!!state.pageScroll}
+            showsVerticalScrollIndicator={false}
+          >
+            {renderSection("top")}
+            {showTopDivisor && <Divisor position="top" handle={currentRoute.state === "top"} />}
+            {renderSection("mid")}
+            {showBottomDivisor && (
+              <Divisor position="bottom" handle={currentRoute.state === "bottom"} />
+            )}
+            {renderSection("bottom")}
+          </ScrollView>
+          {showBackButton && canGoBack && (
+            <View style={styles.backBar} pointerEvents="box-none">
+              <Button variant="secondary" size="sm" label="← Volver" onPress={back} />
+            </View>
           )}
-          {renderSection("bottom")}
-        </Animated.ScrollView>
-        {showBackButton && canGoBack && (
-          <View style={styles.backBar} pointerEvents="box-none">
-            <Button variant="secondary" size="sm" label="← Volver" onPress={back} />
-          </View>
-        )}
-      </View>
-    </AppNavigationContext.Provider>
+        </View>
+      </AppNavigationContext.Provider>
+    </AppLayoutDebugContext.Provider>
   );
 }
 
@@ -500,13 +447,16 @@ const styles = StyleSheet.create({
     width: "100%",
     position: "relative",
   },
-  measureCopy: {
+  measureOuter: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     opacity: 0,
     zIndex: -1,
+  },
+  measureCopy: {
+    width: "100%",
   },
   sectionContent: {
     flex: 1,

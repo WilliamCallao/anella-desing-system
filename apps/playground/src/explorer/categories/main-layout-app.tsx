@@ -225,7 +225,7 @@ const routes: Record<string, AppRoute> = {
 };
 
 export function MainLayoutApp() {
-  return <AppLayout initialRoute={routes.home} debug />;
+  return <AppLayout initialRoute={routes.home} />;
 }
 
 const styles = StyleSheet.create({
