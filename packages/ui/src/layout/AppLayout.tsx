@@ -153,6 +153,35 @@ const LAYOUT_DURATION = 300;
 const REVEAL_DELAY_MS = 380;
 const REVEAL_DURATION_MS = 200;
 
+// Diagnóstico TEMPORAL (producto): seguimiento del tamaño de las secciones
+// durante las transiciones.
+//   [route-change] objetivos planeados al cambiar de ruta (T/M/B)
+//   [heights]      altos comiteados por el motor en cada cambio de estado
+//   [measure]      alto natural medido de una sección (onLayout)
+//   [layout]       alto REAL de una sección en cada layout que emite
+let _logT0 = -1;
+const _logT = () => {
+  if (_logT0 < 0) _logT0 = Date.now();
+  return `${Date.now() - _logT0}ms`;
+};
+const _revLog = (msg: string, ...args: unknown[]) => {
+  // eslint-disable-next-line no-console
+  console.log(`[app-layout] t=${_logT()} ${msg}`, ...args);
+};
+const _logH = (h: Record<SectionKey, number>) =>
+  `T:${Math.round(h.top)} M:${Math.round(h.mid)} B:${Math.round(h.bottom)}`;
+
+// Al colapsar la sección bottom durante una transición (p. ej. accounts→home,
+// bottom 548→0 empujada por el mid que crece), la layout transition encogía la
+// caja: el body se deslizaba hacia abajo pero a la vez se comprimía en alto. La
+// sección mantiene su alto previo mientras la empujan, y recién al terminar el
+// layout adopta su alto final (que ya quedó bajo el borde de pantalla). Solo se
+// mantiene si la transición es animada; un colapso sin animación aplica directo.
+const _withBottomHold = (t: Record<SectionKey, number>, cur: Record<SectionKey, number>) => {
+  const held = t.bottom < cur.bottom ? cur.bottom : t.bottom;
+  return held === t.bottom ? t : { ...t, bottom: held };
+};
+
 const AppNavigationContext = createContext<AppNavigation | null>(null);
 
 export function useAppNavigation(): AppNavigation {
@@ -228,6 +257,7 @@ export function AppLayout({
   useEffect(() => {
     return () => {
       if (revealTimer.current) clearTimeout(revealTimer.current);
+      if (settleTimer.current) clearTimeout(settleTimer.current);
     };
   }, []);
 
@@ -330,6 +360,9 @@ export function AppLayout({
     mid: H / 3,
     bottom: H / 3,
   });
+  const layoutHeightsRef = useRef(layoutHeights);
+  layoutHeightsRef.current = layoutHeights;
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const innerScrollRef = useRef<ScrollView>(null);
 
@@ -378,6 +411,11 @@ export function AppLayout({
     }
     setLayoutHeights((prev) => {
       const changed = !SECTION_KEYS.every((k) => prev[k] === next[k]);
+      if (changed) {
+        _revLog(
+          `[heights] ${_logH(prev)} → ${_logH(next)} (${SECTION_KEYS.filter((k) => prev[k] !== next[k]).join(",")})`
+        );
+      }
       return changed ? next : prev;
     });
   }, []);
@@ -390,7 +428,13 @@ export function AppLayout({
     if (collapsed) return;
     naturalsRef.current[k] = h;
     lastMeasured.current[k] = h;
-    applyTargets(computeTargets(state));
+    _revLog(`[measure] ${k} h=${Math.round(h)} (prev=${Math.round(prev)})`);
+    const targets = computeTargets(state);
+    applyTargets(
+      animateTransitions && prevRoute !== null && !reduceMotion
+        ? _withBottomHold(targets, layoutHeightsRef.current)
+        : targets
+    );
   };
 
   useLayoutEffect(() => {
@@ -398,7 +442,26 @@ export function AppLayout({
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       innerScrollRef.current?.scrollTo({ y: 0, animated: false });
     }
-    applyTargets(computeTargets(state));
+    const targets = computeTargets(state);
+    const animated = animateTransitions && prevRoute !== null && !reduceMotion;
+    const applied = animated ? _withBottomHold(targets, layoutHeightsRef.current) : targets;
+    if (settleTimer.current) {
+      clearTimeout(settleTimer.current);
+      settleTimer.current = null;
+    }
+    if (applied !== targets) {
+      _revLog(
+        `[hold] bottom ${Math.round(layoutHeightsRef.current.bottom)} → ${Math.round(targets.bottom)} (snap @ ${LAYOUT_DURATION}ms)`
+      );
+      settleTimer.current = setTimeout(() => {
+        settleTimer.current = null;
+        applyTargets(targets);
+      }, LAYOUT_DURATION);
+    }
+    _revLog(
+      `[route-change] prev=${prevRoute?.name ?? "(ninguna)"} → cur=${currentRoute.name} targets=${_logH(targets)} applied=${_logH(applied)} pageScroll=${state.pageScroll}`
+    );
+    applyTargets(applied);
     if (revealEnabled && prevRoute) {
       startReveal();
     }
@@ -483,6 +546,9 @@ export function AppLayout({
         key={k}
         layout={animating ? transition : undefined}
         collapsable={false}
+        onLayout={(e) =>
+          _revLog(`[layout] ${k} h=${Math.round(e.nativeEvent.layout.height)}`)
+        }
         style={[
           styles.colBlock,
           { backgroundColor: bg, height },
