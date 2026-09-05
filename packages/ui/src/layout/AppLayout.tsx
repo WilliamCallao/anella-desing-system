@@ -19,8 +19,6 @@ import { useWindowDimensions } from "react-native";
 import Animated, {
   CurvedTransition,
   LinearTransition,
-  runOnJS,
-  useAnimatedReaction,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -155,58 +153,12 @@ const LAYOUT_DURATION = 300;
 const REVEAL_DELAY_MS = 380;
 const REVEAL_DURATION_MS = 200;
 
-// --- Diagnóstico temporal: trazabilidad completa de la transición -----------
-// Cada llamada loguea con un id de transición monótono (+1 por cambio de ruta)
-// y un timestamp relativo al primer log del módulo, para correlacionar el
-// waveform del reveal con cuándo cambian las alturas (layout transitions) y
-// cuándo se miden las secciones. El prefijo [app-layout] permite filtrar.
-let _logSeq = 0;
-let _logT0 = -1;
-const _log = () => {
-  if (_logT0 < 0) _logT0 = Date.now();
-  return `${Date.now() - _logT0}ms`;
-};
-const _logH = (h: Record<SectionKey, number>) =>
-  `T:${Math.round(h.top)} M:${Math.round(h.mid)} B:${Math.round(h.bottom)}`;
-const _revLog = (msg: string, ...args: unknown[]) => {
-  // eslint-disable-next-line no-console
-  console.log(`[app-layout] t=${_log()} ${msg}`, ...args);
-};
-// Señales de "error de fondo": condiciones anómalas que no rompen la pantalla
-// pero revelan config mala o mediciones corruptas. Salen con console.warn para
-// distinguirlas del trazado normal y ser visibles también en la consola.
-const _warnLog = (msg: string, ...args: unknown[]) => {
-  // eslint-disable-next-line no-console
-  console.warn(`[app-layout:warn] t=${_log()} ${msg}`, ...args);
-};
-
 const AppNavigationContext = createContext<AppNavigation | null>(null);
 
 export function useAppNavigation(): AppNavigation {
   const ctx = useContext(AppNavigationContext);
   if (!ctx) {
     throw new Error("useAppNavigation debe usarse dentro de <AppLayout>");
-  }
-  return ctx;
-}
-
-// Diagnóstico: permite a cualquier slot pedir un snapshot del estado actual del
-// motor (alturas, opacidades de fade, scrollY) en un momento puntual.
-export type AppLayoutDebugSnapshot = {
-  route: string;
-  anchors: string[];
-  anim: Record<string, number>;
-  naturals: Record<SectionKey, number>;
-  lastMeasured: Record<SectionKey, number>;
-  windowH: number;
-};
-
-const AppLayoutDebugContext = createContext<{ snapshot: () => AppLayoutDebugSnapshot } | null>(null);
-
-export function useAppLayoutDebug(): { snapshot: () => AppLayoutDebugSnapshot } {
-  const ctx = useContext(AppLayoutDebugContext);
-  if (!ctx) {
-    throw new Error("useAppLayoutDebug debe usarse dentro de <AppLayout>");
   }
   return ctx;
 }
@@ -249,14 +201,6 @@ export function AppLayout({
   const [prevRoute, setPrevRoute] = useState<AppRoute | null>(null);
   const hasTransition = animateTransitions && prevRoute !== null;
 
-  // Marca de la última navegación (cambio de stack) para medir "stall": el
-  // tiempo entre el setState del stack y el route-change. Un stall alto indica
-  // montajes lentos del contenido de la ruta nueva (hilo JS ocupado).
-  const navMark = useRef(-1);
-  const markNav = useCallback(() => {
-    navMark.current = Date.now();
-  }, []);
-
   // Ocultar/revelar el contenido visible durante una transición animada. El
   // ocultamiento ("erase", opacity 0) es un estilo PLANO en un nodo SIN
   // useAnimatedStyle (la opacity animada pisa siempre a la estática aunque vaya
@@ -271,9 +215,6 @@ export function AppLayout({
   const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startReveal = useCallback(() => {
     if (revealTimer.current) {
-      _warnLog(
-        `[reveal] nuevo erase antes de que termine el fade anterior (navegación rápida) → timer reiniciado`
-      );
       clearTimeout(revealTimer.current);
     }
     revealTimer.current = setTimeout(() => {
@@ -290,46 +231,22 @@ export function AppLayout({
     };
   }, []);
 
-  // Espejo de los nombres del stack para trazar navegación/pop en los logs.
-  const stackData = useRef<string[]>(stack.map((r) => r.name));
+  // Si la ruta inicial cambia desde afuera (por ejemplo, currentRoute del
+  // AppShell), hay que sincronizar el stack interno. Sin esto, AppLayout ignora
+  // el cambio de initialRoute y se queda en la pantalla anterior.
   useEffect(() => {
-    const names = stack.map((r) => r.name);
-    if (stackData.current.join("→") !== names.join("→")) {
-      _revLog(`[stack] ${stackData.current.join(" → ")} → ${names.join(" → ")}`);
-      stackData.current = names;
-    }
-  }, [stack]);
+    setStack((s) => (s[0]?.name === initialRoute.name ? s : [initialRoute]));
+  }, [initialRoute.name]);
 
-  // Si la ruta inicial cambia desde afuera (por ejemplo, targetRoute del shell),
-  // hay que sincronizar el stack interno. Sin esto, AppLayout ignora el cambio
-  // de initialRoute y se queda en la pantalla anterior.
-  useEffect(() => {
-    setStack((s) => {
-      if (s[0]?.name !== initialRoute.name) {
-        markNav();
-        _revLog(
-          `[sync-stack] initialRoute=“${initialRoute.name}” (externa) vs stack[0]=“${s[0]?.name}” → RESET interno`
-        );
-        return [initialRoute];
-      }
-      return s;
-    });
-  }, [initialRoute.name, markNav]);
   const navigate = useCallback((route: AppRoute) => {
-    markNav();
-    _revLog(`[navigate] push “${route.name}” (stack ${stackData.current.join(" → ")})`);
     setStack((s) => [...s, route]);
-  }, [markNav]);
+  }, []);
   const replace = useCallback((route: AppRoute) => {
-    markNav();
-    _revLog(`[replace] “${route.name}” (stack ${stackData.current.join(" → ")})`);
     setStack((s) => [...s.slice(0, -1), route]);
-  }, [markNav]);
+  }, []);
   const back = useCallback(() => {
-    markNav();
-    _revLog(`[back] pop (stack ${stackData.current.join(" → ")})`);
     setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
-  }, [markNav]);
+  }, []);
   const canGoBack = stack.length > 1;
   const currentRoute = stack[stack.length - 1];
 
@@ -355,7 +272,6 @@ export function AppLayout({
 
   useEffect(() => {
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      _revLog(`[hardwareBack] canGoBack=${canGoBack}`);
       if (canGoBack) {
         back();
         return true;
@@ -378,11 +294,6 @@ export function AppLayout({
     typeof currentRoute.state === "string"
       ? layoutStates[currentRoute.state]
       : currentRoute.state;
-  if (!resolvedState) {
-    _warnLog(
-      `[state] preset “${String(currentRoute.state)}” de la ruta “${currentRoute.name}” no existe en layoutStates → fallback onlyCenter`
-    );
-  }
   const state: LayoutState = resolvedState ?? layoutStates.onlyCenter;
   const slots = currentRoute.slots ?? {};
 
@@ -422,23 +333,14 @@ export function AppLayout({
   const scrollRef = useRef<ScrollView>(null);
   const innerScrollRef = useRef<ScrollView>(null);
 
-  // Alto natural (medido) de cada sección + último alto aceptado por el guard.
-  // Se mantienen en refs simples (cambios no re-renderizan; la animación los
-  // lee en cada render por vía de `naturalsRef`).
+  // Alto natural (medido) de cada sección. Se mantienen en refs simples (los
+  // cambios no re-renderizan; se leen vía `naturalsRef` en cada render).
   const naturalsRef = useRef<Record<SectionKey, number>>({
     top: H / 3,
     mid: H / 3,
     bottom: H / 3,
   });
   const lastMeasured = useRef<Record<SectionKey, number>>({ top: 0, mid: 0, bottom: 0 });
-
-  // --- Diagnóstico de fondo (refs) ---
-  // Rechazos consecutivos de medición por sección: si una sección "content" cae
-  // repetidamente por debajo del colapso, la medida natural no se actualiza.
-  const rejectedMeasures = useRef<Record<SectionKey, number>>({ top: 0, mid: 0, bottom: 0 });
-  // Cuenta secciones que realmente renderizaron el wrapper de reveal en el
-  // último render, para detectar un revealEnabled sin contenido que ocultar.
-  const revealWrapperCount = useRef(0);
 
   const computeTargets = (st: LayoutState): Record<SectionKey, number> => {
     const base: Record<SectionKey, number> = { top: 0, mid: 0, bottom: 0 };
@@ -471,20 +373,11 @@ export function AppLayout({
     for (const k of SECTION_KEYS) {
       const v = next[k];
       if (typeof v !== "number" || !Number.isFinite(v) || v < 0) {
-        _warnLog(
-          `[targets] ${k} inválido: ${String(v)} → reemplazado por 0`
-        );
         next = { ...next, [k]: 0 };
       }
     }
     setLayoutHeights((prev) => {
-      const changed =
-        !SECTION_KEYS.every((k) => prev[k] === next[k]);
-      if (changed) {
-        _revLog(
-          `[heights] ${_logH(prev)} → ${_logH(next)} (${SECTION_KEYS.filter((k) => prev[k] !== next[k]).join(",")})`
-        );
-      }
+      const changed = !SECTION_KEYS.every((k) => prev[k] === next[k]);
       return changed ? next : prev;
     });
   }, []);
@@ -492,121 +385,26 @@ export function AppLayout({
   const makeOnMeasure = (k: SectionKey) => (e: LayoutChangeEvent) => {
     const h = e.nativeEvent.layout.height;
     const prev = lastMeasured.current[k];
-    if (!Number.isFinite(h) || h <= 0) {
-      _warnLog(`[measure] ${k} alto ${String(h)} inválido → ignorado`);
-      return;
-    }
+    if (!Number.isFinite(h) || h <= 0) return;
     const collapsed = prev > 0 && h < Math.min(prev * 0.5, 100);
-    if (collapsed) {
-      const n = (rejectedMeasures.current[k] = (rejectedMeasures.current[k] ?? 0) + 1);
-      _revLog(
-        `[measure] ${k} h=${Math.round(h)} prev=${Math.round(prev)} → RECHAZADO (colapsado)`
-      );
-      if (n % 3 === 0) {
-        _warnLog(
-          `[measure] ${k} lleva ${n} rechazos seguidos por colapso — el natural se queda en ${Math.round(naturalsRef.current[k])}px`
-        );
-      }
-      return;
-    }
-    rejectedMeasures.current[k] = 0;
-    const prevNatural = naturalsRef.current[k];
+    if (collapsed) return;
     naturalsRef.current[k] = h;
     lastMeasured.current[k] = h;
-    _revLog(
-      `[measure] ${k} h=${Math.round(h)} prev=${Math.round(prev)} natural=${Math.round(prevNatural)}${h === prevNatural ? "" : ` → natural ahora ${Math.round(h)}`}`
-    );
     applyTargets(computeTargets(state));
   };
 
   useLayoutEffect(() => {
-    const prevName = prevRoute?.name ?? "(ninguna)";
-    _revLog(
-      `[route-change] currentRoute=“${currentRoute.name}” prevRoute=“${prevName}” pageScroll=${state.pageScroll} reduceMotion=${reduceMotion}`
-    );
-    // Métricas de ruta: "stall" (tiempo del setState del stack al route-change)
-    // y sanity del layout (suma de alturas objetivo contra la ventana).
-    const targets = computeTargets(state);
-    const stall = navMark.current > 0 ? Date.now() - navMark.current : -1;
-    if (stall > 200) {
-      _warnLog(
-        `[route-metrics] stall alto (${stall}ms): el montaje de “${currentRoute.name}” tarda — se percibe “montado antes de la animación”`
-      );
-    }
-    const total = SECTION_KEYS.reduce((acc, k) => acc + targets[k], 0);
-    _revLog(
-      `[route-metrics] name=“${currentRoute.name}” targets=${_logH(targets)} total=${Math.round(total)} window=${Math.round(H)} stall=${stall}ms`
-    );
-    if (total > H + 200) {
-      _warnLog(
-        `[route-metrics] overflow: secciones suman ${Math.round(total)}px > ventana ${Math.round(H)}px (${Math.round(total - H)}px de exceso)`
-      );
-    }
-    // Sombras: el wrapper de reveal no se montó en ninguna sección con
-    // revealEnabled → la ruta no tiene contenido que ocultar (o todas las
-    // secciones visibles salen "planas").
-    const wrapperCount = revealWrapperCount.current;
-    revealWrapperCount.current = 0;
-    if (revealEnabled && wrapperCount === 0) {
-      _warnLog(
-        `[reveal] revealEnabled pero ninguna sección monta contenido (ruta vacía o secciones planas): no hay nada que ocultar/revelar`
-      );
-    }
     if (!state.pageScroll) {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       innerScrollRef.current?.scrollTo({ y: 0, animated: false });
     }
-    applyTargets(targets);
+    applyTargets(computeTargets(state));
     if (revealEnabled && prevRoute) {
-      _revLog(
-        `[reveal] → ERASE plano (latch en render) + fade-in (${REVEAL_DURATION_MS}ms) tras ${REVEAL_DELAY_MS}ms`
-      );
       startReveal();
-    } else {
-      _revLog(
-        `[reveal] NO erase prevRoute=${!!prevRoute} animateTransitions=${animateTransitions} contentReveal=${contentReveal} reduceMotion=${reduceMotion}`
-      );
     }
     setPrevRoute(currentRoute);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRoute.name]);
-
-  // Trazado del waveform del reveal en el hilo UI: se loguea cada cambio de
-  // opacidad (con marca de tiempo) para correlacionar con los cambios de
-  // altura ([heights]) y ver si el fade se re-aplica al terminar el layout.
-  useAnimatedReaction(
-    () => revealProgress.value,
-    (value, prev) => {
-      if (value === prev) return;
-      runOnJS(_revLog)(
-        `[reveal-wave] opacity ${prev?.toFixed(2) ?? "?"} → ${value.toFixed(2)}`
-      );
-    }
-  );
-
-  const snapshot = useCallback(
-    (): AppLayoutDebugSnapshot => {
-      const midNatural = naturalsRef.current.mid || 1;
-      return {
-        route: currentRoute.name,
-        anchors: stack.map((r) => r.name),
-        anim: {
-          scrollY: 0,
-          animating: 0,
-          top: Math.round(layoutHeights.top),
-          mid: Math.round(layoutHeights.mid),
-          bottom: Math.round(layoutHeights.bottom),
-          topFade: 1,
-          midFade: Math.min(layoutHeights.mid / midNatural, 1),
-          bottomFade: 1,
-        },
-        naturals: { ...naturalsRef.current },
-        lastMeasured: { ...lastMeasured.current },
-        windowH: H,
-      };
-    },
-    [currentRoute.name, stack, H, layoutHeights]
-  );
 
   const renderSection = (k: SectionKey) => {
     const cur = state.sections[k];
@@ -630,11 +428,6 @@ export function AppLayout({
           ? prevRoute?.slots?.[slot]
           : slots[slot]
         : null;
-      if (slot && !usePrevContent && !content) {
-        _warnLog(
-          `[slot] ruta “${currentRoute.name}” sección “${k}” pide slot “${slot}” pero no hay contenido en slots`
-        );
-      }
       const isDynamic = (cur?.height ?? prevB?.height) === "content";
       const scroll = cur?.scroll ?? prevB?.scroll ?? false;
       // Medición de la propia instancia visible: para secciones "content" sin
@@ -659,7 +452,6 @@ export function AppLayout({
         <View style={styles.sectionContent}>{content}</View>
       );
       const revealContent = revealEnabled;
-      if (revealContent) revealWrapperCount.current += 1;
       inner = (
         <>
           {isDynamic && !selfMeasured && (
@@ -703,44 +495,42 @@ export function AppLayout({
   };
 
   return (
-    <AppLayoutDebugContext.Provider value={{ snapshot }}>
-      <AppNavigationContext.Provider value={navigationValue}>
-        <View style={[styles.root, { backgroundColor: pageBg }]}>
-          <ScrollView
-            ref={scrollRef}
-            style={styles.pageScroll}
-            contentContainerStyle={[styles.pageContent, { backgroundColor: pageBg }]}
-            scrollEnabled={!!state.pageScroll}
-            showsVerticalScrollIndicator={false}
-          >
-            {renderSection("top")}
-            {showTopDivisor && (
-              <Animated.View
-                layout={hasTransition && animateTransitions ? transition : undefined}
-                collapsable={false}
-              >
-                <Divisor position="top" handle={currentRoute.state === "top"} />
-              </Animated.View>
-            )}
-            {renderSection("mid")}
-            {showBottomDivisor && (
-              <Animated.View
-                layout={hasTransition && animateTransitions ? transition : undefined}
-                collapsable={false}
-              >
-                <Divisor position="bottom" handle={currentRoute.state === "bottom"} />
-              </Animated.View>
-            )}
-            {renderSection("bottom")}
-          </ScrollView>
-          {showBackButton && canGoBack && (
-            <View style={styles.backBar} pointerEvents="box-none">
-              <Button variant="secondary" size="sm" label="← Volver" onPress={back} />
-            </View>
+    <AppNavigationContext.Provider value={navigationValue}>
+      <View style={[styles.root, { backgroundColor: pageBg }]}>
+        <ScrollView
+          ref={scrollRef}
+          style={styles.pageScroll}
+          contentContainerStyle={[styles.pageContent, { backgroundColor: pageBg }]}
+          scrollEnabled={!!state.pageScroll}
+          showsVerticalScrollIndicator={false}
+        >
+          {renderSection("top")}
+          {showTopDivisor && (
+            <Animated.View
+              layout={hasTransition && animateTransitions ? transition : undefined}
+              collapsable={false}
+            >
+              <Divisor position="top" handle={currentRoute.state === "top"} />
+            </Animated.View>
           )}
-        </View>
-      </AppNavigationContext.Provider>
-    </AppLayoutDebugContext.Provider>
+          {renderSection("mid")}
+          {showBottomDivisor && (
+            <Animated.View
+              layout={hasTransition && animateTransitions ? transition : undefined}
+              collapsable={false}
+            >
+              <Divisor position="bottom" handle={currentRoute.state === "bottom"} />
+            </Animated.View>
+          )}
+          {renderSection("bottom")}
+        </ScrollView>
+        {showBackButton && canGoBack && (
+          <View style={styles.backBar} pointerEvents="box-none">
+            <Button variant="secondary" size="sm" label="← Volver" onPress={back} />
+          </View>
+        )}
+      </View>
+    </AppNavigationContext.Provider>
   );
 }
 

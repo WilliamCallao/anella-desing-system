@@ -68,14 +68,6 @@ export function SheetLayer({
   const scrollY = useSharedValue(0);
   const contentFade = useSharedValue(1);
 
-  console.log("[SheetLayer] render", {
-    key: route.key,
-    kind: route.kind,
-    role,
-    direction: layerDirection,
-    screenH,
-  });
-
   const onHeaderLayout = (e: LayoutChangeEvent) => {
     if (fixedH != null) return;
     const h = e.nativeEvent.layout.height;
