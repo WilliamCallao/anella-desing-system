@@ -16,6 +16,16 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import { useWindowDimensions } from "react-native";
+import Animated, {
+  CurvedTransition,
+  LinearTransition,
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { Button } from "../components/Button";
 import { Text } from "../components/text";
 import { Divisor } from "./Divisor";
@@ -94,7 +104,14 @@ export const layoutStates: Record<LayoutStateName, LayoutState> = {
     sections: {
       top: { visible: false },
       mid: { visible: true, height: "content", slot: "header", backgroundColor: DEFAULT_BG },
-      bottom: { visible: true, height: "content", slot: "footer", backgroundColor: DARK_BG },
+      bottom: {
+        visible: true,
+        height: "fillRest",
+        restsOn: "mid",
+        scroll: true,
+        slot: "footer",
+        backgroundColor: DARK_BG,
+      },
     },
   },
   fullBottom: {
@@ -128,6 +145,39 @@ const DEFAULT_COLORS: Record<SectionKey, string> = {
   top: DARK_BG,
   mid: DEFAULT_BG,
   bottom: DARK_BG,
+};
+
+// Transición nativa de estados (Reanimated layout transitions): anima
+// height/posición vía MountingOverrideDelegate (hilo UI) SIN commitear un
+// shadow tree por frame, a diferencia de animar `height` con useAnimatedStyle
+// (que es lo que producía texto sin repintar en Fabric).
+const LAYOUT_DURATION = 300;
+const REVEAL_DELAY_MS = 380;
+const REVEAL_DURATION_MS = 200;
+
+// --- Diagnóstico temporal: trazabilidad completa de la transición -----------
+// Cada llamada loguea con un id de transición monótono (+1 por cambio de ruta)
+// y un timestamp relativo al primer log del módulo, para correlacionar el
+// waveform del reveal con cuándo cambian las alturas (layout transitions) y
+// cuándo se miden las secciones. El prefijo [app-layout] permite filtrar.
+let _logSeq = 0;
+let _logT0 = -1;
+const _log = () => {
+  if (_logT0 < 0) _logT0 = Date.now();
+  return `${Date.now() - _logT0}ms`;
+};
+const _logH = (h: Record<SectionKey, number>) =>
+  `T:${Math.round(h.top)} M:${Math.round(h.mid)} B:${Math.round(h.bottom)}`;
+const _revLog = (msg: string, ...args: unknown[]) => {
+  // eslint-disable-next-line no-console
+  console.log(`[app-layout] t=${_log()} ${msg}`, ...args);
+};
+// Señales de "error de fondo": condiciones anómalas que no rompen la pantalla
+// pero revelan config mala o mediciones corruptas. Salen con console.warn para
+// distinguirlas del trazado normal y ser visibles también en la consola.
+const _warnLog = (msg: string, ...args: unknown[]) => {
+  // eslint-disable-next-line no-console
+  console.warn(`[app-layout:warn] t=${_log()} ${msg}`, ...args);
 };
 
 const AppNavigationContext = createContext<AppNavigation | null>(null);
@@ -165,16 +215,90 @@ export type AppLayoutProps = {
   initialRoute: AppRoute;
   /** Muestra un botón de volver global cuando canGoBack. Default true. */
   showBackButton?: boolean;
+  /**
+   * Anima las transiciones de estado (rutas y colapsos por medición) con
+   * layout transitions de Reanimated, en lugar de aplicar las alturas planas
+   * de forma inmediata. Default false (motor estático estable).
+   */
+  animateTransitions?: boolean;
+  /**
+   * Cuándo revelar el contenido visible de las secciones durante una
+   * transición animada. "always": siempre visible (el alto anima con el
+   * contenido pintado). "after": el contenido se oculta mientras el alto
+   * transiciona y se desvanece al terminar. Default "always".
+   */
+  contentReveal?: "always" | "after";
 };
 
 export function AppLayout({
   initialRoute,
   showBackButton = true,
+  animateTransitions = false,
+  contentReveal = "always",
 }: AppLayoutProps) {
   const { height: H } = useWindowDimensions();
 
+  const reduceMotion = useReducedMotion();
+  const transition = reduceMotion
+    ? LinearTransition.duration(0)
+    : CurvedTransition.duration(LAYOUT_DURATION);
+  const revealProgress = useSharedValue(1);
+  const revealStyle = useAnimatedStyle(() => ({ opacity: revealProgress.value }));
+
   const [stack, setStack] = useState<AppRoute[]>([initialRoute]);
   const [prevRoute, setPrevRoute] = useState<AppRoute | null>(null);
+  const hasTransition = animateTransitions && prevRoute !== null;
+
+  // Marca de la última navegación (cambio de stack) para medir "stall": el
+  // tiempo entre el setState del stack y el route-change. Un stall alto indica
+  // montajes lentos del contenido de la ruta nueva (hilo JS ocupado).
+  const navMark = useRef(-1);
+  const markNav = useCallback(() => {
+    navMark.current = Date.now();
+  }, []);
+
+  // Ocultar/revelar el contenido visible durante una transición animada. El
+  // ocultamiento ("erase", opacity 0) es un estilo PLANO en un nodo SIN
+  // useAnimatedStyle (la opacity animada pisa siempre a la estática aunque vaya
+  // después en el arreglo). El latch de `revealHidden` se hace en TIEMPO DE
+  // RENDER (patrón de ajuste de estado durante render, ver más abajo), no en un
+  // efecto: el primer commit de la ruta nueva ya es invisible y ningún frame
+  // pinta el contenido antes de la transición. El fade-in post-layout es la
+  // única parte animada por shared value, porque Reanimated bloquea el hilo UI
+  // mientras corren las layout transitions y un withSequence programado en el
+  // mismo commit no corre hasta que termina el layout.
+  const [revealHidden, setRevealHidden] = useState(false);
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startReveal = useCallback(() => {
+    if (revealTimer.current) {
+      _warnLog(
+        `[reveal] nuevo erase antes de que termine el fade anterior (navegación rápida) → timer reiniciado`
+      );
+      clearTimeout(revealTimer.current);
+    }
+    revealTimer.current = setTimeout(() => {
+      revealTimer.current = null;
+      revealProgress.value = 0;
+      revealProgress.value = withTiming(1, { duration: REVEAL_DURATION_MS });
+      setRevealHidden(false);
+    }, REVEAL_DELAY_MS);
+  }, [revealProgress, REVEAL_DELAY_MS, REVEAL_DURATION_MS]);
+
+  useEffect(() => {
+    return () => {
+      if (revealTimer.current) clearTimeout(revealTimer.current);
+    };
+  }, []);
+
+  // Espejo de los nombres del stack para trazar navegación/pop en los logs.
+  const stackData = useRef<string[]>(stack.map((r) => r.name));
+  useEffect(() => {
+    const names = stack.map((r) => r.name);
+    if (stackData.current.join("→") !== names.join("→")) {
+      _revLog(`[stack] ${stackData.current.join(" → ")} → ${names.join(" → ")}`);
+      stackData.current = names;
+    }
+  }, [stack]);
 
   // Si la ruta inicial cambia desde afuera (por ejemplo, targetRoute del shell),
   // hay que sincronizar el stack interno. Sin esto, AppLayout ignora el cambio
@@ -182,25 +306,56 @@ export function AppLayout({
   useEffect(() => {
     setStack((s) => {
       if (s[0]?.name !== initialRoute.name) {
+        markNav();
+        _revLog(
+          `[sync-stack] initialRoute=“${initialRoute.name}” (externa) vs stack[0]=“${s[0]?.name}” → RESET interno`
+        );
         return [initialRoute];
       }
       return s;
     });
-  }, [initialRoute.name]);
+  }, [initialRoute.name, markNav]);
   const navigate = useCallback((route: AppRoute) => {
+    markNav();
+    _revLog(`[navigate] push “${route.name}” (stack ${stackData.current.join(" → ")})`);
     setStack((s) => [...s, route]);
-  }, []);
+  }, [markNav]);
   const replace = useCallback((route: AppRoute) => {
+    markNav();
+    _revLog(`[replace] “${route.name}” (stack ${stackData.current.join(" → ")})`);
     setStack((s) => [...s.slice(0, -1), route]);
-  }, []);
+  }, [markNav]);
   const back = useCallback(() => {
+    markNav();
+    _revLog(`[back] pop (stack ${stackData.current.join(" → ")})`);
     setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
-  }, []);
+  }, [markNav]);
   const canGoBack = stack.length > 1;
   const currentRoute = stack[stack.length - 1];
 
+  const revealEnabled = animateTransitions && contentReveal === "after" && !reduceMotion;
+  // Latcheo en TIEMPO DE RENDER: la primera renderización de una ruta nueva
+  // detecta el cambio de `currentRoute` y oculta el contenido al instante. El
+  // patrón "ajustar estado durante render" de React descarta ese render y vuelve
+  // a renderizar con `revealHidden=true` ANTES de pintar, así el primer commit
+  // de la ruta nueva sale invisible. Ocultar en un efecto llega tarde: el primer
+  // commit ya salió con el contenido visible (se veía "montado" antes de la
+  // animación). Solo aplica cuando hay una transición real (prevRoute !== null,
+  // es decir, ya hubo al menos una navegación).
+  const [prevRouteName, setPrevRouteName] = useState(currentRoute.name);
+  if (
+    revealEnabled &&
+    prevRoute !== null &&
+    prevRoute.name !== currentRoute.name &&
+    prevRouteName !== currentRoute.name
+  ) {
+    setPrevRouteName(currentRoute.name);
+    setRevealHidden(true);
+  }
+
   useEffect(() => {
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      _revLog(`[hardwareBack] canGoBack=${canGoBack}`);
       if (canGoBack) {
         back();
         return true;
@@ -219,10 +374,16 @@ export function AppLayout({
     replace,
   };
 
-  const state: LayoutState =
+  const resolvedState: LayoutState | undefined =
     typeof currentRoute.state === "string"
       ? layoutStates[currentRoute.state]
       : currentRoute.state;
+  if (!resolvedState) {
+    _warnLog(
+      `[state] preset “${String(currentRoute.state)}” de la ruta “${currentRoute.name}” no existe en layoutStates → fallback onlyCenter`
+    );
+  }
+  const state: LayoutState = resolvedState ?? layoutStates.onlyCenter;
   const slots = currentRoute.slots ?? {};
 
   const prevLayoutState: LayoutState | null = prevRoute
@@ -234,10 +395,7 @@ export function AppLayout({
   // Cuando el footer es visible, el fondo inferior toma su color para dar la
   // ilusión de que la hoja oscura ocupa todo el alto disponible (aunque su
   // contenido sea corto y la página scrollee).
-  const pageBg =
-    state.sections.bottom?.visible
-      ? state.sections.bottom.backgroundColor ?? DARK_BG
-      : DEFAULT_BG;
+  const pageBg = DEFAULT_BG;
 
   const topVisible = !!state.sections.top?.visible;
   const midVisible = !!state.sections.mid?.visible;
@@ -274,6 +432,14 @@ export function AppLayout({
   });
   const lastMeasured = useRef<Record<SectionKey, number>>({ top: 0, mid: 0, bottom: 0 });
 
+  // --- Diagnóstico de fondo (refs) ---
+  // Rechazos consecutivos de medición por sección: si una sección "content" cae
+  // repetidamente por debajo del colapso, la medida natural no se actualiza.
+  const rejectedMeasures = useRef<Record<SectionKey, number>>({ top: 0, mid: 0, bottom: 0 });
+  // Cuenta secciones que realmente renderizaron el wrapper de reveal en el
+  // último render, para detectar un revealEnabled sin contenido que ocultar.
+  const revealWrapperCount = useRef(0);
+
   const computeTargets = (st: LayoutState): Record<SectionKey, number> => {
     const base: Record<SectionKey, number> = { top: 0, mid: 0, bottom: 0 };
     for (const k of SECTION_KEYS) {
@@ -302,31 +468,121 @@ export function AppLayout({
   // piso de 100px), de modo que una caída puntual colapsada no contamine el
   // valor natural.
   const applyTargets = useCallback((next: Record<SectionKey, number>) => {
-    setLayoutHeights((prev) =>
-      SECTION_KEYS.every((k) => prev[k] === next[k]) ? prev : next
-    );
+    for (const k of SECTION_KEYS) {
+      const v = next[k];
+      if (typeof v !== "number" || !Number.isFinite(v) || v < 0) {
+        _warnLog(
+          `[targets] ${k} inválido: ${String(v)} → reemplazado por 0`
+        );
+        next = { ...next, [k]: 0 };
+      }
+    }
+    setLayoutHeights((prev) => {
+      const changed =
+        !SECTION_KEYS.every((k) => prev[k] === next[k]);
+      if (changed) {
+        _revLog(
+          `[heights] ${_logH(prev)} → ${_logH(next)} (${SECTION_KEYS.filter((k) => prev[k] !== next[k]).join(",")})`
+        );
+      }
+      return changed ? next : prev;
+    });
   }, []);
 
   const makeOnMeasure = (k: SectionKey) => (e: LayoutChangeEvent) => {
     const h = e.nativeEvent.layout.height;
     const prev = lastMeasured.current[k];
+    if (!Number.isFinite(h) || h <= 0) {
+      _warnLog(`[measure] ${k} alto ${String(h)} inválido → ignorado`);
+      return;
+    }
     const collapsed = prev > 0 && h < Math.min(prev * 0.5, 100);
-    if (collapsed) return;
+    if (collapsed) {
+      const n = (rejectedMeasures.current[k] = (rejectedMeasures.current[k] ?? 0) + 1);
+      _revLog(
+        `[measure] ${k} h=${Math.round(h)} prev=${Math.round(prev)} → RECHAZADO (colapsado)`
+      );
+      if (n % 3 === 0) {
+        _warnLog(
+          `[measure] ${k} lleva ${n} rechazos seguidos por colapso — el natural se queda en ${Math.round(naturalsRef.current[k])}px`
+        );
+      }
+      return;
+    }
+    rejectedMeasures.current[k] = 0;
+    const prevNatural = naturalsRef.current[k];
     naturalsRef.current[k] = h;
     lastMeasured.current[k] = h;
+    _revLog(
+      `[measure] ${k} h=${Math.round(h)} prev=${Math.round(prev)} natural=${Math.round(prevNatural)}${h === prevNatural ? "" : ` → natural ahora ${Math.round(h)}`}`
+    );
     applyTargets(computeTargets(state));
   };
 
   useLayoutEffect(() => {
+    const prevName = prevRoute?.name ?? "(ninguna)";
+    _revLog(
+      `[route-change] currentRoute=“${currentRoute.name}” prevRoute=“${prevName}” pageScroll=${state.pageScroll} reduceMotion=${reduceMotion}`
+    );
+    // Métricas de ruta: "stall" (tiempo del setState del stack al route-change)
+    // y sanity del layout (suma de alturas objetivo contra la ventana).
     const targets = computeTargets(state);
+    const stall = navMark.current > 0 ? Date.now() - navMark.current : -1;
+    if (stall > 200) {
+      _warnLog(
+        `[route-metrics] stall alto (${stall}ms): el montaje de “${currentRoute.name}” tarda — se percibe “montado antes de la animación”`
+      );
+    }
+    const total = SECTION_KEYS.reduce((acc, k) => acc + targets[k], 0);
+    _revLog(
+      `[route-metrics] name=“${currentRoute.name}” targets=${_logH(targets)} total=${Math.round(total)} window=${Math.round(H)} stall=${stall}ms`
+    );
+    if (total > H + 200) {
+      _warnLog(
+        `[route-metrics] overflow: secciones suman ${Math.round(total)}px > ventana ${Math.round(H)}px (${Math.round(total - H)}px de exceso)`
+      );
+    }
+    // Sombras: el wrapper de reveal no se montó en ninguna sección con
+    // revealEnabled → la ruta no tiene contenido que ocultar (o todas las
+    // secciones visibles salen "planas").
+    const wrapperCount = revealWrapperCount.current;
+    revealWrapperCount.current = 0;
+    if (revealEnabled && wrapperCount === 0) {
+      _warnLog(
+        `[reveal] revealEnabled pero ninguna sección monta contenido (ruta vacía o secciones planas): no hay nada que ocultar/revelar`
+      );
+    }
     if (!state.pageScroll) {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       innerScrollRef.current?.scrollTo({ y: 0, animated: false });
     }
     applyTargets(targets);
+    if (revealEnabled && prevRoute) {
+      _revLog(
+        `[reveal] → ERASE plano (latch en render) + fade-in (${REVEAL_DURATION_MS}ms) tras ${REVEAL_DELAY_MS}ms`
+      );
+      startReveal();
+    } else {
+      _revLog(
+        `[reveal] NO erase prevRoute=${!!prevRoute} animateTransitions=${animateTransitions} contentReveal=${contentReveal} reduceMotion=${reduceMotion}`
+      );
+    }
     setPrevRoute(currentRoute);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRoute.name]);
+
+  // Trazado del waveform del reveal en el hilo UI: se loguea cada cambio de
+  // opacidad (con marca de tiempo) para correlacionar con los cambios de
+  // altura ([heights]) y ver si el fade se re-aplica al terminar el layout.
+  useAnimatedReaction(
+    () => revealProgress.value,
+    (value, prev) => {
+      if (value === prev) return;
+      runOnJS(_revLog)(
+        `[reveal-wave] opacity ${prev?.toFixed(2) ?? "?"} → ${value.toFixed(2)}`
+      );
+    }
+  );
 
   const snapshot = useCallback(
     (): AppLayoutDebugSnapshot => {
@@ -358,48 +614,91 @@ export function AppLayout({
     const prevVisible = !!prevB?.visible;
     const visible = !!cur?.visible || prevVisible;
     const height = layoutHeights[k];
+    const animating = animateTransitions && hasTransition;
+    let inner: ReactNode;
     if (!visible) {
-      return (
-        <View key={k} style={[styles.colBlock, { height }]}>
-          <View style={styles.measureCopy} onLayout={makeOnMeasure(k)}>
-            {cur?.slot ? slots[cur.slot] : null}
-          </View>
+      inner = (
+        <View style={styles.measureCopy} onLayout={makeOnMeasure(k)}>
+          {cur?.slot ? slots[cur.slot] : null}
         </View>
       );
+    } else {
+      const usePrevContent = !cur?.visible && prevVisible;
+      const slot = usePrevContent ? prevB?.slot : cur?.slot;
+      const content = slot
+        ? usePrevContent
+          ? prevRoute?.slots?.[slot]
+          : slots[slot]
+        : null;
+      if (slot && !usePrevContent && !content) {
+        _warnLog(
+          `[slot] ruta “${currentRoute.name}” sección “${k}” pide slot “${slot}” pero no hay contenido en slots`
+        );
+      }
+      const isDynamic = (cur?.height ?? prevB?.height) === "content";
+      const scroll = cur?.scroll ?? prevB?.scroll ?? false;
+      // Medición de la propia instancia visible: para secciones "content" sin
+      // scroll (p. ej. el header de preset `bottom`), se mide el contenedor
+      // visible directamente en vez de montar una copia oculta. Esto elimina el
+      // doble-mount del slot (measureCopy invisible + vista visible) que duplica
+      // la instancia del contenido (logs [accounts:header] MOUNT x2).
+      const selfMeasured = isDynamic && !scroll;
+      const body = scroll ? (
+        <ScrollView
+          ref={innerScrollRef}
+          style={styles.innerScroll}
+          showsVerticalScrollIndicator={false}
+        >
+          {content}
+        </ScrollView>
+      ) : selfMeasured ? (
+        <View style={styles.measureNatural} onLayout={makeOnMeasure(k)}>
+          {content}
+        </View>
+      ) : (
+        <View style={styles.sectionContent}>{content}</View>
+      );
+      const revealContent = revealEnabled;
+      if (revealContent) revealWrapperCount.current += 1;
+      inner = (
+        <>
+          {isDynamic && !selfMeasured && (
+            <View
+              pointerEvents="none"
+              style={styles.measureOuter}
+              onLayout={makeOnMeasure(k)}
+            >
+              <View style={styles.measureCopy}>{content}</View>
+            </View>
+          )}
+          {revealContent ? (
+            <View
+              style={[styles.reveal, revealHidden && styles.revealHidden]}
+            >
+              <Animated.View style={[styles.reveal, revealStyle]}>
+                {body}
+              </Animated.View>
+            </View>
+          ) : (
+            body
+          )}
+        </>
+      );
     }
-    const usePrevContent = !cur?.visible && prevVisible;
-    const slot = usePrevContent ? prevB?.slot : cur?.slot;
-    const content = slot
-      ? usePrevContent
-        ? prevRoute?.slots?.[slot]
-        : slots[slot]
-      : null;
     const bg = cur?.backgroundColor ?? prevB?.backgroundColor ?? DEFAULT_COLORS[k];
-    const isDynamic = (cur?.height ?? prevB?.height) === "content";
-    const scroll = cur?.scroll ?? prevB?.scroll ?? false;
     return (
-      <View key={k} style={[styles.colBlock, { backgroundColor: bg, height }]}>
-        {isDynamic && (
-          <View
-            pointerEvents="none"
-            style={styles.measureOuter}
-            onLayout={makeOnMeasure(k)}
-          >
-            <View style={styles.measureCopy}>{content}</View>
-          </View>
-        )}
-        {scroll ? (
-          <ScrollView
-            ref={innerScrollRef}
-            style={styles.innerScroll}
-            showsVerticalScrollIndicator={false}
-          >
-            {content}
-          </ScrollView>
-        ) : (
-          <View style={styles.sectionContent}>{content}</View>
-        )}
-      </View>
+      <Animated.View
+        key={k}
+        layout={animating ? transition : undefined}
+        collapsable={false}
+        style={[
+          styles.colBlock,
+          { backgroundColor: bg, height },
+          animating && styles.clip,
+        ]}
+      >
+        {inner}
+      </Animated.View>
     );
   };
 
@@ -415,10 +714,22 @@ export function AppLayout({
             showsVerticalScrollIndicator={false}
           >
             {renderSection("top")}
-            {showTopDivisor && <Divisor position="top" handle={currentRoute.state === "top"} />}
+            {showTopDivisor && (
+              <Animated.View
+                layout={hasTransition && animateTransitions ? transition : undefined}
+                collapsable={false}
+              >
+                <Divisor position="top" handle={currentRoute.state === "top"} />
+              </Animated.View>
+            )}
             {renderSection("mid")}
             {showBottomDivisor && (
-              <Divisor position="bottom" handle={currentRoute.state === "bottom"} />
+              <Animated.View
+                layout={hasTransition && animateTransitions ? transition : undefined}
+                collapsable={false}
+              >
+                <Divisor position="bottom" handle={currentRoute.state === "bottom"} />
+              </Animated.View>
             )}
             {renderSection("bottom")}
           </ScrollView>
@@ -447,6 +758,15 @@ const styles = StyleSheet.create({
     width: "100%",
     position: "relative",
   },
+  clip: {
+    overflow: "hidden",
+  },
+  reveal: {
+    flex: 1,
+  },
+  revealHidden: {
+    opacity: 0,
+  },
   measureOuter: {
     position: "absolute",
     top: 0,
@@ -456,6 +776,9 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
   measureCopy: {
+    width: "100%",
+  },
+  measureNatural: {
     width: "100%",
   },
   sectionContent: {
