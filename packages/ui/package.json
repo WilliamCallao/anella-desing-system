@@ -1,6 +1,6 @@
 {
   "name": "@william-callao/antonella-ui",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Componentes UI de Antonella.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,7 +18,7 @@
   ],
   "dependencies": {
     "@william-callao/antonella-theme": "^1.0.0",
-    "@shopify/react-native-skia": "2.2.12",
+    "@shopify/react-native-skia": ">=2.2.12 <3",
     "expo-linear-gradient": "^57.0.1",
     "lucide-react-native": "^0.517.0",
     "react-native-svg": "^15.12.1"
