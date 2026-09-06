@@ -165,8 +165,8 @@ const REVEAL_DURATION_MS = 200;
 // rechazarse como si fuera un artefacto de remount.
 const REMOUNT_WINDOW_MS = 500;
 
-// Cola de cobertura del body: cuando el bottom es la última sección visible y su
-// contenido no llena la pantalla, su alto no se limita a H sino que se estira
+// Cola de cobertura del body: cuando el bottom es la última sección visible y
+// su contenido no llena la pantalla, su alto no se limita a H sino que se estira
 // BODY_TAIL px por debajo del borde inferior. La hoja oscura "rebalsa" la
 // pantalla (queda fuera de vista, la página no la puede scrollear) y así el
 // borde inferior de la hoja nunca coincide con el borde del viewport, por lo
@@ -367,6 +367,7 @@ export function AppLayout({
   layoutHeightsRef.current = layoutHeights;
   const stateRef = useRef(state);
   stateRef.current = state;
+  const bodyOverflowRef = useRef(false);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const innerScrollRef = useRef<ScrollView>(null);
@@ -428,10 +429,11 @@ export function AppLayout({
       const isCover = spec === "content" || spec === "minFillRest";
       const natural = naturalsRef.current.bottom;
       const floor = Math.max(next.bottom, H);
-      // Cuando el contenido no llena la pantalla, se estira la hoja con la cola
-      // (invisible, debajo del borde) para que el borde inferior de la hoja no
-      // quede pegado al borde del viewport. Para contenidos que sí llenan la
-      // pantalla (height "fill"/"third") no se agrega cola: quedan exactos.
+      // Cuando el contenido NO llena la pantalla, se estira la hoja con la cola
+      // (queda anclada, fuera de vista). Cuando SÍ llena la pantalla y scrollea,
+      // la hoja termina con el contenido: agregar la cola ahí la volvería
+      // scrolleable (offset extra de página), el "scroll en oscuro" que se
+      // evita. Para altura fija ("fill"/"third") queda exacto.
       next = { ...next, bottom: isCover && natural <= H ? floor + BODY_TAIL : floor };
     }
     setLayoutHeights((prev) => {
@@ -461,17 +463,21 @@ export function AppLayout({
     if (collapsed) return;
     naturalsRef.current[k] = h;
     lastMeasured.current[k] = h;
-    // Al encogerse el body (lista larga → panel corto dentro de la misma ruta)
-    // se resetea el scroll de página: si el usuario estaba scrolleado, la
-    // reducción de alto deja el viewport más allá del final del contenido y
-    // asoma el fondo claro mientras el scroll vuelve a su rango (clamp). Al
-    // resetear al instante no hay frames con luz.
+    // Al pasar de body scrolleable (lista larga, página scrolleada) a body que
+    // no desborda la pantalla (panel corto), se ancla el scroll de página al
+    // tope. Se compara contra el flujo de overflow previo (no contra el alto
+    // commiteado, que ahora incluye la cola de cobertura y siempre lo supera)
+    // para no resetear la posición en remediciones dentro de la lista larga.
     if (
+      k === "bottom" &&
       state.pageScroll &&
-      stateRef.current.sections.bottom?.visible &&
-      Math.max(computeTargets(state).bottom, H) < layoutHeightsRef.current.bottom
+      stateRef.current.sections.bottom?.visible
     ) {
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      const overflows = naturalsRef.current.bottom > H;
+      if (!overflows && bodyOverflowRef.current) {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      }
+      bodyOverflowRef.current = overflows;
     }
     const targets = computeTargets(state);
     // El hold del bottom protege solo la ventana de remount de un cambio de
