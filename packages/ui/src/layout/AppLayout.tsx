@@ -165,6 +165,14 @@ const REVEAL_DURATION_MS = 200;
 // rechazarse como si fuera un artefacto de remount.
 const REMOUNT_WINDOW_MS = 500;
 
+// Cola de cobertura del body: cuando el bottom es la última sección visible y su
+// contenido no llena la pantalla, su alto no se limita a H sino que se estira
+// BODY_TAIL px por debajo del borde inferior. La hoja oscura "rebalsa" la
+// pantalla (queda fuera de vista, la página no la puede scrollear) y así el
+// borde inferior de la hoja nunca coincide con el borde del viewport, por lo
+// que no puede filtrarse el fondo claro bajo la hoja en ningún reflow/scroll.
+const BODY_TAIL = 600;
+
 // Al colapsar la sección bottom durante una transición (p. ej. accounts→home,
 // bottom 548→0 empujada por el mid que crece), la layout transition encogía la
 // caja: el body se deslizaba hacia abajo pero a la vez se comprimía en alto. La
@@ -357,6 +365,8 @@ export function AppLayout({
   });
   const layoutHeightsRef = useRef(layoutHeights);
   layoutHeightsRef.current = layoutHeights;
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const innerScrollRef = useRef<ScrollView>(null);
@@ -408,11 +418,27 @@ export function AppLayout({
         next = { ...next, [k]: 0 };
       }
     }
+    // Piso de cobertura del body (anti-parpadeo): cuando el bottom es la última
+    // sección visible, su alto nunca baja del alto de PANTALLA completo. La
+    // hoja oscura cubre el viewport por sí sola, de modo que ningún cambio de
+    // tamaño dentro de la misma ruta (subcategoría → categorías) deja asomar el
+    // fondo claro bajo la hoja durante el reflow/medición.
+    if (stateRef.current.sections.bottom?.visible) {
+      const spec = stateRef.current.sections.bottom?.height;
+      const isCover = spec === "content" || spec === "minFillRest";
+      const natural = naturalsRef.current.bottom;
+      const floor = Math.max(next.bottom, H);
+      // Cuando el contenido no llena la pantalla, se estira la hoja con la cola
+      // (invisible, debajo del borde) para que el borde inferior de la hoja no
+      // quede pegado al borde del viewport. Para contenidos que sí llenan la
+      // pantalla (height "fill"/"third") no se agrega cola: quedan exactos.
+      next = { ...next, bottom: isCover && natural <= H ? floor + BODY_TAIL : floor };
+    }
     setLayoutHeights((prev) => {
       const changed = !SECTION_KEYS.every((k) => prev[k] === next[k]);
       return changed ? next : prev;
     });
-  }, []);
+  }, [H]);
 
   const makeOnMeasure = (k: SectionKey) => (e: LayoutChangeEvent) => {
     const h = e.nativeEvent.layout.height;
@@ -435,6 +461,18 @@ export function AppLayout({
     if (collapsed) return;
     naturalsRef.current[k] = h;
     lastMeasured.current[k] = h;
+    // Al encogerse el body (lista larga → panel corto dentro de la misma ruta)
+    // se resetea el scroll de página: si el usuario estaba scrolleado, la
+    // reducción de alto deja el viewport más allá del final del contenido y
+    // asoma el fondo claro mientras el scroll vuelve a su rango (clamp). Al
+    // resetear al instante no hay frames con luz.
+    if (
+      state.pageScroll &&
+      stateRef.current.sections.bottom?.visible &&
+      Math.max(computeTargets(state).bottom, H) < layoutHeightsRef.current.bottom
+    ) {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }
     const targets = computeTargets(state);
     // El hold del bottom protege solo la ventana de remount de un cambio de
     // ruta (mediciones transitorias del doble-montaje mientras el morph corre).
@@ -581,7 +619,9 @@ export function AppLayout({
           ref={scrollRef}
           style={styles.pageScroll}
           contentContainerStyle={[styles.pageContent, { backgroundColor: pageBg }]}
-          scrollEnabled={!!state.pageScroll}
+          scrollEnabled={!!state.pageScroll && naturalsRef.current.bottom > H}
+          bounces={false}
+          overScrollMode="never"
           showsVerticalScrollIndicator={false}
         >
           {renderSection("top")}
