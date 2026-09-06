@@ -19,6 +19,8 @@ export type AppResponsiveDialogProps = {
   children: React.ReactNode;
   contentStyle?: React.ComponentProps<typeof BottomSheet>["contentStyle"];
   snapPoints?: React.ComponentProps<typeof BottomSheet>["snapPoints"];
+  /** Monta el diálogo sin RN Modal (para hosts modal nativos tipo expo-router). */
+  embedded?: boolean;
 };
 
 export function AppResponsiveDialog({
@@ -31,6 +33,7 @@ export function AppResponsiveDialog({
   children,
   contentStyle,
   snapPoints,
+  embedded = false,
 }: AppResponsiveDialogProps) {
   const { width } = useWindowDimensions();
   const isTablet = width >= 600;
@@ -48,6 +51,7 @@ export function AppResponsiveDialog({
         caption={caption}
         children={children}
         contentStyle={contentStyle}
+        embedded={embedded}
       />
     );
   }
@@ -63,6 +67,7 @@ export function AppResponsiveDialog({
       snapPoints={snapPoints}
       children={children}
       contentStyle={contentStyle}
+      embedded={embedded}
     />
   );
 }

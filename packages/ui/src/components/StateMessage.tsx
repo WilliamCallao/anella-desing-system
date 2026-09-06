@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
-import { danger, space, TextType, resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
+import { danger, neutrals, space, TextType, resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 import Animated, {
   cancelAnimation,
   Easing,
@@ -25,6 +25,7 @@ export enum StateMessageType {
 export enum StateMessageStyle {
   DEFAULT = "DEFAULT",
   DARKNESS = "DARKNESS",
+  SECONDARY = "SECONDARY",
 }
 
 // ── Props ───────────────────────────────────────────────────
@@ -72,11 +73,11 @@ export function StateMessage({
   return (
     <View style={[styles.container, isLoading && styles.compact]}>
       {isLoading ? (
-        <SpinningIcon name={icon ?? d.icon} size={26} color={c.iconColor} />
+        <SpinningIcon name={icon ?? d.icon} size={c.loadingIconSize} color={c.iconColor} />
       ) : (
         <Icon
           name={icon ?? d.icon}
-          size={40}
+          size={c.iconSize}
           color={state === StateMessageType.ERROR ? c.errorIconColor : c.iconColor}
         />
       )}
@@ -134,19 +135,40 @@ const _semantic = resolveSemantic(lightSemantic);
 
 const STYLE_COLORS: Record<
   StateMessageStyle,
-  { iconColor: string; titleColor: string; messageColor: string; errorIconColor: string }
+  {
+    iconColor: string;
+    titleColor: string;
+    messageColor: string;
+    errorIconColor: string;
+    iconSize: number;
+    loadingIconSize: number;
+  }
 > = {
   [StateMessageStyle.DEFAULT]: {
     iconColor: _semantic.default.text.subtle,
     titleColor: _semantic.default.text.default,
     messageColor: _semantic.default.text.subtle,
     errorIconColor: danger.D600,
+    iconSize: 40,
+    loadingIconSize: 26,
   },
   [StateMessageStyle.DARKNESS]: {
     iconColor: _semantic.darkness.text.subtle,
     titleColor: _semantic.darkness.text.default,
     messageColor: _semantic.darkness.text.subtle,
     errorIconColor: danger.D400,
+    iconSize: 40,
+    loadingIconSize: 26,
+  },
+  // Variante discreta: menos contraste y a menor tamaño para no robar
+  // protagonismo (se usa dentro de paneles/contextos ya ocupados).
+  [StateMessageStyle.SECONDARY]: {
+    iconColor: neutrals.N600,
+    titleColor: neutrals.N500,
+    messageColor: neutrals.N600,
+    errorIconColor: danger.D400,
+    iconSize: 26,
+    loadingIconSize: 20,
   },
 };
 
@@ -160,8 +182,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.space5,
   },
   compact: {
-    paddingTop: space.space20,
-    paddingBottom: space.space7,
+    paddingVertical: space.space7,
     gap: space.space1,
   },
   title: {

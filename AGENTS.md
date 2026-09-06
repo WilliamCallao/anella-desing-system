@@ -26,3 +26,7 @@ Seguir este proceso **antes de hacer push o merge**:
 - Nunca commitear directamente a `main`.
 - Correr `pnpm typecheck` antes de commitear.
 - No incluir archivos sensibles (tokens, credenciales).
+
+## Changelog
+
+Actualizar `CHANGELOG.md` (raíz) únicamente cuando haya **cambios funcionales o de contrato** (props nuevas/removidas, firma de tipos, comportamiento, breaking changes) sobre los paquetes publicados. **No** anotar mejoras visuales retrocompatibles ni refactors que no alteren el contrato.

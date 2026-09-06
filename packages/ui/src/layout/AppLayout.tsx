@@ -173,6 +173,27 @@ const REMOUNT_WINDOW_MS = 500;
 // que no puede filtrarse el fondo claro bajo la hoja en ningún reflow/scroll.
 const BODY_TAIL = 600;
 
+// Alto del divisor superior que se muestra en el patrón full-bottom. Es 25
+// (igual al divisor bottom del preset) y se resta del alto de la hoja (fill H)
+// para que el contenido total (divisor + hoja) quede en exactamente una
+// pantalla y no se recorte el pie del detalle.
+const FULLBOTTOM_DIVISOR_H = 25;
+
+// Sobresalir del cap fuera de su caja para que la superficie oscura continúe
+// sin costuras: FULLBOTTOM_OVERSCAN px por encima del tope de pantalla (el
+// ScrollView recorta el excedente, así el borde visible corta por el medio de
+// la superficie y no aparece una línea de subpixel sobre el fondo claro) y
+// FULLBOTTOM_EXTEND px por debajo, sobre el tope de la hoja (cubre cualquier
+// resto de costura entre cap y hoja).
+const FULLBOTTOM_OVERSCAN = 5;
+const FULLBOTTOM_EXTEND = 5;
+
+// Colchón inferior del patrón full-bottom: pinta la hoja N px por debajo del
+// borde de pantalla (recortado por el viewport) para que el borde visible
+// corte por el medio de la superficie oscura y no asome una línea de subpixel
+// en el borde inferior. Es absoluto, no aporta al flujo ni agrega scroll.
+const FULLBOTTOM_CUSHION = 5;
+
 // Al colapsar la sección bottom durante una transición (p. ej. accounts→home,
 // bottom 548→0 empujada por el mid que crece), la layout transition encogía la
 // caja: el body se deslizaba hacia abajo pero a la vez se comprimía en alto. La
@@ -330,6 +351,15 @@ export function AppLayout({
   const state: LayoutState = resolvedState ?? layoutStates.onlyCenter;
   const slots = currentRoute.slots ?? {};
 
+  // TEMPORAL (diagnóstico): logs de geometría del patrón full-bottom. Verifica
+  // dónde arranca el contenido, dónde cae el divisor y dónde la hoja en
+  // producto-detalle.
+  const dbgFB = (tag: string) => (e: LayoutChangeEvent) => {
+    if (currentRoute.name === "producto-detalle") {
+      console.log(`[ALFB:${tag}]`, JSON.stringify(e.nativeEvent.layout));
+    }
+  };
+
   const prevLayoutState: LayoutState | null = prevRoute
     ? typeof prevRoute.state === "string"
       ? layoutStates[prevRoute.state]
@@ -346,6 +376,12 @@ export function AppLayout({
   const bottomVisible = !!state.sections.bottom?.visible;
   const showTopDivisor = topVisible && (midVisible || bottomVisible);
   const showBottomDivisor = bottomVisible && (topVisible || midVisible);
+  // Patrón full-bottom (p. ej. producto-detalle): la hoja ocupa toda la pantalla
+  // (top y mid ocultos). Sin divisor, su borde superior queda "recto" pegado al
+  // borde del viewport. Se agrega el divisor de esquinas superiores redondeadas
+  // arriba, que queda como overflow permanente (la hoja "rebalsa" el tope) para
+  // que la transición y el reposo no se vean rectos.
+  const showFullBottomDivisor = bottomVisible && !topVisible && !midVisible;
 
   // Motor ESTÁTICO de layout: las alturas se derivan de las medidas naturales y
   // se aplican de forma inmediata, sin animación.
@@ -368,9 +404,20 @@ export function AppLayout({
   const stateRef = useRef(state);
   stateRef.current = state;
   const bodyOverflowRef = useRef(false);
+  // Overflow del footer medido como estado (no ref): el gate de scrollEnabled
+  // depende de `naturals.bottom > viewport`, y ese valor puede cambiar (p. ej.
+  // datos que llegan tras el estado de carga) sin que cambien los altos
+  // commiteados — durante la ventana de remount `_withBottomHold` los sostiene y
+  // applyTargets devuelve el mismo layout, por lo que no había re-render y el
+  // scroll quedaba desactivado hasta una remontada posterior (ir a subcategoría
+  // y volver). Setear el flag acá fuerza la re-render con el estado correcto.
+  const [pageCanScroll, setPageCanScroll] = useState(false);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const innerScrollRef = useRef<ScrollView>(null);
+  // TEMPORAL (diagnóstico): refs para medir posición absoluta en ventana.
+  const rootViewRef = useRef<View>(null);
+  const capHolderRef = useRef<View>(null);
 
   // Alto natural (medido) de cada sección. Se mantienen en refs simples (los
   // cambios no re-renderizan; se leen vía `naturalsRef` en cada render).
@@ -401,6 +448,19 @@ export function AppLayout({
       } else base[k] = h;
     }
     return base;
+  };
+
+  // Alto del viewport que ve el contenido del bottom: lo que queda de pantalla
+  // por debajo de la sección sobre la que se apoya (p. ej. el header con el
+  // preset "bottom"). Es el umbral correcto para decidir si la hoja desborda el
+  // área visible: antes se comparaba contra H completo, lo que dejaba una zona
+  // muerta (contenido entre "H - header" y H) donde el contenido excedía la
+  // vista pero el scroll seguía desactivado ("no scrollea por más que exceda").
+  const bottomViewport = (): number => {
+    const b = stateRef.current.sections.bottom;
+    if (!b?.restsOn) return H;
+    const rest = H - naturalsRef.current[b.restsOn];
+    return rest > 0 ? rest : H;
   };
 
   // Último alto natural aceptado por sección. Protege el layout de un artefacto
@@ -434,7 +494,20 @@ export function AppLayout({
       // la hoja termina con el contenido: agregar la cola ahí la volvería
       // scrolleable (offset extra de página), el "scroll en oscuro" que se
       // evita. Para altura fija ("fill"/"third") queda exacto.
-      next = { ...next, bottom: isCover && natural <= H ? floor + BODY_TAIL : floor };
+      next = { ...next, bottom: isCover && natural <= bottomViewport() ? floor + BODY_TAIL : floor };
+      // Patrón full-bottom (top y mid ocultos, hoja a pantalla completa): el
+      // divisor superior ocupa su lugar en el flujo, así que la hoja (fill H) se
+      // contrae por ese alto para que el contenido total no exceda la ventana
+      // (si no, el pie del detalle quedaría recortado sin scroll).
+      const fullBottom =
+        !stateRef.current.sections.top?.visible &&
+        !stateRef.current.sections.mid?.visible;
+      if (fullBottom) {
+        next = {
+          ...next,
+          bottom: Math.max(0, next.bottom - (FULLBOTTOM_DIVISOR_H - FULLBOTTOM_OVERSCAN)),
+        };
+      }
     }
     setLayoutHeights((prev) => {
       const changed = !SECTION_KEYS.every((k) => prev[k] === next[k]);
@@ -473,7 +546,8 @@ export function AppLayout({
       state.pageScroll &&
       stateRef.current.sections.bottom?.visible
     ) {
-      const overflows = naturalsRef.current.bottom > H;
+      const overflows = naturalsRef.current.bottom > bottomViewport();
+      setPageCanScroll(overflows);
       if (!overflows && bodyOverflowRef.current) {
         scrollRef.current?.scrollTo({ y: 0, animated: false });
       }
@@ -498,6 +572,9 @@ export function AppLayout({
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       innerScrollRef.current?.scrollTo({ y: 0, animated: false });
     }
+    setPageCanScroll(
+      !!state.pageScroll && naturalsRef.current.bottom > bottomViewport()
+    );
     routeChangedAt.current = Date.now();
     const targets = computeTargets(state);
     const animated = animateTransitions && prevRoute !== null && !reduceMotion;
@@ -517,6 +594,28 @@ export function AppLayout({
       startReveal();
     }
     setPrevRoute(currentRoute);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRoute.name]);
+
+  // TEMPORAL (diagnóstico de la línea delgada en full-bottom): mide posición
+  // absoluta en ventana del tope del cap, del root y del frame del ScrollView
+  // una vez asentada la transición.
+  useEffect(() => {
+    if (currentRoute.name !== "producto-detalle") return;
+    const t = setTimeout(() => {
+      rootViewRef.current?.measureInWindow((x, y, w, h) =>
+        console.log(`[ALFB:rootWindow] ${JSON.stringify({ x, y, width: w, height: h })}`)
+      );
+      scrollRef.current
+        ?.getNativeScrollRef()
+        ?.measureInWindow?.((x, y, w, h) =>
+          console.log(`[ALFB:scrollWindow] ${JSON.stringify({ x, y, width: w, height: h })}`)
+        );
+      capHolderRef.current?.measureInWindow((x, y, w, h) =>
+        console.log(`[ALFB:capWindow] ${JSON.stringify({ x, y, width: w, height: h })}`)
+      );
+    }, 700);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRoute.name]);
 
@@ -607,12 +706,34 @@ export function AppLayout({
         key={k}
         layout={hasTransition && animateTransitions ? transition : undefined}
         collapsable={false}
+        onLayout={
+          k === "bottom" && currentRoute.name === "producto-detalle"
+            ? (e) =>
+                console.log(
+                  `[ALFB:sheet]`,
+                  JSON.stringify(e.nativeEvent.layout)
+                )
+            : undefined
+        }
         style={[
           styles.colBlock,
           { backgroundColor: bg, height },
           hasTransition && animateTransitions && styles.clip,
         ]}
       >
+        {k === "bottom" && showFullBottomDivisor && (
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: -FULLBOTTOM_CUSHION,
+              height: FULLBOTTOM_CUSHION,
+              backgroundColor: bg,
+            }}
+          />
+        )}
         {inner}
       </Animated.View>
     );
@@ -620,15 +741,28 @@ export function AppLayout({
 
   return (
     <AppNavigationContext.Provider value={navigationValue}>
-      <View style={[styles.root, { backgroundColor: pageBg }]}>
+      <View
+        ref={rootViewRef}
+        style={[styles.root, { backgroundColor: pageBg }]}
+        onLayout={dbgFB("root")}
+      >
         <ScrollView
           ref={scrollRef}
           style={styles.pageScroll}
           contentContainerStyle={[styles.pageContent, { backgroundColor: pageBg }]}
-          scrollEnabled={!!state.pageScroll && naturalsRef.current.bottom > H}
+          scrollEnabled={!!state.pageScroll && pageCanScroll}
           bounces={false}
           overScrollMode="never"
           showsVerticalScrollIndicator={false}
+          onLayout={dbgFB("scroll")}
+          onContentSizeChange={(w, h) => {
+            if (currentRoute.name === "producto-detalle") {
+              console.log(`[ALFB:contentSize] ${w}x${h}`);
+              console.log(
+                `[ALFB:meta] H=${H} pageScroll=${!!state.pageScroll} hBottom=${layoutHeights.bottom} naturalBottom=${naturalsRef.current.bottom} naturalMid=${naturalsRef.current.mid}`
+              );
+            }
+          }}
         >
           {renderSection("top")}
           {showTopDivisor && (
@@ -640,17 +774,31 @@ export function AppLayout({
             </Animated.View>
           )}
           {renderSection("mid")}
-          {showBottomDivisor && (
+          {(showBottomDivisor || showFullBottomDivisor) && (
             <Animated.View
               layout={hasTransition && animateTransitions ? transition : undefined}
               collapsable={false}
+              onLayout={dbgFB("divisor")}
             >
-              <Divisor
-                position="bottom"
-                handle={currentRoute.state === "bottom"}
-                height={25}
-                style={{ transform: [{ translateY: 5 }] }}
-              />
+              <View ref={capHolderRef} collapsable={false}>
+                <Divisor
+                  position="bottom"
+                  handle={currentRoute.state === "bottom" || showFullBottomDivisor}
+                  height={FULLBOTTOM_DIVISOR_H}
+                  extend={showFullBottomDivisor ? FULLBOTTOM_EXTEND : 0}
+                  style={
+                    // El traslado de 5px es para ubicar el borde bajo el mid
+                    // (header). En full-bottom no hay header: el cap sobresale
+                    // FULLBOTTOM_OVERSCAN px por encima del tope (recortado por
+                    // el ScrollView) y FULLBOTTOM_EXTEND px sobre la hoja; la
+                    // hoja se contrae en (FULLBOTTOM_DIVISOR_H - OVERSCAN) para
+                    // que divisor + hoja sigan sumando exactamente una pantalla.
+                    showFullBottomDivisor
+                      ? { marginTop: -FULLBOTTOM_OVERSCAN }
+                      : { transform: [{ translateY: 5 }] }
+                  }
+                />
+              </View>
             </Animated.View>
           )}
           {renderSection("bottom")}

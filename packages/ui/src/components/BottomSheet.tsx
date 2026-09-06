@@ -26,7 +26,6 @@ const ANIM_IN_TIMING = 260;
 const ANIM_OUT_TIMING = 240;
 const BACKDROP_COLOR = "#000000";
 const BACKDROP_OPACITY = 0.45;
-
 export type BottomSheetProps = {
   visible: boolean;
   onClose: () => void;
@@ -38,6 +37,12 @@ export type BottomSheetProps = {
   children: React.ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
   snapPoints?: Array<string | number>;
+  /**
+   * Renderiza el sheet SIN envolverlo en un RN Modal, para poder montarlo dentro
+   * de un host modal nativo (p.ej. un screen `transparentModal` de expo-router),
+   * donde anidar otro Modal rompería el edge-to-edge.
+   */
+  embedded?: boolean;
 };
 
 export function BottomSheet({
@@ -51,6 +56,7 @@ export function BottomSheet({
   children,
   contentStyle,
   snapPoints,
+  embedded = false,
 }: BottomSheetProps) {
   const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -59,6 +65,11 @@ export function BottomSheet({
   const [mounted, setMounted] = useState(visible);
   const [contentReady, setContentReady] = useState(false);
   const progress = useSharedValue(0);
+
+  // En modo embedded el host controla el montaje/desmontaje (vía navegación), así
+  // que el sheet se considera siempre "montado"; la animación de entrada corre al
+  // montar con `visible` en true.
+  const effectiveMounted = embedded ? true : mounted;
 
   const maxHeightRatio = useMemo(() => {
     let ratio = 0.9;
@@ -80,15 +91,15 @@ export function BottomSheet({
   // compita con el render JS del árbol del sheet (evita el jank de apertura).
   // El contenido aparece casi al instante junto con el slider.
   useEffect(() => {
-    if (mounted && visible) {
+    if (effectiveMounted && visible) {
       const raf = requestAnimationFrame(() => setContentReady(true));
       return () => cancelAnimationFrame(raf);
     }
-    if (!mounted) setContentReady(false);
-  }, [mounted, visible]);
+    if (!effectiveMounted) setContentReady(false);
+  }, [effectiveMounted, visible]);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!effectiveMounted) return;
     if (visible) {
       progress.value = withTiming(1, {
         duration: ANIM_IN_TIMING,
@@ -106,7 +117,7 @@ export function BottomSheet({
         },
       );
     }
-  }, [mounted, visible, progress]);
+  }, [effectiveMounted, visible, progress]);
 
   const backdropStyle = useAnimatedStyle(
     () => ({ opacity: progress.value * BACKDROP_OPACITY }),
@@ -138,15 +149,9 @@ export function BottomSheet({
     [screenHeight, insets.top, insets.bottom, maxHeightRatio],
   );
 
-  return (
-    <RNModal
-      visible={mounted}
-      transparent
-      statusBarTranslucent
-      animationType="none"
-      onRequestClose={dismissible ? onClose : undefined}
-    >
-      <View style={styles.container}>
+  const overlay = (
+    <View style={styles.container} pointerEvents={embedded ? "box-none" : undefined}>
+      {!embedded && (
         <Pressable
           onPress={dismissible ? onClose : undefined}
           style={StyleSheet.absoluteFill}
@@ -155,30 +160,43 @@ export function BottomSheet({
         >
           <Animated.View style={[styles.backdrop, backdropStyle]} />
         </Pressable>
-        <Animated.View style={[styles.panelWrapper, containerAnimatedStyle]} pointerEvents="box-none">
-          <Animated.View
-            style={[styles.panel, panelHeightStyle, panelStyle]}
+      )}
+      <Animated.View style={[styles.panelWrapper, containerAnimatedStyle]} pointerEvents="box-none">
+        <Animated.View style={[styles.panel, panelHeightStyle, panelStyle]}>
+          <View style={styles.handleBar} />
+          {title || icon || caption || showCloseButton ? (
+            <DialogHeader
+              icon={icon}
+              title={title}
+              caption={caption}
+              onClose={onClose}
+              showCloseButton={showCloseButton}
+            />
+          ) : null}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={[styles.content, contentStyle]}
           >
-            <View style={styles.handleBar} />
-            {title || icon || caption || showCloseButton ? (
-              <DialogHeader
-                icon={icon}
-                title={title}
-                caption={caption}
-                onClose={onClose}
-                showCloseButton={showCloseButton}
-              />
-            ) : null}
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={[styles.content, contentStyle]}
-            >
-              {contentReady ? children : <View style={styles.deferredPlaceholder} />}
-            </ScrollView>
-          </Animated.View>
+            {contentReady ? children : <View style={styles.deferredPlaceholder} />}
+          </ScrollView>
         </Animated.View>
-      </View>
+      </Animated.View>
+    </View>
+  );
+
+  if (embedded) {
+    return overlay;
+  }
+  return (
+    <RNModal
+      visible={mounted}
+      transparent
+      statusBarTranslucent
+      animationType="none"
+      onRequestClose={dismissible ? onClose : undefined}
+    >
+      {overlay}
     </RNModal>
   );
 }

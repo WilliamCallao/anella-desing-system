@@ -19,6 +19,10 @@ export type DivisorProps = {
   height?: number;
   /** Muestra el "grabber" (pill) estilo iOS centrado en el borde de la hoja. */
   handle?: boolean;
+  /** Extiende la capa oscura más allá de la caja base por el lado recto (contra
+   * el borde de la hoja), para que no quede costura ni subpixel entre el cap y
+   * la hoja. Default 0. */
+  extend?: number;
   /** Color del grabber. Default: blanco translúcido. */
   handleColor?: string;
   style?: ViewStyle;
@@ -33,6 +37,7 @@ export function Divisor({
   baseColor = BASE_BG,
   height = 20,
   handle = false,
+  extend = 0,
   handleColor = "rgba(255,255,255,0.4)",
   style,
 }: DivisorProps) {
@@ -40,12 +45,23 @@ export function Divisor({
     position === "top"
       ? { borderBottomLeftRadius: height, borderBottomRightRadius: height }
       : { borderTopLeftRadius: height, borderTopRightRadius: height };
+  // La capa se ancla por el lado opuesto a las esquinas redondeadas; con
+  // `extend` sobresale del lado recto (el que limita con la hoja).
+  const layerAnchor: ViewStyle = position === "top" ? { bottom: 0 } : { top: 0 };
   const handleInset = (height - HANDLE_H) / 2;
   const handlePosition: ViewStyle =
     position === "top" ? { bottom: handleInset } : { top: handleInset };
   return (
     <View style={[styles.base, { backgroundColor: baseColor, height }, style]} pointerEvents="none">
-      <View style={[styles.layer, { backgroundColor: color, height }, radiusStyle]} />
+      <View
+        style={[
+          styles.layer,
+          styles.extended,
+          { backgroundColor: color, height: height + extend },
+          layerAnchor,
+          radiusStyle,
+        ]}
+      />
       {handle && <View style={[styles.handle, { backgroundColor: handleColor }, handlePosition]} />}
     </View>
   );
@@ -57,6 +73,10 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   layer: {
+    width: "100%",
+  },
+  extended: {
+    position: "absolute",
     width: "100%",
   },
   handle: {
