@@ -165,24 +165,6 @@ const REVEAL_DURATION_MS = 200;
 // rechazarse como si fuera un artefacto de remount.
 const REMOUNT_WINDOW_MS = 500;
 
-// Diagnóstico TEMPORAL (producto): seguimiento del tamaño de las secciones
-// durante las transiciones.
-//   [route-change] objetivos planeados al cambiar de ruta (T/M/B)
-//   [heights]      altos comiteados por el motor en cada cambio de estado
-//   [measure]      alto natural medido de una sección (onLayout)
-//   [layout]       alto REAL de una sección en cada layout que emite
-let _logT0 = -1;
-const _logT = () => {
-  if (_logT0 < 0) _logT0 = Date.now();
-  return `${Date.now() - _logT0}ms`;
-};
-const _revLog = (msg: string, ...args: unknown[]) => {
-  // eslint-disable-next-line no-console
-  console.log(`[app-layout] t=${_logT()} ${msg}`, ...args);
-};
-const _logH = (h: Record<SectionKey, number>) =>
-  `T:${Math.round(h.top)} M:${Math.round(h.mid)} B:${Math.round(h.bottom)}`;
-
 // Al colapsar la sección bottom durante una transición (p. ej. accounts→home,
 // bottom 548→0 empujada por el mid que crece), la layout transition encogía la
 // caja: el body se deslizaba hacia abajo pero a la vez se comprimía en alto. La
@@ -388,9 +370,6 @@ export function AppLayout({
   });
   const lastMeasured = useRef<Record<SectionKey, number>>({ top: 0, mid: 0, bottom: 0 });
   const routeChangedAt = useRef(0);
-  // Último alto RENDERIZADO por sección (para ver la secuencia durante una
-  // transición y detectar si una sección pasa por alto 0 en bottom→bottom).
-  const prevRenderH = useRef<Record<SectionKey, number>>({ top: -1, mid: -1, bottom: -1 });
 
   const computeTargets = (st: LayoutState): Record<SectionKey, number> => {
     const base: Record<SectionKey, number> = { top: 0, mid: 0, bottom: 0 };
@@ -431,11 +410,6 @@ export function AppLayout({
     }
     setLayoutHeights((prev) => {
       const changed = !SECTION_KEYS.every((k) => prev[k] === next[k]);
-      if (changed) {
-        _revLog(
-          `[heights] ${_logH(prev)} → ${_logH(next)} (${SECTION_KEYS.filter((k) => prev[k] !== next[k]).join(",")})`
-        );
-      }
       return changed ? next : prev;
     });
   }, []);
@@ -461,10 +435,15 @@ export function AppLayout({
     if (collapsed) return;
     naturalsRef.current[k] = h;
     lastMeasured.current[k] = h;
-    _revLog(`[measure] ${k} h=${Math.round(h)} (prev=${Math.round(prev)})`);
     const targets = computeTargets(state);
+    // El hold del bottom protege solo la ventana de remount de un cambio de
+    // ruta (mediciones transitorias del doble-montaje mientras el morph corre).
+    // Un cambio de contenido DENTRO de la misma ruta (p. ej. categorías→
+    // subcategorías, lista alta → vista corta) dispara mediciones que deben
+    // aplicar el alto directo; si no, el bottom quedaba pinzado en el alto
+    // previo y la vista corta scrolleaba en oscuro.
     applyTargets(
-      animateTransitions && prevRoute !== null && !reduceMotion
+      animateTransitions && prevRoute !== null && !reduceMotion && inRemountWindow
         ? _withBottomHold(targets, layoutHeightsRef.current)
         : targets
     );
@@ -484,17 +463,11 @@ export function AppLayout({
       settleTimer.current = null;
     }
     if (applied !== targets) {
-      _revLog(
-        `[hold] bottom ${Math.round(layoutHeightsRef.current.bottom)} → ${Math.round(targets.bottom)} (snap @ ${LAYOUT_DURATION}ms)`
-      );
       settleTimer.current = setTimeout(() => {
         settleTimer.current = null;
         applyTargets(targets);
       }, LAYOUT_DURATION);
     }
-    _revLog(
-      `[route-change] prevLayoutH=${_logH(layoutHeightsRef.current)} prev=${prevRoute?.name ?? "(ninguna)"} → cur=${currentRoute.name} targets=${_logH(targets)} applied=${_logH(applied)} pageScroll=${state.pageScroll}`
-    );
     applyTargets(applied);
     if (revealEnabled && prevRoute) {
       startReveal();
@@ -521,12 +494,6 @@ export function AppLayout({
     // contenido a su altura real y mide bien.
     const target = computeTargets(state);
     const height = isDynamic ? Math.max(layoutHeights[k], target[k]) : layoutHeights[k];
-    if (prevRenderH.current[k] !== height) {
-      _revLog(
-        `[seccion] ${k}: ${prevRenderH.current[k] === -1 ? "init" : Math.round(prevRenderH.current[k])} → ${Math.round(height)} (target ${Math.round(target[k])})`
-      );
-      prevRenderH.current[k] = height;
-    }
     let inner: ReactNode;
     if (!visible) {
       inner = (
@@ -596,9 +563,6 @@ export function AppLayout({
         key={k}
         layout={hasTransition && animateTransitions ? transition : undefined}
         collapsable={false}
-        onLayout={(e) =>
-          _revLog(`[layout] ${k} h=${Math.round(e.nativeEvent.layout.height)}`)
-        }
         style={[
           styles.colBlock,
           { backgroundColor: bg, height },
@@ -635,7 +599,12 @@ export function AppLayout({
               layout={hasTransition && animateTransitions ? transition : undefined}
               collapsable={false}
             >
-              <Divisor position="bottom" handle={currentRoute.state === "bottom"} />
+              <Divisor
+                position="bottom"
+                handle={currentRoute.state === "bottom"}
+                height={25}
+                style={{ transform: [{ translateY: 5 }] }}
+              />
             </Animated.View>
           )}
           {renderSection("bottom")}
