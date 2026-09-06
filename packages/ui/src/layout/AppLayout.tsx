@@ -147,10 +147,23 @@ const DEFAULT_COLORS: Record<SectionKey, string> = {
 // Transición nativa de estados (Reanimated layout transitions): anima
 // height/posición vía MountingOverrideDelegate (hilo UI) SIN commitear un
 // shadow tree por frame, a diferencia de animar `height` con useAnimatedStyle
-// (que es lo que producía texto sin repintar en Fabric).
+// (que es lo que producía texto sin repintar en Fabric). El morph interpolado
+// de altura no deja franja clara abajo porque las alturas se commitean directo
+// al target desde el primer commit (max(actual, target) en renderSection): con
+// mid y bottom animando en sincronía, box_bottom = mid + h >= H en todo el
+// tramo, así la hoja oscura nunca descubre el fondo claro del page.
 const LAYOUT_DURATION = 300;
 const REVEAL_DELAY_MS = 380;
 const REVEAL_DURATION_MS = 200;
+
+// Ventana posterior a un cambio de ruta durante la cual la medición de una
+// sección se protege del artefacto del doble-montaje (ver makeOnMeasure). Solo
+// en esa ventana se descarta una medida que caiga por debajo de la mitad del
+// último alto aceptado; fuera de ella las medidas se commitean libres, porque
+// un colapso legítimo y de un solo salto (p. ej. el header de catálogo que pasa
+// de expandido ~264 a solo barra ~110 al entrar en una categoría) no debe
+// rechazarse como si fuera un artefacto de remount.
+const REMOUNT_WINDOW_MS = 500;
 
 // Diagnóstico TEMPORAL (producto): seguimiento del tamaño de las secciones
 // durante las transiciones.
@@ -197,8 +210,9 @@ export type AppLayoutProps = {
   showBackButton?: boolean;
   /**
    * Anima las transiciones de estado (rutas y colapsos por medición) con
-   * layout transitions de Reanimated, en lugar de aplicar las alturas planas
-   * de forma inmediata. Default false (motor estático estable).
+   * layout transitions de Reanimated (morph de altura en hilo UI), en lugar de
+   * aplicar las alturas planas de forma inmediata. Default false (motor
+   * estático estable).
    */
   animateTransitions?: boolean;
   /**
@@ -332,7 +346,7 @@ export function AppLayout({
       : prevRoute.state
     : null;
 
-  // Cuando el footer es visible, el fondo inferior toma su color para dar la
+// Cuando el footer es visible, el fondo inferior toma su color para dar la
   // ilusión de que la hoja oscura ocupa todo el alto disponible (aunque su
   // contenido sea corto y la página scrollee).
   const pageBg = DEFAULT_BG;
@@ -373,6 +387,10 @@ export function AppLayout({
     bottom: H / 3,
   });
   const lastMeasured = useRef<Record<SectionKey, number>>({ top: 0, mid: 0, bottom: 0 });
+  const routeChangedAt = useRef(0);
+  // Último alto RENDERIZADO por sección (para ver la secuencia durante una
+  // transición y detectar si una sección pasa por alto 0 en bottom→bottom).
+  const prevRenderH = useRef<Record<SectionKey, number>>({ top: -1, mid: -1, bottom: -1 });
 
   const computeTargets = (st: LayoutState): Record<SectionKey, number> => {
     const base: Record<SectionKey, number> = { top: 0, mid: 0, bottom: 0 };
@@ -426,7 +444,20 @@ export function AppLayout({
     const h = e.nativeEvent.layout.height;
     const prev = lastMeasured.current[k];
     if (!Number.isFinite(h) || h <= 0) return;
-    const collapsed = prev > 0 && h < Math.min(prev * 0.5, 100);
+    // Solo se descarta una medida "colapsada" dentro de la ventana posterior a
+    // un cambio de ruta: es el artefacto del doble-montaje del slot al volver a
+    // una ruta (p. ej. desde producto-detalle), donde un árbol con "flex:1"
+    // recién remontado puede medir solo su padding (~32px) en vez del alto real
+    // (~290px). Commitear ese valor colapsaba la sección ("items comprimidos").
+    // Se usa Math.max (no min): con min el umbral quedaba capado en 100px para
+    // secciones altas, y una remedición parcial (~300px de un prev de ~800px)
+    // pasaba el filtro y commiteaba el alto corto ("contenido aplastado").
+    // Fuera de la ventana (o para la primera medida) no hay guard: un colapso
+    // real de un solo salto (header de catálogo 264→110 al entrar en categoría)
+    // debe commitease, o la sección se quedaba con un hueco muerto.
+    const inRemountWindow = Date.now() - routeChangedAt.current < REMOUNT_WINDOW_MS;
+    const collapsed =
+      inRemountWindow && prev > 0 && h < Math.max(prev * 0.5, 100);
     if (collapsed) return;
     naturalsRef.current[k] = h;
     lastMeasured.current[k] = h;
@@ -444,6 +475,7 @@ export function AppLayout({
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       innerScrollRef.current?.scrollTo({ y: 0, animated: false });
     }
+    routeChangedAt.current = Date.now();
     const targets = computeTargets(state);
     const animated = animateTransitions && prevRoute !== null && !reduceMotion;
     const applied = animated ? _withBottomHold(targets, layoutHeightsRef.current) : targets;
@@ -461,7 +493,7 @@ export function AppLayout({
       }, LAYOUT_DURATION);
     }
     _revLog(
-      `[route-change] prev=${prevRoute?.name ?? "(ninguna)"} → cur=${currentRoute.name} targets=${_logH(targets)} applied=${_logH(applied)} pageScroll=${state.pageScroll}`
+      `[route-change] prevLayoutH=${_logH(layoutHeightsRef.current)} prev=${prevRoute?.name ?? "(ninguna)"} → cur=${currentRoute.name} targets=${_logH(targets)} applied=${_logH(applied)} pageScroll=${state.pageScroll}`
     );
     applyTargets(applied);
     if (revealEnabled && prevRoute) {
@@ -476,8 +508,25 @@ export function AppLayout({
     const prevB = prevLayoutState?.sections[k];
     const prevVisible = !!prevB?.visible;
     const visible = !!cur?.visible || prevVisible;
-    const height = layoutHeights[k];
-    const animating = animateTransitions && hasTransition;
+    const isDynamic = ["content", "minFillRest"].includes(
+      (cur?.height ?? prevB?.height) as string
+    );
+    // Secciones dinámicas (content/minFillRest) se miden a sí mismas: su
+    // contenido debe montarse contra el alto FINAL (target), no contra el alto
+    // de la ruta anterior. Si monta contra un alto transitorio más chico — al
+    // volver de producto-detalle el bottom arranca en 812 y recién después va a
+    // 2203 — el árbol flex:1 del contenido se encoge a ~0 por flexShrink y NO se
+    // recupera cuando la sección crece (subcategorías "aplastadas": body root
+    // 2163→40, filas 66→24). Renderizar con max(actual, target) monta el
+    // contenido a su altura real y mide bien.
+    const target = computeTargets(state);
+    const height = isDynamic ? Math.max(layoutHeights[k], target[k]) : layoutHeights[k];
+    if (prevRenderH.current[k] !== height) {
+      _revLog(
+        `[seccion] ${k}: ${prevRenderH.current[k] === -1 ? "init" : Math.round(prevRenderH.current[k])} → ${Math.round(height)} (target ${Math.round(target[k])})`
+      );
+      prevRenderH.current[k] = height;
+    }
     let inner: ReactNode;
     if (!visible) {
       inner = (
@@ -493,9 +542,6 @@ export function AppLayout({
           ? prevRoute?.slots?.[slot]
           : slots[slot]
         : null;
-      const isDynamic = ["content", "minFillRest"].includes(
-        (cur?.height ?? prevB?.height) as string
-      );
       const scroll = cur?.scroll ?? prevB?.scroll ?? false;
       // Medición de la propia instancia visible: para secciones "content" sin
       // scroll (p. ej. el header de preset `bottom`), se mide el contenedor
@@ -548,7 +594,7 @@ export function AppLayout({
     return (
       <Animated.View
         key={k}
-        layout={animating ? transition : undefined}
+        layout={hasTransition && animateTransitions ? transition : undefined}
         collapsable={false}
         onLayout={(e) =>
           _revLog(`[layout] ${k} h=${Math.round(e.nativeEvent.layout.height)}`)
@@ -556,7 +602,7 @@ export function AppLayout({
         style={[
           styles.colBlock,
           { backgroundColor: bg, height },
-          animating && styles.clip,
+          hasTransition && animateTransitions && styles.clip,
         ]}
       >
         {inner}
