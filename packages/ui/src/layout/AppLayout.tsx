@@ -34,13 +34,13 @@ const DEFAULT_BG = _semantic.default.bg.default;
 const DARK_BG = _semantic.darkness.bg.default;
 
 export type SectionKey = "top" | "mid" | "bottom";
-export type HeightSpec = "content" | "fill" | "fillRest" | "third" | number;
+export type HeightSpec = "content" | "fill" | "fillRest" | "minFillRest" | "third" | number;
 export type SlotName = "header" | "body" | "footer";
 
 export type SectionBehavior = {
   /** Si la sección se renderiza. Default true. */
   visible?: boolean;
-  /** Cómo se determina su alto: contenido medido, llenar (H), rellenar resto, un tercio, o px fijos. Default "content". */
+  /** Cómo se determina su alto: contenido medido, llenar (H), rellenar resto, al menos rellenar el resto creciendo con el contenido, un tercio, o px fijos. Default "content". */
   height?: HeightSpec;
   /** La sección scrollea internamente (ScrollView propio). */
   scroll?: boolean;
@@ -104,9 +104,8 @@ export const layoutStates: Record<LayoutStateName, LayoutState> = {
       mid: { visible: true, height: "content", slot: "header", backgroundColor: DEFAULT_BG },
       bottom: {
         visible: true,
-        height: "fillRest",
+        height: "minFillRest",
         restsOn: "mid",
-        scroll: true,
         slot: "footer",
         backgroundColor: DARK_BG,
       },
@@ -388,7 +387,10 @@ export function AppLayout({
       else if (h === "third") base[k] = H / 3;
       else if (h === "fill") base[k] = H;
       else if (h === "fillRest") base[k] = b.restsOn ? H - naturalsRef.current[b.restsOn] : 0;
-      else base[k] = h;
+      else if (h === "minFillRest") {
+        const rest = b.restsOn ? H - naturalsRef.current[b.restsOn] : 0;
+        base[k] = Math.max(naturalsRef.current[k], rest);
+      } else base[k] = h;
     }
     return base;
   };
@@ -491,7 +493,9 @@ export function AppLayout({
           ? prevRoute?.slots?.[slot]
           : slots[slot]
         : null;
-      const isDynamic = (cur?.height ?? prevB?.height) === "content";
+      const isDynamic = ["content", "minFillRest"].includes(
+        (cur?.height ?? prevB?.height) as string
+      );
       const scroll = cur?.scroll ?? prevB?.scroll ?? false;
       // Medición de la propia instancia visible: para secciones "content" sin
       // scroll (p. ej. el header de preset `bottom`), se mide el contenedor
