@@ -3,6 +3,7 @@ export * from "./SheetLayout";
 export * from "./SheetSlot";
 export * from "./MainLayout";
 export * from "./AppLayout";
+export * from "./AppShell";
 export * from "./Divisor";
 export * from "./composition";
 export * from "./transitions";

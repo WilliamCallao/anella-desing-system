@@ -100,13 +100,6 @@ export function SheetLayout({
     const newComp = resolveComposition(toRoute.kind);
     const newColor = resolveBaseColor(newComp.baseColor);
 
-    console.log("[SheetLayout] transition", {
-      from: prevKey.current,
-      to: activeKey,
-      host: newComp.host,
-      baseColor: newComp.baseColor,
-    });
-
     setSlots((prev) => ({ ...prev, [newComp.host]: toRoute }));
 
     (Object.keys(visBySide) as HostKey[]).forEach((h) => {

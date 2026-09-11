@@ -35,6 +35,12 @@ export type CardStackSheetProps = {
   snapPoints?: Array<string | number>;
   /** Color del área semitransparente del sheet (fondo entre y bajo las cards). */
   areaColor?: string;
+  /**
+   * Renderiza el sheet SIN envolverlo en un RN Modal, para poder montarlo dentro
+   * de un host modal nativo (p.ej. un screen `transparentModal` de expo-router),
+   * donde anidar otro Modal rompería el edge-to-edge.
+   */
+  embedded?: boolean;
 };
 
 export function CardStackSheet({
@@ -45,6 +51,7 @@ export function CardStackSheet({
   contentStyle,
   snapPoints,
   areaColor,
+  embedded = false,
 }: CardStackSheetProps) {
   const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -52,6 +59,11 @@ export function CardStackSheet({
   const [mounted, setMounted] = useState(visible);
   const [contentReady, setContentReady] = useState(false);
   const progress = useSharedValue(0);
+
+  // En modo embedded el host controla el montaje/desmontaje (vía navegación), así
+  // que el sheet se considera siempre "montado"; la animación de entrada corre al
+  // montar con `visible` en true.
+  const effectiveMounted = embedded ? true : mounted;
 
   const maxHeightRatio = useMemo(() => {
     let ratio = 0.9;
@@ -81,7 +93,7 @@ export function CardStackSheet({
   }, [mounted, visible]);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!effectiveMounted) return;
     if (visible) {
       progress.value = withTiming(1, {
         duration: ANIM_IN_TIMING,
@@ -99,7 +111,7 @@ export function CardStackSheet({
         },
       );
     }
-  }, [mounted, visible, progress]);
+  }, [effectiveMounted, visible, progress]);
 
   const backdropStyle = useAnimatedStyle(
     () => ({ opacity: progress.value * BACKDROP_OPACITY }),
@@ -131,15 +143,9 @@ export function CardStackSheet({
     [screenHeight, insets.top, insets.bottom, maxHeightRatio],
   );
 
-  return (
-    <RNModal
-      visible={mounted}
-      transparent
-      statusBarTranslucent
-      animationType="none"
-      onRequestClose={dismissible ? onClose : undefined}
-    >
-      <View style={styles.container}>
+  const overlay = (
+    <View style={styles.container} pointerEvents={embedded ? "box-none" : undefined}>
+      {!embedded && (
         <Pressable
           onPress={dismissible ? onClose : undefined}
           style={StyleSheet.absoluteFill}
@@ -148,25 +154,40 @@ export function CardStackSheet({
         >
           <Animated.View style={[styles.backdrop, backdropStyle]} />
         </Pressable>
-        <Animated.View
-          style={[styles.wrapper, containerAnimatedStyle]}
-          pointerEvents="box-none"
-        >
-          <Animated.View style={[styles.stack, stackHeightStyle, stackStyle]}>
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={[
-                styles.content,
-                contentStyle,
-                areaColor ? { backgroundColor: areaColor } : undefined,
-              ]}
-            >
-              {contentReady ? children : <View style={styles.deferredPlaceholder} />}
-            </ScrollView>
-          </Animated.View>
+      )}
+      <Animated.View
+        style={[styles.wrapper, containerAnimatedStyle]}
+        pointerEvents="box-none"
+      >
+        <Animated.View style={[styles.stack, stackHeightStyle, stackStyle]}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={[
+              styles.content,
+              contentStyle,
+              areaColor ? { backgroundColor: areaColor } : undefined,
+            ]}
+          >
+            {contentReady ? children : <View style={styles.deferredPlaceholder} />}
+          </ScrollView>
         </Animated.View>
-      </View>
+      </Animated.View>
+    </View>
+  );
+
+  if (embedded) {
+    return overlay;
+  }
+  return (
+    <RNModal
+      visible={mounted}
+      transparent
+      statusBarTranslucent
+      animationType="none"
+      onRequestClose={dismissible ? onClose : undefined}
+    >
+      {overlay}
     </RNModal>
   );
 }

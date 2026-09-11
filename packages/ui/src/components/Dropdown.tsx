@@ -9,7 +9,8 @@ import {
   useWindowDimensions,
   type ViewStyle,
 } from "react-native";
-import { Icon, Text, type IconName } from "../";
+import { Icon, type IconName } from "./Icon";
+import { Text } from "./text/Text";
 import { background, card, cta1, cta1Contrast, spacing, texts } from "@william-callao/antonella-theme";
 
 export type DropdownOption = {
