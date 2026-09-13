@@ -2,6 +2,7 @@ import { animaciones } from "./categories/animaciones";
 import { arbol } from "./categories/arbol";
 import { botones } from "./categories/botones";
 import { bottomBars } from "./categories/bottom-bars";
+import { camara } from "./categories/camara";
 import { checklists } from "./categories/checklists";
 import { colores } from "./categories/colores";
 import { composingOrb } from "./categories/composing-orb";
@@ -27,7 +28,7 @@ import type { ComponentCategory, SectionMeta, SectionWithCategories } from "./ty
 
 export type { ComponentCategory, ComponentEntry, VariantDemo, SectionMeta, SectionWithCategories } from "./types";
 
-export const componentCategories = [formularios, inputs, animaciones, botones, dialogos, checklists, filtros, arbol, other, tipografia, bottomBars, composingOrb, drawerMenu, drawerMenuItem, headerBar, searchBar, categoryText, layout, sheetLayout, mainLayout, mainLayoutApp, iconos, toast];
+export const componentCategories = [formularios, inputs, animaciones, botones, dialogos, checklists, filtros, arbol, other, tipografia, bottomBars, composingOrb, drawerMenu, drawerMenuItem, headerBar, searchBar, categoryText, layout, sheetLayout, mainLayout, mainLayoutApp, iconos, toast, camara];
 
 export const sectionCategories: ComponentCategory[] = [colores, semanticTokens];
 
@@ -37,7 +38,7 @@ export const sections: SectionMeta[] = [
     title: "Componentes",
     icon: "clipboard",
     order: 1,
-    items: ["botones", "inputs", "formularios", "dialogos", "checklists", "filtros", "searchBar", "toast"],
+    items: ["botones", "inputs", "formularios", "dialogos", "checklists", "filtros", "searchBar", "toast", "camara"],
   },
   {
     key: "navegacion",

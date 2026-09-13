@@ -50,6 +50,12 @@ import {
   Wrench,
   X,
   Calendar,
+  Flashlight,
+  FlashlightOff,
+  Repeat,
+  ScanLine,
+  Zap,
+  ZapOff,
 } from "lucide-react-native";
 import type { ComponentType } from "react";
 
@@ -118,7 +124,13 @@ export type IconName =
   | "inbox"
   | "triangle-alert"
   | "eye"
-  | "eye-off";
+  | "eye-off"
+  | "flash"
+  | "flash-off"
+  | "torch"
+  | "torch-off"
+  | "flip-camera"
+  | "scan";
 
 export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: string; strokeWidth?: number }>> = {
   home: Home,
@@ -186,6 +198,12 @@ export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: st
   "triangle-alert": TriangleAlert,
   eye: Eye,
   "eye-off": EyeOff,
+  flash: Zap,
+  "flash-off": ZapOff,
+  torch: Flashlight,
+  "torch-off": FlashlightOff,
+  "flip-camera": Repeat,
+  scan: ScanLine,
 };
 
 export type IconProps = {

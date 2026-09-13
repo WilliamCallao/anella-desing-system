@@ -16,6 +16,9 @@
   "files": [
     "dist"
   ],
+  "devDependencies": {
+    "expo-camera": "~17.0.10"
+  },
   "dependencies": {
     "@william-callao/antonella-theme": "^1.0.0",
     "@shopify/react-native-skia": ">=2.2.12 <3",
@@ -24,6 +27,7 @@
     "react-native-svg": "^15.12.1"
   },
   "peerDependencies": {
+    "expo-camera": ">=17.0.0",
     "react": ">=19.0.0",
     "react-native": ">=0.81.0",
     "react-native-keyboard-controller": ">=1.18.5",
