@@ -351,15 +351,6 @@ export function AppLayout({
   const state: LayoutState = resolvedState ?? layoutStates.onlyCenter;
   const slots = currentRoute.slots ?? {};
 
-  // TEMPORAL (diagnóstico): logs de geometría del patrón full-bottom. Verifica
-  // dónde arranca el contenido, dónde cae el divisor y dónde la hoja en
-  // producto-detalle.
-  const dbgFB = (tag: string) => (e: LayoutChangeEvent) => {
-    if (currentRoute.name === "producto-detalle") {
-      console.log(`[ALFB:${tag}]`, JSON.stringify(e.nativeEvent.layout));
-    }
-  };
-
   const prevLayoutState: LayoutState | null = prevRoute
     ? typeof prevRoute.state === "string"
       ? layoutStates[prevRoute.state]
@@ -597,28 +588,6 @@ export function AppLayout({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRoute.name]);
 
-  // TEMPORAL (diagnóstico de la línea delgada en full-bottom): mide posición
-  // absoluta en ventana del tope del cap, del root y del frame del ScrollView
-  // una vez asentada la transición.
-  useEffect(() => {
-    if (currentRoute.name !== "producto-detalle") return;
-    const t = setTimeout(() => {
-      rootViewRef.current?.measureInWindow((x, y, w, h) =>
-        console.log(`[ALFB:rootWindow] ${JSON.stringify({ x, y, width: w, height: h })}`)
-      );
-      scrollRef.current
-        ?.getNativeScrollRef()
-        ?.measureInWindow?.((x, y, w, h) =>
-          console.log(`[ALFB:scrollWindow] ${JSON.stringify({ x, y, width: w, height: h })}`)
-        );
-      capHolderRef.current?.measureInWindow((x, y, w, h) =>
-        console.log(`[ALFB:capWindow] ${JSON.stringify({ x, y, width: w, height: h })}`)
-      );
-    }, 700);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentRoute.name]);
-
   const renderSection = (k: SectionKey) => {
     const cur = state.sections[k];
     const prevB = prevLayoutState?.sections[k];
@@ -706,15 +675,6 @@ export function AppLayout({
         key={k}
         layout={hasTransition && animateTransitions ? transition : undefined}
         collapsable={false}
-        onLayout={
-          k === "bottom" && currentRoute.name === "producto-detalle"
-            ? (e) =>
-                console.log(
-                  `[ALFB:sheet]`,
-                  JSON.stringify(e.nativeEvent.layout)
-                )
-            : undefined
-        }
         style={[
           styles.colBlock,
           { backgroundColor: bg, height },
@@ -744,7 +704,6 @@ export function AppLayout({
       <View
         ref={rootViewRef}
         style={[styles.root, { backgroundColor: pageBg }]}
-        onLayout={dbgFB("root")}
       >
         <ScrollView
           ref={scrollRef}
@@ -754,15 +713,6 @@ export function AppLayout({
           bounces={false}
           overScrollMode="never"
           showsVerticalScrollIndicator={false}
-          onLayout={dbgFB("scroll")}
-          onContentSizeChange={(w, h) => {
-            if (currentRoute.name === "producto-detalle") {
-              console.log(`[ALFB:contentSize] ${w}x${h}`);
-              console.log(
-                `[ALFB:meta] H=${H} pageScroll=${!!state.pageScroll} hBottom=${layoutHeights.bottom} naturalBottom=${naturalsRef.current.bottom} naturalMid=${naturalsRef.current.mid}`
-              );
-            }
-          }}
         >
           {renderSection("top")}
           {showTopDivisor && (
@@ -778,7 +728,6 @@ export function AppLayout({
             <Animated.View
               layout={hasTransition && animateTransitions ? transition : undefined}
               collapsable={false}
-              onLayout={dbgFB("divisor")}
             >
               <View ref={capHolderRef} collapsable={false}>
                 <Divisor

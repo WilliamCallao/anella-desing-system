@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import {
+  Pressable,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -9,6 +10,7 @@ import {
 } from "react-native";
 import { spacing, text, texts, TextType, space } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
+import { Icon, type IconName } from "../Icon";
 import type { AppInputProps } from "./AppInput";
 
 const SINGLE_LINE_HEIGHT = 18;
@@ -22,6 +24,12 @@ export type AppTextInputProps = AppInputProps & {
   keyboardType?: KeyboardTypeOptions;
   maxLength?: number;
   editable?: boolean;
+  /** Botón de acción a la derecha del campo (ej. escanear un código). */
+  trailingAction?: {
+    icon: IconName;
+    onPress: () => void;
+    accessibilityLabel?: string;
+  };
 };
 
 export function AppTextInput({
@@ -34,6 +42,7 @@ export function AppTextInput({
   keyboardType,
   maxLength,
   editable = true,
+  trailingAction,
 }: AppTextInputProps) {
   const inputRef = useRef<TextInput>(null);
   const [inputHeight, setInputHeight] = useState<number | undefined>(undefined);
@@ -101,6 +110,17 @@ export function AppTextInput({
         blurOnSubmit
         submitBehavior="blurAndSubmit"
       />
+      {trailingAction ? (
+        <Pressable
+          onPress={trailingAction.onPress}
+          hitSlop={8}
+          style={styles.trailingAction}
+          accessibilityRole="button"
+          accessibilityLabel={trailingAction.accessibilityLabel}
+        >
+          <Icon name={trailingAction.icon} size={20} color={text.secondary} />
+        </Pressable>
+      ) : null}
     </TouchableOpacity>
   );
 }
@@ -130,5 +150,9 @@ const styles = StyleSheet.create({
     paddingRight: 2,
     textAlign: "right",
     outlineWidth: 0,
+  },
+  trailingAction: {
+    marginLeft: spacing.xs,
+    justifyContent: "center",
   },
 });

@@ -42,6 +42,7 @@ import {
   Plus,
   Search,
   Settings,
+  ShoppingCart,
   Trash2,
   TriangleAlert,
   User,
@@ -50,6 +51,13 @@ import {
   Wrench,
   X,
   Calendar,
+  Flashlight,
+  FlashlightOff,
+  Repeat,
+  ScanLine,
+  Tag,
+  Zap,
+  ZapOff,
 } from "lucide-react-native";
 import type { ComponentType } from "react";
 
@@ -62,6 +70,7 @@ export type IconName =
   | "calendar-filled"
   | "bar-chart"
   | "bar-chart-filled"
+  | "cart"
   | "settings"
   | "settings-filled"
   | "user"
@@ -118,7 +127,15 @@ export type IconName =
   | "inbox"
   | "triangle-alert"
   | "eye"
-  | "eye-off";
+  | "eye-off"
+  | "flash"
+  | "flash-off"
+  | "torch"
+  | "torch-off"
+  | "flip-camera"
+  | "scan"
+  | "tag"
+  | "tag-filled";
 
 export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: string; strokeWidth?: number }>> = {
   home: Home,
@@ -129,6 +146,7 @@ export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: st
   "calendar-filled": Calendar,
   "bar-chart": BarChart,
   "bar-chart-filled": BarChart,
+  cart: ShoppingCart,
   settings: Settings,
   "settings-filled": Settings,
   user: User,
@@ -186,6 +204,14 @@ export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: st
   "triangle-alert": TriangleAlert,
   eye: Eye,
   "eye-off": EyeOff,
+  flash: Zap,
+  "flash-off": ZapOff,
+  torch: Flashlight,
+  "torch-off": FlashlightOff,
+  "flip-camera": Repeat,
+  scan: ScanLine,
+  tag: Tag,
+  "tag-filled": Tag,
 };
 
 export type IconProps = {

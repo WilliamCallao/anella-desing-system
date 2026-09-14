@@ -82,13 +82,7 @@ export function StateMessage({
         />
       )}
       <Text
-        variant={
-          isLoading
-            ? TextType.Caption
-            : state === StateMessageType.ERROR
-              ? TextType.Label
-              : TextType.Heading
-        }
+        variant={isLoading ? TextType.Caption : TextType.Label}
         color={isLoading ? c.messageColor : c.titleColor}
         style={styles.title}
       >
