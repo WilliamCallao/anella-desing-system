@@ -24,6 +24,8 @@ export type ElementCardProps = {
   onPress?: () => void;
   /** Ícono a la derecha (por defecto "chevron-forward"). */
   trailing?: IconName;
+  /** Llamado al presionar el ícono de la derecha. Si no se pasa, el ícono no es táctil. */
+  onTrailingPress?: () => void;
   /** Elemento oculto/inactivo: atenúa la card. */
   dimmed?: boolean;
   style?: ElementCardStyle;
@@ -47,6 +49,7 @@ export function ElementCard({
   icon = "folder",
   onPress,
   trailing = "chevron-forward",
+  onTrailingPress,
   dimmed = false,
   style = ElementCardStyle.DEFAULT,
   containerStyle,
@@ -81,7 +84,18 @@ export function ElementCard({
           </Text>
         ) : null}
       </View>
-      <Icon name={trailing} size={18} color={ctx.icon.subtle} />
+      {onTrailingPress ? (
+        <Pressable
+          onPress={onTrailingPress}
+          hitSlop={8}
+          accessibilityRole="button"
+          style={styles.trailingTouch}
+        >
+          <Icon name={trailing} size={18} color={ctx.icon.subtle} />
+        </Pressable>
+      ) : (
+        <Icon name={trailing} size={18} color={ctx.icon.subtle} />
+      )}
     </Pressable>
   );
 }
@@ -108,6 +122,9 @@ const styles = StyleSheet.create({
   body: {
     flex: 1,
     gap: 2,
+  },
+  trailingTouch: {
+    paddingLeft: space.space1,
   },
   pressed: {
     opacity: 0.7,
