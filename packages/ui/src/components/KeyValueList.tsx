@@ -67,7 +67,7 @@ export function KeyValueList({
             </Text>
             <View style={styles.right}>
               {item.value ? (
-                <Text variant={TextType.BodyMedium} color={ctx.text.default} style={styles.value} numberOfLines={1}>
+                <Text variant={TextType.Caption} color={ctx.text.default} style={styles.value} numberOfLines={1}>
                   {item.value}
                 </Text>
               ) : null}

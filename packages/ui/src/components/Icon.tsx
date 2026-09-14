@@ -54,6 +54,7 @@ import {
   FlashlightOff,
   Repeat,
   ScanLine,
+  Tag,
   Zap,
   ZapOff,
 } from "lucide-react-native";
@@ -130,7 +131,9 @@ export type IconName =
   | "torch"
   | "torch-off"
   | "flip-camera"
-  | "scan";
+  | "scan"
+  | "tag"
+  | "tag-filled";
 
 export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: string; strokeWidth?: number }>> = {
   home: Home,
@@ -204,6 +207,8 @@ export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: st
   "torch-off": FlashlightOff,
   "flip-camera": Repeat,
   scan: ScanLine,
+  tag: Tag,
+  "tag-filled": Tag,
 };
 
 export type IconProps = {

@@ -5,6 +5,7 @@
 ### Added
 
 - Nuevo componente `StackDetails`: card de filas clave-valor compactas (label Caption a la izquierda, valor Caption a la derecha), con chevron y fila presionable cuando se pasa `onPress`. Estilos DEFAULT / LIGHT / DARKNESS. Extraído de la card de cuentas enlazadas del detalle de categoría de la app.
+- Nuevo ícono `tag` / `tag-filled` para etiquetas y precios.
 
 ## 1.0.1
 
