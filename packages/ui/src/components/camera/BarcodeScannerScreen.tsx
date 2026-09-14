@@ -32,8 +32,11 @@ export type BarcodeScannerScreenProps = {
   onScan?: (result: ScanResult) => void;
   /** Tipos a reconocer. Default solo QR. */
   barcodeTypes?: BarcodeType[];
-  /** Tiempo mínimo entre scans consecutivos (ms). Default 1500. */
+/** Tiempo mínimo entre scans consecutivos (ms). Default 1500. */
   throttleMs?: number;
+  /** Ignora las lecturas durante los primeros N ms tras abrir el escáner
+   * (para encuadrar antes de que dispare). Default 0. */
+  detectionDelayMs?: number;
   /** Vibra al detectar (nativo). Default true. */
   haptics?: boolean;
   /** Linterna encendida (light durante el escaneo). */
@@ -62,8 +65,9 @@ export function BarcodeScannerScreen({
   caption = "Enfocá un código QR para leerlo.",
   onClose,
   onScan,
-  barcodeTypes = DEFAULT_BARCODE_TYPES,
+barcodeTypes = DEFAULT_BARCODE_TYPES,
   throttleMs = 1500,
+  detectionDelayMs = 0,
   haptics = true,
   torch = false,
   onTorchChange,
@@ -75,11 +79,13 @@ export function BarcodeScannerScreen({
 }: BarcodeScannerScreenProps) {
   const lastScanAt = useRef(0);
   const locked = useRef(false);
+  const startedAt = useRef(Date.now());
   const [facingState, setFacingState] = useState<CameraFacing>(facing);
 
   const handleBarcode = useCallback(
     (result: BarcodeScanningResult) => {
       if (locked.current) return;
+      if (detectionDelayMs > 0 && Date.now() - startedAt.current < detectionDelayMs) return;
       const now = Date.now();
       if (now - lastScanAt.current < throttleMs) return;
       lastScanAt.current = now;
@@ -90,7 +96,7 @@ export function BarcodeScannerScreen({
         locked.current = false;
       }, throttleMs);
     },
-    [throttleMs, haptics, onScan],
+    [throttleMs, haptics, onScan, detectionDelayMs],
   );
 
   const flipCamera = useCallback(() => {

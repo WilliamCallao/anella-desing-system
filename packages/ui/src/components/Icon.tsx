@@ -42,6 +42,7 @@ import {
   Plus,
   Search,
   Settings,
+  ShoppingCart,
   Trash2,
   TriangleAlert,
   User,
@@ -69,6 +70,7 @@ export type IconName =
   | "calendar-filled"
   | "bar-chart"
   | "bar-chart-filled"
+  | "cart"
   | "settings"
   | "settings-filled"
   | "user"
@@ -144,6 +146,7 @@ export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: st
   "calendar-filled": Calendar,
   "bar-chart": BarChart,
   "bar-chart-filled": BarChart,
+  cart: ShoppingCart,
   settings: Settings,
   "settings-filled": Settings,
   user: User,

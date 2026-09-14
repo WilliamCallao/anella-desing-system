@@ -60,13 +60,13 @@ export function ProductCard({
   containerStyle,
 }: ProductCardProps) {
   const ctx = resolveSemantic(lightSemantic)[STYLE_CONTEXT[style]];
-  const [quantity, setQuantity] = useState(cart?.quantity ?? 1);
+  const [quantity, setQuantity] = useState(cart?.quantity ?? 0);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(String(cart?.quantity ?? 1));
+  const [draft, setDraft] = useState(String(cart?.quantity ?? 0));
 
   const commitQuantity = () => {
     const parsed = Number.parseInt(draft, 10);
-    const next = Number.isNaN(parsed) || parsed < 1 ? 1 : parsed;
+    const next = Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
     setQuantity(next);
     setDraft(String(next));
     setEditing(false);
@@ -137,10 +137,11 @@ export function ProductCard({
           ) : null}
         </View>
         <View style={styles.column}>
+          {quantity >= 1 ? (
           <View style={[styles.stepper, { backgroundColor: ctx.bg.default }]}>
             <Pressable
               onPress={() => {
-                const q = Math.max(1, quantity - 1);
+                const q = Math.max(0, quantity - 1);
                 setQuantity(q);
                 setDraft(String(q));
                 onQuantityChange?.(q);
@@ -192,6 +193,21 @@ export function ProductCard({
               <Icon name="add" size={16} color={cta1} />
             </Pressable>
           </View>
+          ) : (
+          <Pressable
+            onPress={() => {
+              setQuantity(1);
+              setDraft("1");
+              onQuantityChange?.(1);
+            }}
+            style={[styles.addButton, { backgroundColor: ctx.bg.default }]}
+            accessibilityRole="button"
+            accessibilityLabel="Añadir al carrito"
+          >
+            <Icon name="add" size={16} color={cta1} />
+            <Text variant={TextType.Caption} color={cta1}>Añadir</Text>
+          </Pressable>
+          )}
         </View>
       </View>
     </View>
@@ -276,6 +292,14 @@ const styles = StyleSheet.create({
   },
   stepperButtonPressed: {
     opacity: 0.6,
+  },
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.space2,
+    paddingHorizontal: space.space3,
+    paddingVertical: space.space2,
+    borderRadius: 999,
   },
   quantity: {
     minWidth: 32,
