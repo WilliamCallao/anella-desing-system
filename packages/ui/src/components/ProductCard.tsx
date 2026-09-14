@@ -1,9 +1,19 @@
 import React, { useState } from "react";
 import { Pressable, StyleSheet, TextInput, View, type StyleProp, type ViewStyle } from "react-native";
-import { TextType, cta1, resolveSemantic, lightSemantic, space } from "@william-callao/antonella-theme";
+import { TextType, cta1, lightSemantic, resolveSemantic, space } from "@william-callao/antonella-theme";
 import { Text } from "./text";
 import { Icon } from "./Icon";
 import type { IconName } from "./Icon";
+
+// ── Style enum ──────────────────────────────────────────────
+
+export enum ProductCardStyle {
+  DEFAULT = "DEFAULT",
+  LIGHT = "LIGHT",
+  DARKNESS = "DARKNESS",
+}
+
+// ── Types ───────────────────────────────────────────────────
 
 export type ProductCardCart = {
   quantity?: number;
@@ -24,10 +34,20 @@ export type ProductCardProps = {
   onQuantityChange?: (quantity: number) => void;
   // Ícono del placeholder de imagen.
   imageIcon?: IconName;
-  style?: StyleProp<ViewStyle>;
+  style?: ProductCardStyle;
+  // Override de estilo para el card contenedor.
+  containerStyle?: StyleProp<ViewStyle>;
 };
 
-const LIGHT = resolveSemantic(lightSemantic).default;
+// ── Config ──────────────────────────────────────────────────
+
+const STYLE_CONTEXT: Record<ProductCardStyle, "default" | "light" | "darkness"> = {
+  [ProductCardStyle.DEFAULT]: "default",
+  [ProductCardStyle.LIGHT]: "light",
+  [ProductCardStyle.DARKNESS]: "darkness",
+};
+
+// ── Component ───────────────────────────────────────────────
 
 export function ProductCard({
   name,
@@ -36,8 +56,10 @@ export function ProductCard({
   cart,
   onQuantityChange,
   imageIcon = "camera",
-  style,
+  style = ProductCardStyle.DEFAULT,
+  containerStyle,
 }: ProductCardProps) {
+  const ctx = resolveSemantic(lightSemantic)[STYLE_CONTEXT[style]];
   const [quantity, setQuantity] = useState(cart?.quantity ?? 1);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(cart?.quantity ?? 1));
@@ -59,18 +81,18 @@ export function ProductCard({
   // Modo solo-info: horizontal y compacto (imagen a la izquierda).
   if (!cart) {
     return (
-      <View style={[styles.card, styles.rowCard, style]}>
-        <View style={styles.imageBoxLarge}>
-          <Icon name={imageIcon} size={26} color={LIGHT.icon.subtle} />
+      <View style={[styles.card, styles.rowCard, { backgroundColor: ctx.bg.subtle }, containerStyle]}>
+        <View style={[styles.imageBoxLarge, { backgroundColor: ctx.bg.default }]}>
+          <Icon name={imageIcon} size={26} color={ctx.icon.subtle} />
         </View>
         <View style={styles.body}>
-          <Text variant={TextType.BodyMedium} color={LIGHT.text.default} numberOfLines={1}>
+          <Text variant={TextType.BodyMedium} color={ctx.text.default} numberOfLines={1}>
             {name}
           </Text>
           {code ? (
             <View style={styles.codeRow}>
-              <Icon name="scan" size={13} color={LIGHT.icon.subtle} />
-              <Text variant={TextType.Caption} color={LIGHT.text.subtle} numberOfLines={1}>
+              <Icon name="scan" size={13} color={ctx.icon.subtle} />
+              <Text variant={TextType.Caption} color={ctx.text.subtle} numberOfLines={1}>
                 {code}
               </Text>
             </View>
@@ -82,9 +104,9 @@ export function ProductCard({
 
   // Modo carrito: apilado, el título va por encima de la imagen.
   return (
-    <View style={[styles.card, styles.stackCard, style]}>
+    <View style={[styles.card, styles.stackCard, { backgroundColor: ctx.bg.subtle }, containerStyle]}>
       <View style={styles.titleRow}>
-        <Text variant={TextType.BodyBold} color={LIGHT.text.default} numberOfLines={2} style={styles.titleFill}>
+        <Text variant={TextType.BodyBold} color={ctx.text.default} numberOfLines={2} style={styles.titleFill}>
           {name}
         </Text>
         {price ? (
@@ -94,28 +116,28 @@ export function ProductCard({
         ) : null}
       </View>
       <View style={styles.contentRow}>
-        <View style={styles.imageBox}>
-          <Icon name={imageIcon} size={22} color={LIGHT.icon.subtle} />
+        <View style={[styles.imageBox, { backgroundColor: ctx.bg.default }]}>
+          <Icon name={imageIcon} size={22} color={ctx.icon.subtle} />
         </View>
         <View style={styles.controls}>
           {cart.code ? (
             <View style={styles.codeRow}>
-              <Icon name="scan" size={13} color={LIGHT.icon.subtle} />
-              <Text variant={TextType.Caption} color={LIGHT.text.subtle} numberOfLines={1} style={styles.code}>
+              <Icon name="scan" size={13} color={ctx.icon.subtle} />
+              <Text variant={TextType.Caption} color={ctx.text.subtle} numberOfLines={1} style={styles.code}>
                 {cart.code}
               </Text>
             </View>
           ) : null}
           {cart.unitPrice ? (
             <View style={styles.codeRow}>
-              <Text variant={TextType.Caption} color={LIGHT.text.subtle} numberOfLines={1}>
+              <Text variant={TextType.Caption} color={ctx.text.subtle} numberOfLines={1}>
                 {cart.unitPrice} c/u
               </Text>
             </View>
           ) : null}
         </View>
         <View style={styles.column}>
-          <View style={styles.stepper}>
+          <View style={[styles.stepper, { backgroundColor: ctx.bg.default }]}>
             <Pressable
               onPress={() => {
                 const q = Math.max(1, quantity - 1);
@@ -123,7 +145,11 @@ export function ProductCard({
                 setDraft(String(q));
                 onQuantityChange?.(q);
               }}
-              style={({ pressed }) => [styles.stepperButton, pressed && styles.stepperButtonPressed]}
+              style={({ pressed }) => [
+                styles.stepperButton,
+                { backgroundColor: ctx.bg.subtle },
+                pressed && styles.stepperButtonPressed,
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Disminuir cantidad"
             >
@@ -131,7 +157,7 @@ export function ProductCard({
             </Pressable>
             {editing ? (
               <TextInput
-                style={styles.quantityInput}
+                style={[styles.quantityInput, { color: ctx.text.default }]}
                 value={draft}
                 onChangeText={setDraft}
                 keyboardType="number-pad"
@@ -143,7 +169,7 @@ export function ProductCard({
               />
             ) : (
               <Pressable onPress={startEditing} accessibilityRole="button" accessibilityLabel="Editar cantidad">
-                <Text variant={TextType.BodyMedium} color={LIGHT.text.default} style={styles.quantity}>
+                <Text variant={TextType.BodyMedium} color={ctx.text.default} style={styles.quantity}>
                   {quantity}
                 </Text>
               </Pressable>
@@ -155,7 +181,11 @@ export function ProductCard({
                 setDraft(String(q));
                 onQuantityChange?.(q);
               }}
-              style={({ pressed }) => [styles.stepperButton, pressed && styles.stepperButtonPressed]}
+              style={({ pressed }) => [
+                styles.stepperButton,
+                { backgroundColor: ctx.bg.subtle },
+                pressed && styles.stepperButtonPressed,
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Aumentar cantidad"
             >
@@ -168,9 +198,10 @@ export function ProductCard({
   );
 }
 
+// ── Styles ──────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: LIGHT.bg.subtle,
     borderRadius: 16,
     padding: space.space3,
   },
@@ -186,7 +217,6 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 12,
-    backgroundColor: LIGHT.bg.default,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -194,7 +224,6 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 14,
-    backgroundColor: LIGHT.bg.default,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -235,7 +264,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: space.space1,
-    backgroundColor: LIGHT.bg.default,
     borderRadius: 999,
     padding: 3,
   },
@@ -243,7 +271,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 999,
-    backgroundColor: LIGHT.bg.subtle,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -262,7 +289,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
-    color: LIGHT.text.default,
   },
   codeRow: {
     flexDirection: "row",

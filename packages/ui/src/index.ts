@@ -28,6 +28,7 @@ export * from "./components/DrawerMenu";
 export * from "./components/Item";
 export * from "./components/ListItem";
 export * from "./components/ProductCard";
+export * from "./components/ElementCard";
 export { ColorWheel, ColorCustomizerDialog } from "./components/ColorCustomizer";
 export type { ColorToken } from "./components/ColorCustomizer";
 export { ComposingOrb } from "./components/ComposingOrb/ComposingOrb";

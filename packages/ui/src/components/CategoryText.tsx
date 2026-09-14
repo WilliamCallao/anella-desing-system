@@ -18,6 +18,12 @@ export type CategoryTextProps = {
   title: string;
   /** Texto secundario debajo del título (opcional). */
   subtitle?: string;
+  /** Sin descripción: si es `true` no se renderiza la descripción (ni siquiera
+   *  el placeholder). En su defecto (false), si no se pasa `subtitle` se reserva
+   *  su espacio con un placeholder invisible (texto "mv" en el color del fondo
+   *  del contexto darkness) para que las filas sin descripción mantengan el alto
+   *  de las que sí tienen. Por defecto false. */
+  hideDescription?: boolean;
   action?: string;
   onAction?: () => void;
   /** Ícono opcional a la derecha de la acción (edición, configuración, agregar, etc.). */
@@ -36,6 +42,7 @@ export type CategoryTextProps = {
 export function CategoryText({
   title,
   subtitle,
+  hideDescription = false,
   action,
   onAction,
   actionIcon,
@@ -47,6 +54,7 @@ export function CategoryText({
   const s = resolveSemantic(lightSemantic);
   const ctx = s[STYLE_CONTEXT[style]];
   const handleIcon = onActionIcon ?? onAction;
+  const hasSubtitle = subtitle != null && subtitle !== "";
 
   return (
     <View style={[styles.row, horizontalPadding != null ? { paddingHorizontal: horizontalPadding } : null, containerStyle]}>
@@ -58,13 +66,13 @@ export function CategoryText({
         >
           {title}
         </Text>
-        {subtitle ? (
+        {!hideDescription ? (
           <Text
             variant={TextType.Caption}
-            color={ctx.text.subtle}
+            color={hasSubtitle ? ctx.text.subtle : s.darkness.bg.default}
             style={styles.subtitle}
           >
-            {subtitle}
+            {hasSubtitle ? subtitle : "mv"}
           </Text>
         ) : null}
       </View>
