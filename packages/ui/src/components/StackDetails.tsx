@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { TextType, lightSemantic, resolveSemantic, space } from "@william-callao/antonella-theme";
 import { Text } from "./text";
-import { Icon } from "./Icon";
+import { Icon, type IconName } from "./Icon";
 
 // ── Style enum ──────────────────────────────────────────────
 
@@ -14,6 +14,13 @@ export enum StackDetailsStyle {
 
 // ── Types ───────────────────────────────────────────────────
 
+export type StackDetailsAction = {
+  /** Ícono de la acción, táctil (p. ej. "pencil" para editar o "trash" para eliminar). */
+  icon: IconName;
+  /** Llamado al presionar el ícono de acción. */
+  onPress: () => void;
+};
+
 export type StackDetailsRow = {
   /** Texto de la columna izquierda (la clave). */
   label: string;
@@ -21,6 +28,8 @@ export type StackDetailsRow = {
   value?: string;
   /** Si se pasa, la fila es presionable y muestra un chevron al final. */
   onPress?: () => void;
+  /** Íconos de acción al final de la fila (editar, eliminar, desasignar...). */
+  actions?: StackDetailsAction[];
 };
 
 export type StackDetailsProps = {
@@ -73,7 +82,19 @@ export function StackDetails({
                   {row.value}
                 </Text>
               ) : null}
-              {row.onPress ? (
+              {row.actions && row.actions.length > 0 ? (
+                row.actions.map((action, actionIndex) => (
+                  <Pressable
+                    key={actionIndex}
+                    onPress={action.onPress}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    style={styles.actionTouch}
+                  >
+                    <Icon name={action.icon} size={18} color={ctx.icon.subtle} />
+                  </Pressable>
+                ))
+              ) : row.onPress ? (
                 <Icon name="chevron-forward" size={14} color={ctx.icon.subtle} />
               ) : null}
             </View>
@@ -126,5 +147,8 @@ const styles = StyleSheet.create({
     maxWidth: 180,
     flexShrink: 1,
     textAlign: "right",
+  },
+  actionTouch: {
+    marginLeft: space.space1,
   },
 });
