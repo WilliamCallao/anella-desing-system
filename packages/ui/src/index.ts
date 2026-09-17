@@ -35,6 +35,8 @@ export { ColorWheel, ColorCustomizerDialog } from "./components/ColorCustomizer"
 export type { ColorToken } from "./components/ColorCustomizer";
 export { ComposingOrb } from "./components/ComposingOrb/ComposingOrb";
 export * from "./components/ActionTiles";
+export * from "./components/ActionCard";
+export * from "./components/ShortcutCard";
 export * from "./components/TabNavigation";
 export * from "./components/Dropdown";
 export * from "./components/FloatingActionButton";
