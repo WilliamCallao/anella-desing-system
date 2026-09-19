@@ -8,3 +8,4 @@ export * from "./core/syncState";
 export * from "./core/session";
 export * from "./core/sql/upsert";
 export * from "./core/sql/coerce";
+export * from "./runtime/syncRuntime";
