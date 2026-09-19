@@ -1,0 +1,27 @@
+{
+  "name": "@william-callao/antonella-sync",
+  "version": "0.1.0",
+  "description": "Mecanismo de sincronización offline-first reutilizable: transporte, campana, estado de sync, helpers SQL genéricos y migración del esquema meta.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "react-native": "dist/index.js",
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "better-sqlite3": "^13.0.3",
+    "vite": "^8.0.0",
+    "vitest": "^5.0.0"
+  }
+}
