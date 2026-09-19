@@ -1,4 +1,5 @@
 export * from "./core/db";
+export * from "./core/domain";
 export * from "./core/errors";
 export * from "./core/logs";
 export * from "./core/schema";
