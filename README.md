@@ -16,7 +16,8 @@ antonella/
 │   ├── storage/           # @antonella/storage   Capa de persistencia
 │   ├── animations/        # @antonella/animations  Animaciones (Reanimated)
 │   ├── hooks/             # @antonella/hooks     Hooks compartidos
-│   └── utils/             # @antonella/utils     Utilidades puras
+│   ├── utils/             # @antonella/utils     Utilidades puras
+│   └── sync/              # @antonella/sync      Sincronización offline-first (motor + runtime)
 ├── package.json
 ├── pnpm-workspace.yaml
 └── turbo.json
@@ -96,5 +97,6 @@ La aplicación **no cambia sus imports** ni se entera de la diferencia (mecanism
 - [Índice de componentes](INDEX.md) — qué aporta cada componente/export con su función en una oración.
 - [Integración en una app React Native (Expo)](docs/integracion-react-native.md) — steps to consume Antonella from an SDK 54 app (`file:` + `metro.config.js`, troubleshooting).
 - [Component Implementation Guide](docs/COMPONENT_IMPLEMENTATION.md) — conventions for building typed, reusable, responsive DS components.
+- [Sincronización offline-first (`@william-callao/antonella-sync`)](packages/sync/README.md) — motor reutilizable (transporte de delta, campana, estado de sync, runtime de ciclo de vida) y cómo lo consume la app Minimarket.
 - [DashboardShell Scroll Contract](packages/ui/src/components/DashboardShell/SCROLL_CONTRACT.md) — scroll behavior rules across tablet/mobile.
 - [DashboardShell Design](docs/designs/2026-08-01-dashboard-shell-design.md) — design decisions for the shell component.

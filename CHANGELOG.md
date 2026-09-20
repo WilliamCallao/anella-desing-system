@@ -1,6 +1,6 @@
 # Antonella
 
-Changelog raíz de Antonella. Agrupa cambios relevantes del monorepo (packages: ui, theme, utils, hooks, animations).
+Changelog raíz de Antonella. Agrupa cambios relevantes del monorepo (packages: ui, theme, utils, hooks, animations, sync).
 
 ## Unreleased
 
@@ -18,3 +18,14 @@ Changelog raíz de Antonella. Agrupa cambios relevantes del monorepo (packages: 
 - `ProductCard`: agrega `ProductCardStyle` (DEFAULT/LIGHT/DARKNESS) resolviendo los colores por contexto semántico (fondo de card, cajas de imagen, textos, íconos y stepper), de modo que el card pueda usarse sobre superficies claras u oscuras. La prop `style` que antes recibía un override de estilo ahora se usa para el tono; el override de estilo del card contenedor pasa a `containerStyle` (breaking de contrato). Sin cambios de comportamiento en `DEFAULT` (equivale a los colores anteriores).
 - `CategoryText`: agrega la prop opcional `hideDescription` (por defecto `false`). Con el valor por defecto, si no se pasa `subtitle`, se reserva el alto de la descripción con un placeholder invisible (texto `"mv"` en el color del fondo del contexto darkness, `darkness.bg.default`), de modo que una fila sin descripción conserve la misma altura que las que sí tienen; al pasar `true` no se renderiza ninguna línea de descripción. Sin cambios de contrato en componentes existentes.
 - `StateMessage`: el título de los estados `EMPTY` y `ERROR` baja de `TextType.Heading` a `TextType.Label` (más discreto, acorde al rol de un mensaje de estado secundario). Sin cambios de contrato en componentes existentes.
+
+### @william-callao/antonella-sync
+
+- Nuevo paquete `@william-callao/antonella-sync`: núcleo de **sincronización offline-first
+  reutilizable**, extraído de la app Minimarket. Exporta `SyncDomainModule` (contrato de
+  dominio data-driven), `createHttpSyncTransport` (delta `GET /sync/changes`), campana
+  (`BellGate`/`bellShouldPull`), estado de sync (`createSyncStateRepo` + `clearTenantRows`),
+  migrador meta (`migrate`/`SYNC_META_SQL`), helpers SQL (`upsertRows`/`applyDeletes`/
+  `coerce*`) y `createSyncRuntime` (ciclo de vida con adaptadores inyectados). Sin
+  dependencias de la app (no importa `expo-sqlite`/`firebase`/`logwood`). Ver
+  `packages/sync/README.md`.

@@ -79,6 +79,15 @@
 - **noop** — Función vacía reutilizable.
 - **isWeb** — Detecta si se está ejecutando en web.
 
+## @antonella/sync — Sincronización offline-first
+- **SyncDomainModule** — Contrato de un dominio syncable (`domain`, `ddl`, `tenantTables`, `invalidateKeys`, `applyDelta`).
+- **createHttpSyncTransport** — Transporte de delta (`GET /sync/changes`) tipado por `SyncPage<T>`.
+- **BellGate / bellShouldPull** — Filtro de bumps de la campana (repetidos/regresivos).
+- **createSyncStateRepo** — Cursores por `(domain, tenant, store)` + última campana por tenant.
+- **migrate / SYNC_META_SQL** — Migrador del esquema meta del sync.
+- **upsertRows / applyDeletes / buildPlaceholders / coerceBool / coerceNumber** — Helpers SQL genéricos del delta.
+- **createSyncRuntime** — Runtime de ciclo de vida (sesión, campana, poll, foreground) con adaptadores inyectados (`identity`, `queryCache`, `bellSource`, `clock`, `openSession`, `closeSession`, `logs`).
+
 ## @antonella/auth — Autenticación
 - **User / Session / AuthProvider** — Tipos base de sesión y contrato del provider. *(implementación con backend pendiente: Firebase/Clerk)*
 
