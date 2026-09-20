@@ -9,9 +9,9 @@ import { composingOrb } from "./categories/composing-orb";
 import { dialogos } from "./categories/dialogos";
 import { drawerMenu } from "./categories/drawer-menu";
 import { drawerMenuItem } from "./categories/drawer-menu-item";
-import { headerBar } from "./categories/header-bar";
+import { topBar } from "./categories/top-bar";
 import { searchBar } from "./categories/search-bar";
-import { categoryText } from "./categories/category-text";
+import { sectionHeader } from "./categories/section-header";
 import { actionCard } from "./categories/action-card";
 import { shortcutCard } from "./categories/shortcut-card";
 import { stackDetails } from "./categories/stack-details";
@@ -31,7 +31,7 @@ import type { ComponentCategory, SectionMeta, SectionWithCategories } from "./ty
 
 export type { ComponentCategory, ComponentEntry, VariantDemo, SectionMeta, SectionWithCategories } from "./types";
 
-export const componentCategories = [formularios, inputs, animaciones, botones, dialogos, checklists, filtros, arbol, other, tipografia, bottomBars, composingOrb, drawerMenu, drawerMenuItem, headerBar, searchBar, categoryText, actionCard, shortcutCard, stackDetails, layout, sheetLayout, mainLayout, mainLayoutApp, iconos, toast, camara];
+export const componentCategories = [formularios, inputs, animaciones, botones, dialogos, checklists, filtros, arbol, other, tipografia, bottomBars, composingOrb, drawerMenu, drawerMenuItem, topBar, searchBar, sectionHeader, actionCard, shortcutCard, stackDetails, layout, sheetLayout, mainLayout, mainLayoutApp, iconos, toast, camara];
 
 export const sectionCategories: ComponentCategory[] = [colores, semanticTokens];
 
@@ -48,7 +48,7 @@ export const sections: SectionMeta[] = [
     title: "Navegación",
     icon: "menu",
     order: 2,
-    items: ["drawerMenu", "drawerMenuItem", "bottomBars", "headerBar", "categoryText"],
+    items: ["drawerMenu", "drawerMenuItem", "bottomBars", "topBar", "sectionHeader"],
   },
   {
     key: "contenido",

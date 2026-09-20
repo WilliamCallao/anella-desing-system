@@ -125,13 +125,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: space.space2,
-    minHeight: 44,
-    padding: space.space1,
+    // Alto estándar de acciones (52): interno (icon 28) + paddings space3 (24)
+    // = 52 natural; mín, nunca height fijo — crece con contenido/fuente.
+    minHeight: 52,
+    paddingVertical: space.space3,
+    paddingHorizontal: space.space3,
     borderRadius: 9999,
   },
   iconCircle: {
-    width: 36,
-    height: 36,
+    width: 28,
+    height: 28,
     borderRadius: 9999,
     alignItems: "center",
     justifyContent: "center",
@@ -139,5 +142,8 @@ const styles = StyleSheet.create({
   label: {
     flex: 1,
     paddingRight: space.space4,
+    // Texto interno preferente del estándar (14 / peso 500) sobre Caption.
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

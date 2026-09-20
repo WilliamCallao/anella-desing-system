@@ -8,14 +8,14 @@ import type { IconName } from "./Icon";
 
 // ── Props ───────────────────────────────────────────────────
 
-export type ChipRowOption = {
+export type ChipTabsOption = {
   icon: IconName;
   label: string;
   value: string;
 };
 
-export type ChipRowProps = {
-  options: ChipRowOption[];
+export type ChipTabsProps = {
+  options: ChipTabsOption[];
   selected?: string;
   onSelect?: (value: string) => void;
   style?: ItemStyle;
@@ -25,13 +25,13 @@ export type ChipRowProps = {
 
 // ── Component ───────────────────────────────────────────────
 
-export function ChipRow({
+export function ChipTabs({
   options,
   selected: controlledSelected,
   onSelect,
   style = ItemStyle.DARKNESS,
   fullWidth = false,
-}: ChipRowProps) {
+}: ChipTabsProps) {
   const [internalSelected, setInternalSelected] = useState(
     options[0]?.value ?? ""
   );
@@ -84,13 +84,13 @@ export function ChipRow({
 
 const styles = StyleSheet.create({
   scroll: {
-    gap: 8,
+    gap: space.space2,
     paddingLeft: space.space3,
     paddingRight: space.space3,
   },
   fullWidth: {
     flexDirection: "row",
-    gap: 8,
+    gap: space.space2,
   },
   fullWidthItem: {
     flex: 1,

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "rea
 import { TextType, lightSemantic, resolveSemantic, space } from "@william-callao/antonella-theme";
 import { Text } from "./text";
 import { Icon, type IconName } from "./Icon";
+import { TopAction, TopActionStyle } from "./TopAction";
 
 // ── Style enum ──────────────────────────────────────────────
 
@@ -31,6 +32,10 @@ export type ElementCardProps = {
   style?: ElementCardStyle;
   /** Override de estilo para el card contenedor. */
   containerStyle?: StyleProp<ViewStyle>;
+  /** Fondo del elemento visual (TopAction) a la izquierda (opcional). */
+  visualBg?: string;
+  /** Color del icono del elemento visual (opcional). */
+  visualIconColor?: string;
 };
 
 // ── Config ──────────────────────────────────────────────────
@@ -39,6 +44,12 @@ const STYLE_CONTEXT: Record<ElementCardStyle, "default" | "light" | "darkness"> 
   [ElementCardStyle.DEFAULT]: "default",
   [ElementCardStyle.LIGHT]: "light",
   [ElementCardStyle.DARKNESS]: "darkness",
+};
+
+const TOP_ACTION_STYLE: Record<ElementCardStyle, TopActionStyle> = {
+  [ElementCardStyle.DEFAULT]: TopActionStyle.DEFAULT,
+  [ElementCardStyle.LIGHT]: TopActionStyle.DEFAULT,
+  [ElementCardStyle.DARKNESS]: TopActionStyle.DARKNESS,
 };
 
 // ── Component ───────────────────────────────────────────────
@@ -53,6 +64,8 @@ export function ElementCard({
   dimmed = false,
   style = ElementCardStyle.DEFAULT,
   containerStyle,
+  visualBg,
+  visualIconColor,
 }: ElementCardProps) {
   const ctx = resolveSemantic(lightSemantic)[STYLE_CONTEXT[style]];
 
@@ -62,8 +75,8 @@ export function ElementCard({
       style={({ pressed }) => [
         styles.card,
         styles.rowCard,
-        // Card con el fondo sutil del contexto y caja de ícono sobre el fondo
-        // por defecto (un paso más profundo), igual que ProductCard.
+        // Card con el fondo sutil del contexto y un TopAction a la izquierda
+        // como elemento visual/identificador del tipo de elemento.
         { backgroundColor: ctx.bg.subtle },
         dimmed && styles.dimmed,
         pressed && styles.pressed,
@@ -71,11 +84,19 @@ export function ElementCard({
       ]}
       accessibilityRole="button"
     >
-      <View style={[styles.iconBox, { backgroundColor: ctx.bg.default }]}>
-        <Icon name={icon} size={22} color={ctx.icon.subtle} />
-      </View>
+      <TopAction
+        icon={icon}
+        onPress={onPress ?? (() => {})}
+        style={TOP_ACTION_STYLE[style]}
+        borderRadius={20}
+        colors={{
+          buttonBg: visualBg ?? ctx.bg.default,
+          buttonPressedBg: visualBg ?? ctx.bg.default,
+          iconColor: visualIconColor ?? ctx.icon.subtle,
+        }}
+      />
       <View style={styles.body}>
-        <Text variant={TextType.BodyMedium} color={ctx.text.default} numberOfLines={1}>
+        <Text variant={TextType.BodyMedium} color={ctx.text.default} style={styles.title} numberOfLines={1}>
           {name}
         </Text>
         {subtitle ? (
@@ -104,24 +125,22 @@ export function ElementCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
-    padding: space.space1,
+    borderRadius: 32,
+    padding: space.space3,
   },
   rowCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: space.space3,
   },
-  iconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   body: {
     flex: 1,
     gap: 2,
+  },
+  title: {
+    fontSize: 14,
+    fontWeight: "500",
+    lineHeight: 18,
   },
   trailingTouch: {
     paddingLeft: space.space1,

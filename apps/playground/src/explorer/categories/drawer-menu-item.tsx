@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Item, ItemStyle, ChipRow, AppIcon } from "@william-callao/antonella-ui";
+import { Item, ItemStyle, ChipTabs, AppIcon } from "@william-callao/antonella-ui";
 import { resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 import type { ComponentCategory } from "../types";
 import type { IconName } from "@william-callao/antonella-ui";
@@ -57,10 +57,10 @@ const CHIP_OPTIONS = [
   { icon: AppIcon.Configuracion, label: "Ajustes", value: "ajustes" },
 ];
 
-function HorizontalChipRowDemo() {
+function HorizontalChipTabsDemo() {
   return (
     <View style={[styles.chipSection, { backgroundColor: _s.darkness.bg.default }]}>
-      <ChipRow
+      <ChipTabs
         options={CHIP_OPTIONS}
         selected="inicio"
         style={ItemStyle.DARKNESS}
@@ -117,10 +117,10 @@ export const drawerMenuItem: ComponentCategory = {
     },
     {
       id: "horizontal-chip",
-      name: "Chip Row",
+      name: "Chip Tabs",
       description: "Fila horizontal con scroll, borde brand al seleccionar.",
       variants: [
-        { id: "all", label: "Chips", render: () => <HorizontalChipRowDemo /> },
+        { id: "all", label: "Chips", render: () => <HorizontalChipTabsDemo /> },
       ],
     },
   ],

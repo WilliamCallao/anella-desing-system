@@ -6,7 +6,7 @@ import { TextType, resolveSemantic, lightSemantic, space, neutrals } from "@will
 
 // ── Style enum ──────────────────────────────────────────────
 
-export enum CategoryTextStyle {
+export enum SectionHeaderStyle {
   DEFAULT = "DEFAULT",
   LIGHT = "LIGHT",
   DARKNESS = "DARKNESS",
@@ -14,7 +14,7 @@ export enum CategoryTextStyle {
 
 // ── Props ───────────────────────────────────────────────────
 
-export type CategoryTextProps = {
+export type SectionHeaderProps = {
   title: string;
   /** Texto secundario debajo del título (opcional). */
   subtitle?: string;
@@ -30,7 +30,7 @@ export type CategoryTextProps = {
   actionIcon?: IconName;
   /** Handler del ícono. Si no se pasa, usa onAction. */
   onActionIcon?: () => void;
-  style?: CategoryTextStyle;
+  style?: SectionHeaderStyle;
   /** Padding horizontal de la fila (si no se pasa, 0). */
   horizontalPadding?: number;
   /** Override de estilo para la fila contenedora (p. ej. quitar el marginBottom por defecto). */
@@ -39,7 +39,7 @@ export type CategoryTextProps = {
 
 // ── Component ───────────────────────────────────────────────
 
-export function CategoryText({
+export function SectionHeader({
   title,
   subtitle,
   hideDescription = false,
@@ -47,10 +47,10 @@ export function CategoryText({
   onAction,
   actionIcon,
   onActionIcon,
-  style = CategoryTextStyle.DEFAULT,
+  style = SectionHeaderStyle.DEFAULT,
   horizontalPadding,
   containerStyle,
-}: CategoryTextProps) {
+}: SectionHeaderProps) {
   const s = resolveSemantic(lightSemantic);
   const ctx = s[STYLE_CONTEXT[style]];
   const handleIcon = onActionIcon ?? onAction;
@@ -81,6 +81,7 @@ export function CategoryText({
           <Text
             variant={TextType.CaptionMedium}
             color={ctx.text.default}
+            style={styles.action}
           >
             {action}
           </Text>
@@ -97,10 +98,10 @@ export function CategoryText({
 
 // ── Style config ────────────────────────────────────────────
 
-const STYLE_CONTEXT: Record<CategoryTextStyle, "default" | "light" | "darkness"> = {
-  [CategoryTextStyle.DEFAULT]: "default",
-  [CategoryTextStyle.LIGHT]: "light",
-  [CategoryTextStyle.DARKNESS]: "darkness",
+const STYLE_CONTEXT: Record<SectionHeaderStyle, "default" | "light" | "darkness"> = {
+  [SectionHeaderStyle.DEFAULT]: "default",
+  [SectionHeaderStyle.LIGHT]: "light",
+  [SectionHeaderStyle.DARKNESS]: "darkness",
 };
 
 // ── Styles ──────────────────────────────────────────────────
@@ -118,11 +119,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
+    lineHeight: 18,
   },
   subtitle: {
     marginTop: space.space1,
+  },
+  action: {
+    fontSize: 14,
+    fontWeight: "500",
+    lineHeight: 18,
   },
   iconTouch: {
     paddingLeft: space.space1,

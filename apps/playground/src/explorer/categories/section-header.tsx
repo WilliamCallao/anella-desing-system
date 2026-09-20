@@ -1,45 +1,45 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { CategoryText, CategoryTextStyle } from "@william-callao/antonella-ui";
+import { SectionHeader, SectionHeaderStyle } from "@william-callao/antonella-ui";
 import { resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 import type { ComponentCategory } from "../types";
 
 const _s = resolveSemantic(lightSemantic);
 
-function CategoryTextDefaultDemo() {
+function SectionHeaderDefaultDemo() {
   return (
     <View style={[styles.container, { backgroundColor: _s.default.bg.default, borderRadius: 16, padding: 12 }]}>
-      <CategoryText
+      <SectionHeader
         title="Lista de items"
         action="Ver todo"
         onAction={() => {}}
-        style={CategoryTextStyle.DEFAULT}
+        style={SectionHeaderStyle.DEFAULT}
       />
     </View>
   );
 }
 
-function CategoryTextLightDemo() {
+function SectionHeaderLightDemo() {
   return (
     <View style={[styles.container, { backgroundColor: _s.light.bg.default, borderRadius: 16, padding: 12 }]}>
-      <CategoryText
+      <SectionHeader
         title="Lista de items"
         action="Ver todo"
         onAction={() => {}}
-        style={CategoryTextStyle.LIGHT}
+        style={SectionHeaderStyle.LIGHT}
       />
     </View>
   );
 }
 
-function CategoryTextDarknessDemo() {
+function SectionHeaderDarknessDemo() {
   return (
     <View style={[styles.container, { backgroundColor: _s.darkness.bg.default, borderRadius: 16, padding: 12 }]}>
-      <CategoryText
+      <SectionHeader
         title="Lista de items"
         action="Ver todo"
         onAction={() => {}}
-        style={CategoryTextStyle.DARKNESS}
+        style={SectionHeaderStyle.DARKNESS}
       />
     </View>
   );
@@ -51,9 +51,9 @@ const styles = StyleSheet.create({
   },
 });
 
-export const categoryText: ComponentCategory = {
-  id: "category-text",
-  title: "CategoryText",
+export const sectionHeader: ComponentCategory = {
+  id: "section-header",
+  title: "SectionHeader",
   icon: "document-text",
   components: [
     {
@@ -61,7 +61,7 @@ export const categoryText: ComponentCategory = {
       name: "DEFAULT",
       description: "Título text.default, acción text.subtlest.",
       variants: [
-        { id: "all", label: "CategoryText", render: () => <CategoryTextDefaultDemo /> },
+        { id: "all", label: "SectionHeader", render: () => <SectionHeaderDefaultDemo /> },
       ],
     },
     {
@@ -69,7 +69,7 @@ export const categoryText: ComponentCategory = {
       name: "LIGHT",
       description: "Título text.default, acción text.subtlest.",
       variants: [
-        { id: "all", label: "CategoryText", render: () => <CategoryTextLightDemo /> },
+        { id: "all", label: "SectionHeader", render: () => <SectionHeaderLightDemo /> },
       ],
     },
     {
@@ -77,7 +77,7 @@ export const categoryText: ComponentCategory = {
       name: "DARKNESS",
       description: "Título text.default, acción text.subtlest.",
       variants: [
-        { id: "all", label: "CategoryText", render: () => <CategoryTextDarknessDemo /> },
+        { id: "all", label: "SectionHeader", render: () => <SectionHeaderDarknessDemo /> },
       ],
     },
   ],

@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
-import { space, neutrals, brand as brandPalette } from "@william-callao/antonella-theme";
+import { resolveSemantic, lightSemantic, space, neutrals, brand as brandPalette } from "@william-callao/antonella-theme";
 import { Icon } from "./Icon";
 import type { IconName } from "./Icon";
 
@@ -59,6 +59,8 @@ export function SearchBar({
 
 // ── Color maps per style ────────────────────────────────────
 
+const _semantic = resolveSemantic(lightSemantic);
+
 const STYLE_COLORS: Record<
   SearchBarStyle,
   {
@@ -70,19 +72,19 @@ const STYLE_COLORS: Record<
 > = {
   [SearchBarStyle.DEFAULT]: {
     bg: neutrals.N100,
-    iconColor: neutrals.N500,
+    iconColor: _semantic.default.text.default,
     textColor: neutrals.N950,
     placeholderColor: neutrals.N500,
   },
   [SearchBarStyle.LIGHT]: {
     bg: neutrals.N0,
-    iconColor: neutrals.N500,
+    iconColor: _semantic.light.text.default,
     textColor: neutrals.N950,
     placeholderColor: neutrals.N500,
   },
   [SearchBarStyle.DARKNESS]: {
     bg: neutrals.N950,
-    iconColor: neutrals.N400,
+    iconColor: _semantic.darkness.text.default,
     textColor: neutrals.N0,
     placeholderColor: neutrals.N400,
   },
@@ -95,8 +97,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: space.space2,
-    minHeight: 54,
-    padding: space.space1,
+    // Alto estándar de acciones (52): mínimo derivado de internos + paddings de
+    // space, nunca height fijo — con fuente mayor crece con el contenido.
+    minHeight: 52,
+    paddingVertical: space.space2,
+    paddingHorizontal: space.space1,
     borderRadius: 9999,
   },
   iconLeft: {
@@ -104,8 +109,9 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    lineHeight: 20,
+    fontSize: 14,
+    fontWeight: "500",
+    lineHeight: 18,
     padding: 0,
   },
 });
