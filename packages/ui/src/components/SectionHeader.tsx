@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { Text } from "./text";
 import { Icon, type IconName } from "./Icon";
+import { Label, LabelStyle } from "./Label";
 import { TextType, resolveSemantic, lightSemantic, space, neutrals } from "@william-callao/antonella-theme";
 
 // ── Style enum ──────────────────────────────────────────────
@@ -11,6 +12,12 @@ export enum SectionHeaderStyle {
   LIGHT = "LIGHT",
   DARKNESS = "DARKNESS",
 }
+
+const STYLE_LABEL: Record<SectionHeaderStyle, LabelStyle> = {
+  [SectionHeaderStyle.DEFAULT]: LabelStyle.DEFAULT,
+  [SectionHeaderStyle.LIGHT]: LabelStyle.LIGHT,
+  [SectionHeaderStyle.DARKNESS]: LabelStyle.DARKNESS,
+};
 
 // ── Props ───────────────────────────────────────────────────
 
@@ -53,6 +60,7 @@ export function SectionHeader({
 }: SectionHeaderProps) {
   const s = resolveSemantic(lightSemantic);
   const ctx = s[STYLE_CONTEXT[style]];
+  const labelStyle = STYLE_LABEL[style];
   const handleIcon = onActionIcon ?? onAction;
   const hasSubtitle = subtitle != null && subtitle !== "";
 
@@ -77,17 +85,13 @@ export function SectionHeader({
         ) : null}
       </View>
       {action ? (
-        <Pressable onPress={onAction}>
-          <Text
-            variant={TextType.CaptionMedium}
-            color={ctx.text.default}
-            style={styles.action}
-          >
-            {action}
-          </Text>
-        </Pressable>
-      ) : null}
-      {actionIcon ? (
+        <Label
+          label={action}
+          icon={actionIcon}
+          onPress={handleIcon}
+          style={labelStyle}
+        />
+      ) : actionIcon ? (
         <Pressable onPress={handleIcon} hitSlop={8} style={styles.iconTouch}>
           <Icon name={actionIcon} size={16} color={ctx.text.default} />
         </Pressable>
@@ -113,7 +117,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: space.space2,
     paddingHorizontal: 0,
-    marginBottom: space.space3,
   },
   textWrap: {
     flex: 1,
@@ -125,11 +128,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: space.space1,
-  },
-  action: {
-    fontSize: 14,
-    fontWeight: "500",
-    lineHeight: 18,
   },
   iconTouch: {
     paddingLeft: space.space1,

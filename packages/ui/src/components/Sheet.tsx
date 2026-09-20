@@ -6,19 +6,18 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import Animated, { useAnimatedStyle } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { background, radius, space } from "@william-callao/antonella-theme";
 import { DialogHeader } from "./DialogHeader";
 import type { IconName } from "./Icon";
 import { SheetOverlay } from "./SheetOverlay";
 import { useSheetController } from "./useSheetController";
 
-const ANIM_IN_TIMING = 220;
-const ANIM_OUT_TIMING = 180;
-const BACKDROP_OPACITY = 0.4;
-const PANEL_IN_SCALE = 0.92;
+const ANIM_IN_TIMING = 260;
+const ANIM_OUT_TIMING = 240;
+const BACKDROP_OPACITY = 0.45;
 
-export type ModalProps = {
+export type SheetProps = {
   visible: boolean;
   onClose: () => void;
   dismissible?: boolean;
@@ -28,17 +27,18 @@ export type ModalProps = {
   caption?: string;
   children: React.ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
-  /** Zona de acciones fija al pie del modal. */
+  snapPoints?: Array<string | number>;
+  /** Zona de acciones fija al pie del sheet. */
   actions?: React.ReactNode;
   /**
-   * Renderiza el modal SIN envolverlo en un RN Modal, para poder montarlo dentro
+   * Renderiza el sheet SIN envolverlo en un RN Modal, para poder montarlo dentro
    * de un host modal nativo (p.ej. un screen `transparentModal` de expo-router),
    * donde anidar otro Modal rompería el edge-to-edge.
    */
   embedded?: boolean;
 };
 
-export function Modal({
+export function Sheet({
   visible,
   onClose,
   dismissible = true,
@@ -48,26 +48,19 @@ export function Modal({
   caption,
   children,
   contentStyle,
+  snapPoints,
   actions,
   embedded = false,
-}: ModalProps) {
+}: SheetProps) {
   const controller = useSheetController({
     visible,
     onClose,
     dismissible,
     embedded,
+    snapPoints,
+    dragToDismiss: true,
     timings: { inMs: ANIM_IN_TIMING, outMs: ANIM_OUT_TIMING, backdropOpacity: BACKDROP_OPACITY },
   });
-
-  const panelStyle = useAnimatedStyle(
-    () => ({
-      opacity: controller.progress.value,
-      transform: [
-        { scale: PANEL_IN_SCALE + (1 - PANEL_IN_SCALE) * controller.progress.value },
-      ],
-    }),
-    [],
-  );
 
   return (
     <SheetOverlay
@@ -76,13 +69,16 @@ export function Modal({
       dismissible={dismissible}
       onClose={onClose}
       backdropStyle={controller.backdropStyle}
-      accessibilityLabel="Cerrar diálogo"
     >
       <Animated.View
-        style={[styles.centered, controller.containerAnimatedStyle]}
+        style={[styles.panelWrapper, controller.containerAnimatedStyle]}
         pointerEvents="box-none"
       >
-        <Animated.View style={[styles.panel, controller.heightStyle, panelStyle, contentStyle]}>
+        <Animated.View
+          style={[styles.panel, controller.heightStyle, controller.sheetPanelStyle]}
+          {...(controller.panResponder?.panHandlers ?? {})}
+        >
+          <View style={styles.handleBar} />
           {title || icon || caption || showCloseButton ? (
             <DialogHeader
               icon={icon}
@@ -94,8 +90,10 @@ export function Modal({
           ) : null}
           <ScrollView
             showsVerticalScrollIndicator={false}
+            bounces={false}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={[styles.scrollContent, actions && styles.scrollContentCompact]}
+            onScroll={controller.scrollHandler}
+            contentContainerStyle={[styles.content, actions && styles.contentCompact, contentStyle]}
           >
             {controller.contentReady ? children : <View style={styles.deferredPlaceholder} />}
           </ScrollView>
@@ -107,22 +105,31 @@ export function Modal({
 }
 
 const styles = StyleSheet.create({
-  centered: {
+  panelWrapper: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "flex-end",
   },
   panel: {
-    width: 420,
-    maxWidth: "100%",
+    width: "100%",
     backgroundColor: background.default,
-    borderRadius: radius.lg,
-    padding: space.space4,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    paddingTop: space.space2,
+    paddingHorizontal: space.space4,
   },
-  scrollContent: {
-    paddingBottom: space.space3,
+  handleBar: {
+    alignSelf: "center",
+    width: 36,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: background.surface,
+    marginBottom: space.space2,
   },
-  scrollContentCompact: {
+  content: {
+    paddingTop: space.space2,
+    paddingBottom: Math.max(space.space3, 24),
+  },
+  contentCompact: {
     paddingBottom: 0,
   },
   actions: {

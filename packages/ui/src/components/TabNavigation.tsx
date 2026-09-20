@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent } from "react-native";
-import { neutrals, radius, space, TextType } from "@william-callao/antonella-theme";
-import { Text } from "./text/Text";
-import { Icon, type IconName } from "./Icon";
+import { ScrollView, StyleSheet, View, type LayoutChangeEvent } from "react-native";
+import { space } from "@william-callao/antonella-theme";
+import { Label, LabelStyle } from "./Label";
+import type { IconName } from "./Icon";
 
 // ── Style enum ──────────────────────────────────────────────
 
@@ -11,6 +11,12 @@ export enum TabNavigationStyle {
   LIGHT = "LIGHT",
   DARKNESS = "DARKNESS",
 }
+
+const STYLE_LABEL: Record<TabNavigationStyle, LabelStyle> = {
+  [TabNavigationStyle.DEFAULT]: LabelStyle.DEFAULT,
+  [TabNavigationStyle.LIGHT]: LabelStyle.LIGHT,
+  [TabNavigationStyle.DARKNESS]: LabelStyle.DARKNESS,
+};
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -42,30 +48,6 @@ export type TabNavigationProps = {
 
 // ── Config ──────────────────────────────────────────────────
 
-const TONES: Record<
-  TabNavigationStyle,
-  { border: string; fill: string; active: string; inactive: string }
-> = {
-  [TabNavigationStyle.DEFAULT]: {
-    border: neutrals.N200,
-    fill: neutrals.N950,
-    active: "#FFFFFF",
-    inactive: neutrals.N600,
-  },
-  [TabNavigationStyle.LIGHT]: {
-    border: neutrals.N200,
-    fill: neutrals.N950,
-    active: "#FFFFFF",
-    inactive: neutrals.N600,
-  },
-  [TabNavigationStyle.DARKNESS]: {
-    border: neutrals.N800,
-    fill: neutrals.N800,
-    active: neutrals.N0,
-    inactive: neutrals.N400,
-  },
-};
-
 // ── Component ───────────────────────────────────────────────
 
 type TabMode = "fit" | "scroll";
@@ -79,7 +61,7 @@ export function TabNavigation({
   horizontalMargin,
 }: TabNavigationProps) {
   const selected = controlledSelected ?? options[0]?.value ?? "";
-  const tone = TONES[style];
+  const labelStyle = STYLE_LABEL[style];
 
   const [mode, setMode] = useState<TabMode | null>(null);
   const [availableWidth, setAvailableWidth] = useState<number | null>(null);
@@ -131,30 +113,18 @@ export function TabNavigation({
 
   const renderChip = (opt: TabNavigationOption, distribute: boolean) => {
     const active = opt.value === selected;
-    const color = active ? tone.active : tone.inactive;
     return (
-      <Pressable
+      <Label
         key={opt.value}
+        label={opt.label}
+        icon={opt.icon}
+        selected={active}
         onPress={() => onSelect?.(opt.value)}
-        style={({ pressed }) => [
-          styles.chip,
-          // Cada chip lleva su propio borde: al desbordar, el borde viaja con el
-          // scroll (no hay marco exterior fijo). Solo la tab seleccionada lleva
-          // fondo (relleno).
-          { borderColor: tone.border, backgroundColor: active ? tone.fill : "transparent" },
-          // Solo se distribuye el espacio en el modo fit; en scroll quedan a su
-          // ancho natural.
-          distribute && fitMode ? styles.chipFilled : null,
-          pressed && styles.chipPressed,
-        ]}
-        accessibilityRole="button"
-        accessibilityState={{ selected: active }}
-      >
-        {opt.icon ? <Icon name={opt.icon} size={16} color={color} /> : null}
-        <Text variant={TextType.Caption} color={color} numberOfLines={1}>
-          {opt.label}
-        </Text>
-      </Pressable>
+        style={labelStyle}
+        // Solo se distribuye el espacio en el modo fit; en scroll quedan a su
+        // ancho natural.
+        containerStyle={distribute && fitMode ? styles.chipFilled : undefined}
+      />
     );
   };
 
@@ -238,20 +208,7 @@ const styles = StyleSheet.create({
   contentFit: {
     flexGrow: 1,
   },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: space.space1,
-    paddingHorizontal: space.space4,
-    paddingVertical: space.space2,
-    borderRadius: radius.md,
-    borderWidth: 1,
-  },
   chipFilled: {
     flex: 1,
-  },
-  chipPressed: {
-    opacity: 0.7,
   },
 });
