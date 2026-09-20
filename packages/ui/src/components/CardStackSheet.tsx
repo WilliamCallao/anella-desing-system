@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  ScrollView,
   StyleSheet,
   View,
   type StyleProp,
@@ -69,7 +68,7 @@ export function CardStackSheet({
           style={[styles.stack, controller.heightStyle, controller.sheetPanelStyle]}
           {...(controller.panResponder?.panHandlers ?? {})}
         >
-          <ScrollView
+          <Animated.ScrollView
             showsVerticalScrollIndicator={false}
             bounces={false}
             keyboardShouldPersistTaps="handled"
@@ -81,7 +80,7 @@ export function CardStackSheet({
             ]}
           >
             {controller.contentReady ? children : <View style={styles.deferredPlaceholder} />}
-          </ScrollView>
+          </Animated.ScrollView>
         </Animated.View>
       </Animated.View>
     </SheetOverlay>

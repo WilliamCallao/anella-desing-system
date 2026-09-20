@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  ScrollView,
   StyleSheet,
   View,
   type StyleProp,
@@ -88,7 +87,7 @@ export function Sheet({
               showCloseButton={showCloseButton}
             />
           ) : null}
-          <ScrollView
+          <Animated.ScrollView
             showsVerticalScrollIndicator={false}
             bounces={false}
             keyboardShouldPersistTaps="handled"
@@ -96,7 +95,7 @@ export function Sheet({
             contentContainerStyle={[styles.content, actions && styles.contentCompact, contentStyle]}
           >
             {controller.contentReady ? children : <View style={styles.deferredPlaceholder} />}
-          </ScrollView>
+          </Animated.ScrollView>
           {actions ? <View style={styles.actions}>{actions}</View> : null}
         </Animated.View>
       </Animated.View>
