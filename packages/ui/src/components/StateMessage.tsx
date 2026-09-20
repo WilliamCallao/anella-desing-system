@@ -146,13 +146,15 @@ const STYLE_COLORS: Record<
     iconSize: 40,
     loadingIconSize: 26,
   },
+  // Darkness: escala de intensidad con jerarquía clara — ícono N500, mensaje N500,
+  // título N400 (el más claro). Contraste medio, discreto.
   [StateMessageStyle.DARKNESS]: {
-    iconColor: _semantic.darkness.text.subtle,
-    titleColor: _semantic.darkness.text.default,
-    messageColor: _semantic.darkness.text.subtle,
+    iconColor: neutrals.N500,
+    titleColor: neutrals.N400,
+    messageColor: neutrals.N500,
     errorIconColor: danger.D400,
-    iconSize: 40,
-    loadingIconSize: 26,
+    iconSize: 32,
+    loadingIconSize: 20,
   },
   // Variante discreta: menos contraste y a menor tamaño para no robar
   // protagonismo (se usa dentro de paneles/contextos ya ocupados).

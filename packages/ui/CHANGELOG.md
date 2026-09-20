@@ -9,6 +9,10 @@
 - `StackDetails`: soporte opcional de `actions` por fila (array de íconos táctiles al final, p. ej. editar/eliminar, como en `KeyValueList`).
 - `AppTextInput`: prop opcional `onPress` que reemplaza el foco del input al tocar la fila (p. ej. campos que solo se completan escaneando: tocar el campo abre el escáner y no el teclado). Prop opcional `readOnly`: bloquea el ingreso de texto (sin teclado) conservando el aspecto normal y dejando operativas las acciones.
 
+### Breaking
+
+- `CardStackSheet` se renombra a `AppBottomSheet` (tipo `CardStackSheetProps` → `AppBottomSheetProps`). Misma API: pila de cards en un bottom sheet, con `areaColor`, `snapPoints`, `dismissible` y `embedded`. Renombrado para alinearlo con el prefijo `App*` de los primitivos del paquete.
+
 ## 1.0.1
 
 ### Patch Changes

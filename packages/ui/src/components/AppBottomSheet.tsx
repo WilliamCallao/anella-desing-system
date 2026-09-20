@@ -15,7 +15,7 @@ const ANIM_OUT_TIMING = 240;
 const BACKDROP_OPACITY = 0.45;
 const EDGE_MARGIN = space.space3;
 
-export type CardStackSheetProps = {
+export type AppBottomSheetProps = {
   visible: boolean;
   onClose: () => void;
   dismissible?: boolean;
@@ -32,7 +32,7 @@ export type CardStackSheetProps = {
   embedded?: boolean;
 };
 
-export function CardStackSheet({
+export function AppBottomSheet({
   visible,
   onClose,
   dismissible = true,
@@ -41,7 +41,7 @@ export function CardStackSheet({
   snapPoints,
   areaColor,
   embedded = false,
-}: CardStackSheetProps) {
+}: AppBottomSheetProps) {
   const controller = useSheetController({
     visible,
     onClose,

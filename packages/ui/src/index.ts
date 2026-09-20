@@ -15,7 +15,7 @@ export * from "./components/DrawerMenuItem";
 export * from "./components/SectionHeader";
 export * from "./components/BottomSheet";
 export * from "./components/Sheet";
-export * from "./components/CardStackSheet";
+export * from "./components/AppBottomSheet";
 export * from "./components/OptionListItem";
 export * from "./components/Toast";
 export * from "./providers/ToastProvider";
