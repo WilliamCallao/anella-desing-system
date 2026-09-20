@@ -7,6 +7,7 @@
 - Nuevo componente `StackDetails`: card de filas clave-valor compactas (label Caption a la izquierda, valor Caption a la derecha), con chevron y fila presionable cuando se pasa `onPress`. Estilos DEFAULT / LIGHT / DARKNESS. Extraído de la card de cuentas enlazadas del detalle de categoría de la app.
 - Nuevo ícono `tag` / `tag-filled` para etiquetas y precios.
 - `StackDetails`: soporte opcional de `actions` por fila (array de íconos táctiles al final, p. ej. editar/eliminar, como en `KeyValueList`).
+- `AppTextInput`: prop opcional `onPress` que reemplaza el foco del input al tocar la fila (p. ej. campos que solo se completan escaneando: tocar el campo abre el escáner y no el teclado). Prop opcional `readOnly`: bloquea el ingreso de texto (sin teclado) conservando el aspecto normal y dejando operativas las acciones.
 
 ## 1.0.1
 

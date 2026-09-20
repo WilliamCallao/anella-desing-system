@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
-import { resolveSemantic, lightSemantic, neutrals, radius, space, TextType } from "@william-callao/antonella-theme";
+import { neutrals, radius, space, TextType } from "@william-callao/antonella-theme";
 import { Text } from "./text/Text";
 import { Icon, type IconName } from "./Icon";
 
@@ -30,21 +30,23 @@ export type LabelProps = {
 
 // ── Config ──────────────────────────────────────────────────
 
-// El texto inactivo (no seleccionado) deriva del contexto semántico como en el
-// resto de los componentes (TopAction, ProductCard, SectionHeader…): la píldora
-// no seleccionada queda transparente con su texto en `text.subtle` del contexto.
-const STYLE_CONTEXT: Record<LabelStyle, "default" | "light" | "darkness"> = {
-  [LabelStyle.DEFAULT]: "default",
-  [LabelStyle.LIGHT]: "light",
-  [LabelStyle.DARKNESS]: "darkness",
+// La píldora vive sobre la superficie del contexto: oscura (N950/N900) en
+// darkness, clara (N50/N100 o blanca) en DEFAULT/LIGHT. En cada variante los
+// colores son el espejo de la otra: relleno seleccionado = loseta N800 sobre
+// fondo oscuro vs loseta N200 sobre fondo claro; texto activo blanco vs N950;
+// texto inactivo N400 (text.subtle del modo oscuro) vs su equivalente N500.
+const INACTIVE: Record<LabelStyle, string> = {
+  [LabelStyle.DEFAULT]: neutrals.N500,
+  [LabelStyle.LIGHT]: neutrals.N500,
+  [LabelStyle.DARKNESS]: neutrals.N400,
 };
 
 // Relleno del estado seleccionado y borde: sin token semántico dedicado, se
-// mantienen fijos por variante (la píldora seleccionada es siempre oscura con
-// texto claro, igual que las chips de TabNavigation).
+// mantienen fijos por variante como espejo de la otra (la píldora seleccionada
+// es siempre una loseta monocroma sutil, clara u oscura según el contexto).
 const FILL: Record<LabelStyle, string> = {
-  [LabelStyle.DEFAULT]: neutrals.N950,
-  [LabelStyle.LIGHT]: neutrals.N950,
+  [LabelStyle.DEFAULT]: neutrals.N200,
+  [LabelStyle.LIGHT]: neutrals.N200,
   [LabelStyle.DARKNESS]: neutrals.N800,
 };
 
@@ -54,8 +56,13 @@ const BORDER: Record<LabelStyle, string> = {
   [LabelStyle.DARKNESS]: neutrals.N800,
 };
 
-// Texto activo (seleccionado): claro, sobre el relleno oscuro.
-const ACTIVE = "#FFFFFF";
+// Texto activo (seleccionado): en contraste con el relleno — blanco sobre la
+// loseta oscura, texto casi negro sobre la loseta clara.
+const ACTIVE: Record<LabelStyle, string> = {
+  [LabelStyle.DEFAULT]: neutrals.N950,
+  [LabelStyle.LIGHT]: neutrals.N950,
+  [LabelStyle.DARKNESS]: "#FFFFFF",
+};
 
 // ── Component ───────────────────────────────────────────────
 // Label estilo píldora (borde propio), con relleno solo en el estado
@@ -71,8 +78,7 @@ export function Label({
   containerStyle,
   accessibilityLabel,
 }: LabelProps) {
-  const ctx = resolveSemantic(lightSemantic)[STYLE_CONTEXT[style]];
-  const color = selected ? ACTIVE : ctx.text.subtle;
+  const color = selected ? ACTIVE[style] : INACTIVE[style];
 
   return (
     <Pressable
