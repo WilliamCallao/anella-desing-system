@@ -1,5 +1,11 @@
 # @william-callao/antonella-animations
 
+## 1.0.1
+
+### Patch Changes
+
+- [`dfb38a7`](https://github.com/WilliamCallao/anella-desing-system/commit/dfb38a788df1bca6390ddff44bb2771e5417bc5a) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - feat: exportar `FadeIn` y `useFadeIn` (fade de entrada hook-driven, con `contentKey` para re-lanzar la animación)
+
 ## Unreleased
 
 ### Minor Changes

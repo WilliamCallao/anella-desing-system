@@ -1,6 +1,6 @@
 {
   "name": "@william-callao/antonella-animations",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Animaciones compartidas de Antonella (React Native Reanimated).",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
