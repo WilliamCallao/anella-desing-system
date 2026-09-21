@@ -1,5 +1,14 @@
 # @william-callao/antonella-ui
 
+## 1.0.4
+
+### Patch Changes
+
+- [`4c13525`](https://github.com/WilliamCallao/anella-desing-system/commit/4c135253bcf98a9f9a43bc9303fc36c7e105dc35) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - fix(ui): ternario en contentContainerStyle con ReactNode falsy y onChangeText opcional en AppTextInput
+  
+  - `Sheet` y `Modal`: cambiar `actions && styles.x` por ternario para que los falsy de ReactNode (0, "", false) no rompan el DTS build.
+  - `AppTextInput`: `onChangeText` ahora es opcional, permitiendo campos readOnly/escaneo sin handler de texto.
+
 ## Unreleased
 
 ### Added
