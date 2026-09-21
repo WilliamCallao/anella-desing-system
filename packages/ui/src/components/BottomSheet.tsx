@@ -1,131 +1,78 @@
 import React from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
-import Animated from "react-native-reanimated";
-import { background, radius, space } from "@william-callao/antonella-theme";
-import { DialogHeader } from "./DialogHeader";
+import { useWindowDimensions } from "react-native";
+import { Sheet } from "./Sheet";
+import { Modal } from "./Modal";
 import type { IconName } from "./Icon";
-import { SheetOverlay } from "./SheetOverlay";
-import { useSheetController } from "./useSheetController";
 
-const ANIM_IN_TIMING = 260;
-const ANIM_OUT_TIMING = 240;
-const BACKDROP_OPACITY = 0.45;
+export enum AppDialogMode {
+  Dismissable = "dismissable",
+  Required = "required",
+}
 
 export type BottomSheetProps = {
   visible: boolean;
   onClose: () => void;
-  dismissible?: boolean;
-  showCloseButton?: boolean;
+  mode?: AppDialogMode;
   icon?: IconName;
   title?: string;
   caption?: string;
   children: React.ReactNode;
-  contentStyle?: StyleProp<ViewStyle>;
-  snapPoints?: Array<string | number>;
-  /**
-   * Renderiza el sheet SIN envolverlo en un RN Modal, para poder montarlo dentro
-   * de un host modal nativo (p.ej. un screen `transparentModal` de expo-router),
-   * donde anidar otro Modal rompería el edge-to-edge.
-   */
+  contentStyle?: React.ComponentProps<typeof Sheet>["contentStyle"];
+  snapPoints?: React.ComponentProps<typeof Sheet>["snapPoints"];
+  /** Zona de acciones fija al pie del diálogo (botones, etc.). */
+  actions?: React.ReactNode;
+  /** Monta el diálogo sin RN Modal (para hosts modales nativos tipo expo-router). */
   embedded?: boolean;
 };
 
 export function BottomSheet({
   visible,
   onClose,
-  dismissible = true,
-  showCloseButton = false,
+  mode = AppDialogMode.Dismissable,
   icon,
   title,
   caption,
   children,
   contentStyle,
   snapPoints,
+  actions,
   embedded = false,
 }: BottomSheetProps) {
-  const controller = useSheetController({
-    visible,
-    onClose,
-    dismissible,
-    embedded,
-    snapPoints,
-    dragToDismiss: true,
-    timings: { inMs: ANIM_IN_TIMING, outMs: ANIM_OUT_TIMING, backdropOpacity: BACKDROP_OPACITY },
-  });
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 600;
+  const dismissible = mode === AppDialogMode.Dismissable;
 
+  if (isTablet) {
+    return (
+      <Modal
+        visible={visible}
+        onClose={onClose}
+        dismissible={dismissible}
+        showCloseButton={dismissible}
+        icon={icon}
+        title={title}
+        caption={caption}
+        actions={actions}
+        children={children}
+        contentStyle={contentStyle}
+        embedded={embedded}
+      />
+    );
+  }
   return (
-    <SheetOverlay
-      mounted={controller.effectiveMounted}
-      embedded={embedded}
-      dismissible={dismissible}
+    <Sheet
+      visible={visible}
       onClose={onClose}
-      backdropStyle={controller.backdropStyle}
-    >
-      <Animated.View
-        style={[styles.panelWrapper, controller.containerAnimatedStyle]}
-        pointerEvents="box-none"
-      >
-        <Animated.View
-          style={[styles.panel, controller.heightStyle, controller.sheetPanelStyle]}
-          {...(controller.panResponder?.panHandlers ?? {})}
-        >
-          <View style={styles.handleBar} />
-          {title || icon || caption || showCloseButton ? (
-            <DialogHeader
-              icon={icon}
-              title={title}
-              caption={caption}
-              onClose={onClose}
-              showCloseButton={showCloseButton}
-            />
-          ) : null}
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-            keyboardShouldPersistTaps="handled"
-            onScroll={controller.scrollHandler}
-            contentContainerStyle={[styles.content, contentStyle]}
-          >
-            {controller.contentReady ? children : <View style={styles.deferredPlaceholder} />}
-          </ScrollView>
-        </Animated.View>
-      </Animated.View>
-    </SheetOverlay>
+      dismissible={dismissible}
+      showCloseButton={dismissible}
+      icon={icon}
+      title={title}
+      caption={caption}
+      snapPoints={snapPoints}
+      actions={actions}
+      children={children}
+      contentStyle={contentStyle}
+      embedded={embedded}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  panelWrapper: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  panel: {
-    width: "100%",
-    backgroundColor: background.default,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    paddingTop: space.space2,
-    paddingHorizontal: space.space4,
-  },
-  handleBar: {
-    alignSelf: "center",
-    width: 36,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: background.surface,
-    marginBottom: space.space2,
-  },
-  content: {
-    paddingTop: space.space2,
-    paddingBottom: Math.max(space.space3, 24),
-  },
-  deferredPlaceholder: {
-    minHeight: space.space16,
-  },
-});

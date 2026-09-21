@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { TextType, lightSemantic, resolveSemantic, space } from "@william-callao/antonella-theme";
+import { neutrals, TextType, lightSemantic, resolveSemantic, space } from "@william-callao/antonella-theme";
 import { Text } from "./text";
 import { Icon, type IconName } from "./Icon";
 
@@ -43,10 +43,12 @@ export type StackDetailsProps = {
 
 type ContextKey = "default" | "light" | "darkness";
 
-const STYLE_CONFIG: Record<StackDetailsStyle, { ctx: ContextKey; divider: string }> = {
-  [StackDetailsStyle.DEFAULT]: { ctx: "default", divider: "rgba(0, 0, 0, 0.06)" },
-  [StackDetailsStyle.LIGHT]: { ctx: "light", divider: "rgba(0, 0, 0, 0.06)" },
-  [StackDetailsStyle.DARKNESS]: { ctx: "darkness", divider: "rgba(255, 255, 255, 0.12)" },
+// La card es una píldora transparente de solo borde, espejo del Label sin
+// seleccionar: oscura (N800) sobre fondo oscuro, clara (N200) sobre fondo claro.
+const STYLE_CONFIG: Record<StackDetailsStyle, { ctx: ContextKey; border: string; divider: string }> = {
+  [StackDetailsStyle.DEFAULT]: { ctx: "default", border: neutrals.N200, divider: "rgba(0, 0, 0, 0.06)" },
+  [StackDetailsStyle.LIGHT]: { ctx: "light", border: neutrals.N200, divider: "rgba(0, 0, 0, 0.06)" },
+  [StackDetailsStyle.DARKNESS]: { ctx: "darkness", border: neutrals.N800, divider: "rgba(255, 255, 255, 0.12)" },
 };
 
 // ── Component ───────────────────────────────────────────────
@@ -62,7 +64,7 @@ export function StackDetails({
   if (rows.length === 0) return null;
 
   return (
-    <View style={[styles.card, { backgroundColor: ctx.bg.subtle }, containerStyle]}>
+    <View style={[styles.card, { borderColor: config.border }, containerStyle]}>
       {rows.map((row, index) => {
         const notLast = index < rows.length - 1;
         const inner = (
@@ -124,6 +126,8 @@ export function StackDetails({
 const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
+    borderWidth: 1,
+    backgroundColor: "transparent",
     overflow: "hidden",
   },
   row: {

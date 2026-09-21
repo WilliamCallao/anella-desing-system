@@ -11,7 +11,7 @@ import {
 import { background, border, radius, space, text } from "@william-callao/antonella-theme";
 import { neutrals, brand, success, warning, danger } from "@william-callao/antonella-theme";
 import { Text } from "../text";
-import { AppResponsiveDialog, AppDialogMode } from "../AppResponsiveDialog";
+import { BottomSheet, AppDialogMode } from "../BottomSheet";
 import type { ColorToken } from "./types";
 
 type ColorCustomizerDialogProps = {
@@ -112,7 +112,7 @@ export function ColorCustomizerDialog({
   }, [tokens]);
 
   return (
-    <AppResponsiveDialog
+    <BottomSheet
       visible={visible}
       onClose={onClose}
       mode={AppDialogMode.Dismissable}
@@ -215,7 +215,7 @@ export function ColorCustomizerDialog({
           Copiar colores
         </Text>
       </Pressable>
-    </AppResponsiveDialog>
+    </BottomSheet>
   );
 }
 

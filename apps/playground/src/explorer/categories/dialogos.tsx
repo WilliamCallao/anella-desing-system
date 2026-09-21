@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import {
+  AppBottomSheet,
   AppButton,
   AppDialogMode,
   AppResponsiveDialog,
   Card,
-  CardStackSheet,
   OptionListItem,
   OptionListItemVariant,
   Text,
@@ -50,12 +50,12 @@ function ResponsiveDialogRequiredDemo() {
   );
 }
 
-function CardStackSheetDemo() {
+function AppBottomSheetDemo() {
   const [open, setOpen] = useState(false);
   return (
     <View style={demoStyles.gap}>
       <AppButton label="Abrir pila de cards" variant="ghost" onPress={() => setOpen(true)} />
-      <CardStackSheet visible={open} onClose={() => setOpen(false)}>
+      <AppBottomSheet visible={open} onClose={() => setOpen(false)}>
         <Card>
           <Text variant="heading">Card 1</Text>
           <Text variant="body" color="#8E8E93">
@@ -74,12 +74,12 @@ function CardStackSheetDemo() {
             Última card de ejemplo. Se puede cerrar tocando afuera o con atrás.
           </Text>
         </Card>
-      </CardStackSheet>
+      </AppBottomSheet>
     </View>
   );
 }
 
-function CardStackSheetOptionsDemo() {
+function AppBottomSheetOptionsDemo() {
   const [open, setOpen] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
 
@@ -91,7 +91,7 @@ function CardStackSheetOptionsDemo() {
   return (
     <View style={demoStyles.gap}>
       <AppButton label="Abrir opciones" variant="ghost" onPress={() => setOpen(true)} />
-      <CardStackSheet visible={open} onClose={closeAll}>
+      <AppBottomSheet visible={open} onClose={closeAll}>
         <Card>
           <OptionListItem
             icon="pencil"
@@ -144,7 +144,7 @@ function CardStackSheetOptionsDemo() {
             </Card>
           ) : null}
         </TransitionView>
-      </CardStackSheet>
+      </AppBottomSheet>
     </View>
   );
 }
@@ -179,12 +179,12 @@ export const dialogos: ComponentCategory = {
       ],
     },
     {
-      id: "card-stack-sheet",
-      name: "CardStackSheet",
+      id: "app-bottom-sheet",
+      name: "AppBottomSheet",
       description: "Cards flotando sobre el fondo oscuro, separadas de los bordes de la pantalla.",
       variants: [
-        { id: "open", label: "Abrir", render: () => <CardStackSheetDemo /> },
-        { id: "options", label: "Opciones", render: () => <CardStackSheetOptionsDemo /> },
+        { id: "open", label: "Abrir", render: () => <AppBottomSheetDemo /> },
+        { id: "options", label: "Opciones", render: () => <AppBottomSheetOptionsDemo /> },
       ],
     },
   ],

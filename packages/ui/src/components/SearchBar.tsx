@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from "react-native";
 import { resolveSemantic, lightSemantic, space, neutrals, brand as brandPalette } from "@william-callao/antonella-theme";
 import { Icon } from "./Icon";
 import type { IconName } from "./Icon";
@@ -23,6 +23,13 @@ export type SearchBarProps = {
   bgColor?: string;
   onFocus?: () => void;
   onBlur?: () => void;
+  /** Tipo de tecla de retorno del teclado (ej: "search" para mostrar "Buscar"). */
+  returnKeyType?: TextInputProps["returnKeyType"];
+  /** Se dispara al presionar la tecla de retorno del teclado. */
+  onSubmitEditing?: TextInputProps["onSubmitEditing"];
+  /** Al presionar retorno, pierde el foco (default true de TextInput). */
+  blurOnSubmit?: boolean;
+  autoFocus?: boolean;
 };
 
 // ── Component ───────────────────────────────────────────────
@@ -36,6 +43,10 @@ export function SearchBar({
   bgColor,
   onFocus,
   onBlur,
+  returnKeyType,
+  onSubmitEditing,
+  blurOnSubmit,
+  autoFocus,
 }: SearchBarProps) {
   const c = STYLE_COLORS[style];
 
@@ -52,6 +63,10 @@ export function SearchBar({
         onChangeText={onChangeText}
         onFocus={onFocus}
         onBlur={onBlur}
+        returnKeyType={returnKeyType}
+        onSubmitEditing={onSubmitEditing}
+        blurOnSubmit={blurOnSubmit}
+        autoFocus={autoFocus}
       />
     </View>
   );

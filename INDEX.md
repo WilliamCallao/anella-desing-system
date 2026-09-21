@@ -13,13 +13,14 @@
 - **Card** — Contenedor de tarjeta con estilo del tema.
 - **CardTitle** — Título + subtítulo para encabezar una tarjeta.
 - **Chip** — Etiqueta pequeña con variantes `subtle` / `solid` / `outlined`, tamaño `sm`/`md` e icono opcional.
+- **Label** — Píldora con borde propio y relleno en el estado seleccionado; estilo de las tabs de `TabNavigation` (icono opcional 16).
 - **AppFilterChips** — Fila de chips de filtro con selección única (opcionalmente controlada).
 - **ToolsCard** — Tarjeta con una fila de herramientas/acciones separadas por divisores verticales.
 
 ### Diálogos y modales
-- **AppResponsiveDialog** — Diálogo responsivo: en tablet (`width >= 600`) muestra `Modal`, en celular `BottomSheet`; maneja el teclado solo.
-- **Modal** — Modal centrado (para tablet) con header, scroll y teclado seguro (se achica y se levanta con el teclado).
-- **BottomSheet** — Sheet desde abajo (para celular) con handle, snap points y teclado seguro.
+- **BottomSheet** — Diálogo responsivo: en tablet (`width >= 600`) muestra `Modal`, en celular `Sheet`; maneja el teclado solo. Acepta `actions` (zona fija al pie con `space.space6` arriba y `space.space10` abajo para estandarizar botones).
+- **Modal** — Modal centrado (para tablet) con header, scroll y teclado seguro (se achica y se levanta con el teclado). Acepta `actions` (misma convención que `BottomSheet`).
+- **Sheet** — Sheet desde abajo (para celular) con handle, snap points y teclado seguro. Acepta `actions` (misma convención que `BottomSheet`).
 - **DialogHeader** — Header reutilizable de diálogo: icono, título, caption y botón de cerrar.
 - **useModalKeyboardHeight** — Hook que devuelve la altura del teclado como shared value de Reanimated (negativa con teclado visible; en web mide el `visualViewport`).
 

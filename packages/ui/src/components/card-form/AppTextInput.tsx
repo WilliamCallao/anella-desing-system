@@ -24,6 +24,13 @@ export type AppTextInputProps = AppInputProps & {
   keyboardType?: KeyboardTypeOptions;
   maxLength?: number;
   editable?: boolean;
+  /** Solo lectura: bloquea el ingreso de texto (sin teclado) pero conserva el
+   *  aspecto normal de la fila y deja operativas las acciones (p. ej. escanear). */
+  readOnly?: boolean;
+  /** Al tocar la fila: si se pasa, se usa este handler en vez de enfocar el
+   *  input (p. ej. campos que solo se completan escaneando: tocar el campo abre
+   *  el escáner y no el teclado). */
+  onPress?: () => void;
   /** Botón de acción a la derecha del campo (ej. escanear un código). */
   trailingAction?: {
     icon: IconName;
@@ -42,13 +49,17 @@ export function AppTextInput({
   keyboardType,
   maxLength,
   editable = true,
+  readOnly = false,
   trailingAction,
+  onPress: onPressOverride,
 }: AppTextInputProps) {
   const inputRef = useRef<TextInput>(null);
   const [inputHeight, setInputHeight] = useState<number | undefined>(undefined);
 
+  const canType = editable && !readOnly;
+
   const focus = () => {
-    if (editable) inputRef.current?.focus();
+    if (canType) inputRef.current?.focus();
   };
 
   const handleContentSizeChange = (
@@ -68,8 +79,8 @@ export function AppTextInput({
         inputHeight != null && inputHeight > SINGLE_LINE_HEIGHT && styles.rowGrown,
         !editable && styles.rowDisabled,
       ]}
-      onPress={focus}
-      disabled={!editable}
+      onPress={() => (onPressOverride ? onPressOverride() : focus())}
+      disabled={!editable && !readOnly}
       activeOpacity={1}
     >
       <Text
@@ -101,7 +112,7 @@ export function AppTextInput({
         autoCapitalize={autoCapitalize}
         keyboardType={keyboardType}
         maxLength={maxLength}
-        editable={editable}
+        editable={canType}
         selectionColor={text.default}
         underlineColorAndroid="transparent"
         multiline

@@ -18,7 +18,7 @@ export type SheetOverlayProps = {
 };
 
 /**
- * Overlay compartido de Modal / BottomSheet / CardStackSheet:
+ * Overlay compartido de Modal / BottomSheet / AppBottomSheet:
  * RN Modal nativo (transparente, hardwareAccelerated), backdrop presionable
  * y, en web, cierre con Escape + bloqueo del scroll del body.
  */

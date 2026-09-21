@@ -35,12 +35,12 @@ export type UseSheetControllerOptions = {
   embedded?: boolean;
   /** Configura la altura máxima del panel. */
   snapPoints?: Array<string | number>;
-  /** Habilita el drag-to-dismiss (BottomSheet / CardStackSheet). */
+  /** Habilita el drag-to-dismiss (BottomSheet / AppBottomSheet). */
   dragToDismiss?: boolean;
 };
 
 /**
- * Estado + animación compartidos de Modal / BottomSheet / CardStackSheet:
+ * Estado + animación compartidos de Modal / BottomSheet / AppBottomSheet:
  * montaje, progreso de Reanimated (UI thread), teclado, altura máxima y
  * drag-to-dismiss con snap-back. Un único lugar para arreglos de animación,
  * a11y y comportamiento web.

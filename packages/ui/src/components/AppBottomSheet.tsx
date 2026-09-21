@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  ScrollView,
   StyleSheet,
   View,
   type StyleProp,
@@ -16,7 +15,7 @@ const ANIM_OUT_TIMING = 240;
 const BACKDROP_OPACITY = 0.45;
 const EDGE_MARGIN = space.space3;
 
-export type CardStackSheetProps = {
+export type AppBottomSheetProps = {
   visible: boolean;
   onClose: () => void;
   dismissible?: boolean;
@@ -33,7 +32,7 @@ export type CardStackSheetProps = {
   embedded?: boolean;
 };
 
-export function CardStackSheet({
+export function AppBottomSheet({
   visible,
   onClose,
   dismissible = true,
@@ -42,7 +41,7 @@ export function CardStackSheet({
   snapPoints,
   areaColor,
   embedded = false,
-}: CardStackSheetProps) {
+}: AppBottomSheetProps) {
   const controller = useSheetController({
     visible,
     onClose,
@@ -69,7 +68,7 @@ export function CardStackSheet({
           style={[styles.stack, controller.heightStyle, controller.sheetPanelStyle]}
           {...(controller.panResponder?.panHandlers ?? {})}
         >
-          <ScrollView
+          <Animated.ScrollView
             showsVerticalScrollIndicator={false}
             bounces={false}
             keyboardShouldPersistTaps="handled"
@@ -81,7 +80,7 @@ export function CardStackSheet({
             ]}
           >
             {controller.contentReady ? children : <View style={styles.deferredPlaceholder} />}
-          </ScrollView>
+          </Animated.ScrollView>
         </Animated.View>
       </Animated.View>
     </SheetOverlay>

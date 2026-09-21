@@ -24,6 +24,8 @@ export enum StateMessageType {
 
 export enum StateMessageStyle {
   DEFAULT = "DEFAULT",
+  LIGHT = "LIGHT",
+  WHITE = "WHITE",
   DARKNESS = "DARKNESS",
   SECONDARY = "SECONDARY",
 }
@@ -146,13 +148,36 @@ const STYLE_COLORS: Record<
     iconSize: 40,
     loadingIconSize: 26,
   },
-  [StateMessageStyle.DARKNESS]: {
-    iconColor: _semantic.darkness.text.subtle,
-    titleColor: _semantic.darkness.text.default,
-    messageColor: _semantic.darkness.text.subtle,
+  // Light: variante invertida de la familia light (misma lógica que SearchBar
+  // LIGHT): ícono N600, título N950, mensaje N500 — texto oscuro sobre
+  // superficies claras.
+  [StateMessageStyle.LIGHT]: {
+    iconColor: _semantic.light.icon.default,
+    titleColor: _semantic.light.text.default,
+    messageColor: _semantic.light.text.subtle,
+    errorIconColor: danger.D600,
+    iconSize: 40,
+    loadingIconSize: 26,
+  },
+  // White: variante para fondos oscuros — ícono y textos en blanco (N0), con
+  // el mensaje en un blanco suavizado (N100) para preservar jerarquía.
+  [StateMessageStyle.WHITE]: {
+    iconColor: neutrals.N0,
+    titleColor: neutrals.N0,
+    messageColor: neutrals.N100,
     errorIconColor: danger.D400,
     iconSize: 40,
     loadingIconSize: 26,
+  },
+  // Darkness: escala de intensidad con jerarquía clara — ícono N500, mensaje N500,
+  // título N400 (el más claro). Contraste medio, discreto.
+  [StateMessageStyle.DARKNESS]: {
+    iconColor: neutrals.N500,
+    titleColor: neutrals.N400,
+    messageColor: neutrals.N500,
+    errorIconColor: danger.D400,
+    iconSize: 32,
+    loadingIconSize: 20,
   },
   // Variante discreta: menos contraste y a menor tamaño para no robar
   // protagonismo (se usa dentro de paneles/contextos ya ocupados).
