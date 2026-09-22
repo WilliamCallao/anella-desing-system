@@ -62,6 +62,20 @@ describe("createHttpSyncTransport", () => {
     expect(SYNC_PAGE_SIZE).toBe(100);
   });
 
+  it("envía store_id solo cuando el hint lo trae (dominio stock)", async () => {
+    const request = vi.fn(async (_opts: SyncRequestOptions) => WIRE_PAGE);
+    const transport = createHttpSyncTransport(request as unknown as SyncRequest);
+
+    await transport.getChanges({ domain: "stock", since: null, storeId: "store-1" });
+    await transport.getChanges({ domain: "products", since: null });
+    await transport.getChanges({ domain: "stock", since: null, storeId: undefined });
+
+    const calls = request.mock.calls.map(([opts]) => opts as SyncRequestOptions);
+    expect(calls[0].query).toEqual({ domain: "stock", store_id: "store-1" });
+    expect(calls[1].query).toEqual({ domain: "products" });
+    expect(calls[2].query).toEqual({ domain: "stock" });
+  });
+
   it("pasa el next_cursor del wire tal cual (normalización identidad)", async () => {
     const wire = {
       items: [],

@@ -30,6 +30,11 @@ export type ProductCardProps = {
   // Modo carrito: cambia el layout (título sobre la imagen, código + precio
   // unitario junto a la imagen, total y stepper a la derecha).
   cart?: ProductCardCart;
+  // Tope de unidades seleccionables: limita steppers y edición manual a este
+  // máximo (p. ej. el stock disponible). Sin el prop, el card acepta cualquier
+  // cantidad (comportamiento previo). Con máximo 0, el botón Añadir queda
+  // deshabilitado (sin stock).
+  maxQuantity?: number;
   // Notifica cada cambio de cantidad (steppers o edición manual).
   onQuantityChange?: (quantity: number) => void;
   // Ícono del placeholder de imagen.
@@ -54,6 +59,7 @@ export function ProductCard({
   price,
   code,
   cart,
+  maxQuantity,
   onQuantityChange,
   imageIcon = "camera",
   style = ProductCardStyle.DEFAULT,
@@ -64,9 +70,14 @@ export function ProductCard({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(cart?.quantity ?? 0));
 
+  const hasMax = maxQuantity != null && Number.isFinite(maxQuantity);
+  const max = hasMax ? Math.max(0, Math.floor(maxQuantity as number)) : 0;
+  const atMax = hasMax && quantity >= max;
+
   const commitQuantity = () => {
     const parsed = Number.parseInt(draft, 10);
-    const next = Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
+    const raw = Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
+    const next = hasMax ? Math.min(raw, max) : raw;
     setQuantity(next);
     setDraft(String(next));
     setEditing(false);
@@ -177,6 +188,7 @@ export function ProductCard({
             )}
             <Pressable
               onPress={() => {
+                if (atMax) return;
                 const q = quantity + 1;
                 setQuantity(q);
                 setDraft(String(q));
@@ -186,9 +198,11 @@ export function ProductCard({
                 styles.stepperButton,
                 { backgroundColor: ctx.bg.subtle },
                 pressed && styles.stepperButtonPressed,
+                atMax && styles.stepperButtonDisabled,
               ]}
               accessibilityRole="button"
               accessibilityLabel="Aumentar cantidad"
+              accessibilityState={{ disabled: atMax }}
             >
               <Icon name="add" size={16} color={cta1} />
             </Pressable>
@@ -200,12 +214,20 @@ export function ProductCard({
               setDraft("1");
               onQuantityChange?.(1);
             }}
-            style={[styles.addButton, { backgroundColor: ctx.bg.default }]}
+            disabled={hasMax && max <= 0}
+            style={({ pressed }) => [
+              styles.addButton,
+              { backgroundColor: ctx.bg.default },
+              hasMax && max <= 0
+                ? styles.addButtonDisabled
+                : pressed && styles.stepperButtonPressed,
+            ]}
             accessibilityRole="button"
             accessibilityLabel="Añadir al carrito"
+            accessibilityState={{ disabled: hasMax && max <= 0 }}
           >
-            <Icon name="add" size={16} color={cta1} />
-            <Text variant={TextType.Caption} color={cta1}>Añadir</Text>
+            <Icon name="add" size={16} color={hasMax && max <= 0 ? ctx.text.subtle : cta1} />
+            <Text variant={TextType.Caption} color={hasMax && max <= 0 ? ctx.text.subtle : cta1}>Añadir</Text>
           </Pressable>
           )}
         </View>
@@ -293,6 +315,9 @@ const styles = StyleSheet.create({
   stepperButtonPressed: {
     opacity: 0.6,
   },
+  stepperButtonDisabled: {
+    opacity: 0.35,
+  },
   addButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -300,6 +325,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.space3,
     paddingVertical: space.space2,
     borderRadius: 999,
+  },
+  addButtonDisabled: {
+    opacity: 0.5,
   },
   quantity: {
     minWidth: 32,

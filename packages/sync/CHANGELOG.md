@@ -1,5 +1,20 @@
 # @william-callao/antonella-sync
 
+## 0.1.1
+
+### Patch Changes
+
+- `core/transport` (`SyncHint` + `createHttpSyncTransport`): el transporte ahora
+  puede enviar `store_id` en el query de `GET /sync/changes`. Se omite cuando el
+  hint no lo trae (dominios tenant-level no cambian). Habilita el pull del dominio
+  `stock` (scoped por sucursal) sin tocar el resto del contrato.
+- `core/runtime` (`createSyncRuntime`): durante un switch de tenant, la sesión
+  cerrada ya no queda expuesta en el snapshot mientras se abre la nueva. Las
+  lecturas local-first podían alcanzar la db ya cerrada y `prepareAsync` sobre el
+  handle nativo inválido explotaba con NullPointerException. Ahora la ventana del
+  switch expone `session:null` y los consumidores caen al HTTP (la data local del
+  tenant saliente ya se limpia vía `cleanData`).
+
 ## 0.1.0
 
 ### Minor Changes

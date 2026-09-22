@@ -147,6 +147,8 @@ class Harness {
   readonly sessions: FakeSession[] = [];
   failOpens = false;
   allowSessionsAfter: string | null = null;
+  /** Gate opcional: si está seteado, `openSession` espera antes de abrir. */
+  openGate: Promise<void> | null = null;
   runtime = createSyncRuntime(this.config());
 
   private config(): SyncRuntimeConfig {
@@ -159,6 +161,7 @@ class Harness {
       pollIntervalMs: 100,
       async openSession(tenant: string): Promise<RuntimeSession> {
         if (harness.failOpens) throw new Error("open failed");
+        if (harness.openGate) await harness.openGate;
         const session = new FakeSession();
         harness.opened.push(tenant);
         harness.sessions.push(session);
@@ -223,6 +226,35 @@ describe("createSyncRuntime", () => {
     expect(h.opened).toEqual(["t1", "t2"]);
     expect(h.closed[0]).toEqual({ tenant: "t1", cleanData: true });
     expect(h.queryCache.clearCalls).toBeGreaterThanOrEqual(1);
+    expect(h.runtime.getSnapshot().tenantId).toBe("t2");
+  });
+
+  it("durante un switch la sesión cerrada NO queda expuesta mientras se abre la nueva", async () => {
+    const h = new Harness();
+    h.identity.signIn("t1");
+    h.runtime.start();
+    await vi.waitFor(() => expect(h.sessions.length).toBe(1));
+
+    // Bloqueo la apertura de la sesión nueva para inspeccionar la ventana del
+    // switch: la db de t1 ya está cerrada, pero la de t2 todavía no existe.
+    let releaseOpen: () => void = () => {};
+    h.openGate = new Promise<void>((resolve) => {
+      releaseOpen = resolve;
+    });
+
+    h.identity.signIn("t2");
+    h.runtime.syncIdentity();
+
+    // La db de t1 se cerró (close registrado) y la nueva sesión está bloqueada:
+    // la sesión con db cerrada debe HABER SALIDO del snapshot — una lectura que
+    // la alcanzara reventaría `prepareAsync` con NPE sobre el handle nativo.
+    await vi.waitFor(() => expect(h.runtime.getSnapshot().session).toBeNull());
+    expect(h.runtime.getSnapshot().tenantId).toBeNull();
+    expect(h.sessions.length).toBe(1);
+    expect(h.closed).toContainEqual({ tenant: "t1", cleanData: true });
+
+    releaseOpen();
+    await vi.waitFor(() => expect(h.sessions.length).toBe(2));
     expect(h.runtime.getSnapshot().tenantId).toBe("t2");
   });
 
