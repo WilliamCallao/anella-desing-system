@@ -95,7 +95,10 @@ export function Modal({
           <ScrollView
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={[styles.scrollContent, actions && styles.scrollContentCompact]}
+            contentContainerStyle={[
+              styles.scrollContent,
+              actions ? styles.scrollContentCompact : undefined,
+            ]}
           >
             {controller.contentReady ? children : <View style={styles.deferredPlaceholder} />}
           </ScrollView>

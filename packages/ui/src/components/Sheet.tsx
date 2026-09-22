@@ -92,7 +92,11 @@ export function Sheet({
             bounces={false}
             keyboardShouldPersistTaps="handled"
             onScroll={controller.scrollHandler}
-            contentContainerStyle={[styles.content, actions && styles.contentCompact, contentStyle]}
+            contentContainerStyle={[
+              styles.content,
+              actions ? styles.contentCompact : undefined,
+              contentStyle,
+            ]}
           >
             {controller.contentReady ? children : <View style={styles.deferredPlaceholder} />}
           </Animated.ScrollView>
