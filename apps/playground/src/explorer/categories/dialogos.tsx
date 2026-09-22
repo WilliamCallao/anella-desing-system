@@ -3,11 +3,10 @@ import { StyleSheet, View } from "react-native";
 import {
   AppBottomSheet,
   AppButton,
-  AppDialogMode,
-  AppResponsiveDialog,
   Card,
   OptionListItem,
   OptionListItemVariant,
+  Sheet,
   Text,
 } from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
@@ -15,37 +14,39 @@ import { demoStyles } from "./shared";
 import { palette, spacing } from "@william-callao/antonella-theme";
 import { TransitionView } from "@william-callao/antonella-animations";
 
-function ResponsiveDialogDemo() {
+function SheetDemo() {
   const [open, setOpen] = useState(false);
   return (
     <View style={demoStyles.gap}>
-      <AppButton label="Abrir diálogo responsivo" variant="ghost" onPress={() => setOpen(true)} />
-      <AppResponsiveDialog
+      <AppButton label="Abrir sheet" variant="ghost" onPress={() => setOpen(true)} />
+      <Sheet
         visible={open}
         onClose={() => setOpen(false)}
-        title="Diálogo responsivo"
-        caption="En celular abre como BottomSheet; en tablet como Modal centrado. Se cierra tocando afuera o con atrás."
+        icon="chatbubble"
+        title="Sheet"
+        caption="En celular abre como sheet con header; se cierra tocando afuera o con atrás."
       >
-        <Text variant="body">El mismo código sirve para ambas resoluciones.</Text>
-      </AppResponsiveDialog>
+        <Text variant="body">Incluye header con icono, título y caption, y zona de acciones fija.</Text>
+      </Sheet>
     </View>
   );
 }
 
-function ResponsiveDialogRequiredDemo() {
+function SheetRequiredDemo() {
   const [open, setOpen] = useState(false);
   return (
     <View style={demoStyles.gap}>
-      <AppButton label="Abrir diálogo no dismissable" variant="ghost" onPress={() => setOpen(true)} />
-      <AppResponsiveDialog
+      <AppButton label="Abrir sheet no dismissable" variant="ghost" onPress={() => setOpen(true)} />
+      <Sheet
         visible={open}
         onClose={() => setOpen(false)}
-        mode={AppDialogMode.Required}
-        title="Diálogo no dismissable"
+        dismissible={false}
+        icon="alert-circle"
+        title="Sheet no dismissable"
         caption="No se cierra tocando afuera ni con atrás; solo con la acción del contenido."
       >
-        <AppButton label="Cerrar diálogo" onPress={() => setOpen(false)} />
-      </AppResponsiveDialog>
+        <AppButton label="Cerrar sheet" onPress={() => setOpen(false)} />
+      </Sheet>
     </View>
   );
 }
@@ -170,12 +171,12 @@ export const dialogos: ComponentCategory = {
   icon: "chatbubble",
   components: [
     {
-      id: "app-responsive-dialog",
-      name: "AppResponsiveDialog",
-      description: "Diálogo responsivo: BottomSheet en celular, Modal centrado en tablet. Un solo componente.",
+      id: "sheet",
+      name: "Sheet",
+      description: "Sheet con header (icono, título, caption) y zona de acciones fija.",
       variants: [
-        { id: "open", label: "Abrir", render: () => <ResponsiveDialogDemo /> },
-        { id: "required", label: "No dismissable", render: () => <ResponsiveDialogRequiredDemo /> },
+        { id: "open", label: "Abrir", render: () => <SheetDemo /> },
+        { id: "required", label: "No dismissable", render: () => <SheetRequiredDemo /> },
       ],
     },
     {

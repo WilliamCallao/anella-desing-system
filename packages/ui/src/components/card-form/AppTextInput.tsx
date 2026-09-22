@@ -18,7 +18,9 @@ const SINGLE_LINE_HEIGHT = 18;
 export type AppTextInputProps = AppInputProps & {
   type?: "text";
   value: string;
-  onChangeText: (value: string) => void;
+  /** Opcional: los campos de solo lectura (readOnly u onPress) completados por
+   *  escaneo no necesitan proveer un handler de texto. */
+  onChangeText?: (value: string) => void;
   placeholder?: string;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
   keyboardType?: KeyboardTypeOptions;
