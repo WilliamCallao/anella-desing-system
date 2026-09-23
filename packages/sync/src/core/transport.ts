@@ -8,12 +8,16 @@ export type SyncDomain = string;
  * - `domain` — dominio syncable.
  * - `since` — cursor a partir del cual traer cambios; `null`/`undefined` =
  *   primera sincronización (el gateway asume `since = epoch`).
+ * - `storeId` — sucursal activa del scope; SOLO aplica al dominio `stock`
+ *   (el gateway lo rechaza cuando no corresponde). Opcional: omitir para los
+ *   dominios tenant-level.
  * - `pageSize` — RESERVADO para fases futuras. v1 NO lo transmite: la app usa
  *   el default del gateway (`SYNC_PAGE_SIZE = 100`).
  */
 export interface SyncHint {
   domain: SyncDomain;
   since?: string | null;
+  storeId?: string;
   pageSize?: number;
 }
 
@@ -53,12 +57,13 @@ export type SyncRequest = <T>(opts: SyncRequestOptions) => Promise<T>;
 export const SYNC_CHANGES_PATH = "/sync/changes";
 
 /**
- * Transporte HTTP del SyncEngine: envía `GET {path}?domain=…&since=…` y tipa la
- * respuesta como `SyncPage<T>`. `since` se omite cuando es `null`/`undefined`, y
- * NUNCA se envía `page_size` (v1 usa el default 100 del gateway). Los errores de
- * red/HTTP se propagan tal cual (no se envuelven ni transforman). El wire llega
- * DEL GATEWAY con los arrays ya presentes; `items`/`deleted_ids` null se
- * normalizan a `[]` sin tapar el guard de contrato del engine.
+ * Transporte HTTP del SyncEngine: envía `GET {path}?domain=…&since=…&store_id=…`
+ * y tipa la respuesta como `SyncPage<T>`. `since` se omite cuando es
+ * `null`/`undefined`, `store_id` cuando está vacío, y NUNCA se envía `page_size`
+ * (v1 usa el default 100 del gateway). Los errores de red/HTTP se propagan tal
+ * cual (no se envuelven ni transforman). El wire llega DEL GATEWAY con los arrays
+ * ya presentes; `items`/`deleted_ids` null se normalizan a `[]` sin tapar el
+ * guard de contrato del engine.
  */
 export function createHttpSyncTransport(
   request: SyncRequest,
@@ -70,9 +75,11 @@ export function createHttpSyncTransport(
     async getChanges<T>(hint: SyncHint): Promise<SyncPage<T>> {
       const query: SyncRequestOptions["query"] = { domain: hint.domain };
       if (hint.since != null) query.since = hint.since;
+      if (hint.storeId) query.store_id = hint.storeId;
       logs?.debug?.("sync: GET /sync/changes", {
         domain: hint.domain,
         since: hint.since ?? "bootstrap",
+        storeId: hint.storeId ?? undefined,
       });
       const raw = await request<SyncPage<T>>({ method: "GET", path: SYNC_CHANGES_PATH, query });
       const items = raw.items ?? [];
