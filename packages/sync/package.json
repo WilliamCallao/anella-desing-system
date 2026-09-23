@@ -1,6 +1,6 @@
 {
   "name": "@william-callao/antonella-sync",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Mecanismo de sincronización offline-first reutilizable: transporte, campana, estado de sync, helpers SQL genéricos y migración del esquema meta.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

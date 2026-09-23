@@ -1,5 +1,14 @@
 # @william-callao/antonella-ui
 
+## 1.0.5
+
+### Added
+
+- `ProductCard`: prop opcional `maxQuantity` — topa el stepper (`+` deshabilitado al
+  alcanzarlo), las ediciones manuales (clamp en commit) y deshabilita el botón
+  "Añadir" con máximo 0. Se usa en la venta rápida para no exceder el stock
+  disponible. Retrocompatible: sin el prop, el card acepta cualquier cantidad.
+
 ## 1.0.4
 
 ### Patch Changes
