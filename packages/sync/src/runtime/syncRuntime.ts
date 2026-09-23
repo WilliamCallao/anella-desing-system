@@ -185,20 +185,22 @@ export function createSyncRuntime(config: SyncRuntimeConfig): SyncRuntime {
   }
 
   /**
-   * Cierra la sesión viva (engine + db) y limpia referencias. `keepState` true
-   * (switch de tenant): deja el estado apuntando a la sesión cerrada hasta que
-   * la nueva asignación lo reemplace (evita el destello `session:null` en medio
-   * del switch). `cleanData` true (signOut o switch): borra los datos LOCALES del
-   * tenant saliente antes de cerrar (Task 8). Nunca lanza.
+   * Cierra la sesión viva (engine + db) y limpia referencias. La sesión queda
+   * SIEMPRE fuera del snapshot apenas su db fue cerrada: nunca se expone a
+   * lecturas un handle ya cerrado (`prepareAsync` sobre SQLite cerrado revienta
+   * con NullPointerException). En el switch, la ventana entre el cierre y la
+   * apertura de la nueva sesión expone `session:null` y los consumidores caen al
+   * HTTP (correcto: la data local del tenant saliente se borró con `cleanData`).
+   * `cleanData` true (signOut o switch): borra los datos LOCALES del tenant
+   * saliente antes de cerrar (Task 8). Nunca lanza.
    */
-  async function closeLive(opts?: { keepState?: boolean; cleanData?: boolean }): Promise<void> {
+  async function closeLive(opts?: { cleanData?: boolean }): Promise<void> {
     const live = sessionRef;
     const liveTenant = tenantRef;
     log.i("sync: cerrando sesión viva", {
       tag: TAG,
       tenant: liveTenant ?? null,
       cleanData: opts?.cleanData ?? false,
-      keepState: opts?.keepState ?? false,
     });
     if (live) {
       try {
@@ -211,7 +213,7 @@ export function createSyncRuntime(config: SyncRuntimeConfig): SyncRuntime {
       sessionRef = null;
       tenantRef = null;
       openRetryRef = null;
-      if (!opts?.keepState) emit();
+      emit();
     }
   }
 
@@ -224,13 +226,14 @@ export function createSyncRuntime(config: SyncRuntimeConfig): SyncRuntime {
   async function openFor(tenant: string): Promise<void> {
     const gen = generationRef;
     if (sessionRef && tenantRef !== tenant) {
-      // Serializa el switch: cierro la sesión vieja ANTES de abrir la nueva;
-      // `keepState` evita el destello session:null. `cleanData` borra los datos
-      // locales del tenant saliente y `queryCache.clear` evita que keys no
-      // scoped por tenant arrastren estado del tenant anterior.
+      // Serializa el switch: cierro la sesión vieja ANTES de abrir la nueva; la
+      // sesión cerrada sale del snapshot (lecturas caen al HTTP mientras llega
+      // la nueva) y `cleanData` borra los datos locales del tenant saliente.
+      // `queryCache.clear` evita que keys no scoped por tenant arrastren estado
+      // del tenant anterior.
       log.i("sync: switch de tenant", { tag: TAG, de: tenantRef, a: tenant });
       queryCache.clear();
-      await closeLive({ keepState: true, cleanData: true });
+      await closeLive({ cleanData: true });
     }
     let next: RuntimeSession | null = null;
     try {
