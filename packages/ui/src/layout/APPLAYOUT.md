@@ -116,7 +116,7 @@ Si ningún preset te sirve, definí tu propio `LayoutState`. Cada sección acept
 ```ts
 type SectionBehavior = {
   visible?: boolean;                 // default true
-  height?: "content" | "fill" | "fillRest" | "third" | number;
+  height?: "content" | "fill" | "fillRest" | "minFillRest" | "third" | number;
   scroll?: boolean;                  // scroll interno (ScrollView propio)
   sticky?: boolean;                  // se queda fija
   fadeOnScroll?: boolean;            // se desvanece al scroll de página
@@ -149,6 +149,8 @@ const custom: LayoutState = {
 - `"content"` → alto = contenido medido (crece dinámicamente con el contenido).
 - `"fill"` → alto = `H` (llena la pantalla).
 - `"fillRest"` → alto = `H - altoNatural(restsOn)` (rellena lo que sobra).
+- `"minFillRest"` → alto = `max(altoNatural, H - altoNatural(restsOn))` (rellena lo
+  que sobra, pero crece con el contenido si lo supera).
 - `"third"` → alto = `H / 3`.
 - `number` → alto fijo en px.
 
@@ -156,6 +158,80 @@ Las secciones de tipo `"content"` o `"fillRest"` **miden su alto natural automá
 y crecen/reencogen cuando el contenido cambia (después de asentar la transición).
 
 ---
+
+## 5b. Modelo de medición y ciclo de ruta (robusto)
+
+El motor no usa heurísticas de valor para decidir si una medición es válida. La
+robustez viene de la estructura:
+
+1. **Proxy de medición no restringido.** Cada sección dinámica
+   (`content`/`minFillRest`) se mide con un proxy offscreen de alto automático
+   (`position:absolute`, `opacity:0`, `pointerEvents:none`). Al no fijarle alto,
+   el proxy reporta siempre la **altura intrínseca real** del contenido: el
+   artefacto clásico de un árbol `flex:1` que medía ~32px de padding en un
+   contenedor de alto fijo es estructuralmente imposible. Por eso **no existe un
+   guard de umbral** que descarte mediciones (ese guard era la causa de que un
+   header legítimamente más bajo al navegar quedara "pegado" en su alto anterior).
+
+2. **Snapshot de naturales por ruta.** Los naturales medidos se cachean por
+   `route.name`. Al volver a una ruta ya vista se siembran sus naturales, de modo
+   que el primer frame se pinta con el alto correcto (sin "header distinto al
+   volver"). Los cambios de contenido dentro de la misma ruta actualizan el
+   snapshot de esa ruta. Una ruta **nunca vista** se siembra con un neutro
+   derivado de la ventana (`initialNaturals(H)`) — **jamás con los naturales de
+   la ruta anterior**: heredar el alto de otra pantalla es un "vestigio" que
+   dejaba al motor convencido de seguir en la pantalla grande aunque ya estuviera
+   en la chica (el caso "vuelvo a la categoría y creció un poco").
+
+3. **Medición que resiste hijos que animan su alto.** El proxy vive **fuera** del
+   wrapper que recorta (`overflow:hidden`) durante las transiciones, así el
+   recorte nunca "capa" la altura medida. Además, como un descendiente puede
+   animar su propio alto en el hilo UI (`TransitionView` arranca en 0 y crece),
+   el `onLayout` de JS puede quedar con un frame intermedio y no volver a
+   dispararse en iOS; por eso el motor re-lee con `measure()` (cada 150 ms) hasta
+   que la altura queda **estable** (dos lecturas iguales) o pasa el tope de 4 s.
+   Nunca se mide un alto a medio animar de forma permanente.
+
+4. **Reset de scroll por ruta.** El `ScrollView` de página se reutiliza entre
+   rutas; su offset se resetea al tope **solo cuando cambia `route.name`**. Los
+   cambios intra-ruta (categorías ↔ subcategorías, filtros de búsqueda) preservan
+   la posición.
+
+5. **Fondo del page = color del cuerpo/mid.** `selectPageBackground` devuelve el
+   color del `mid` (el header/cuerpo, claro) cuando está visible, y solo cae al
+   color de la última sección visible cuando no hay `mid` (patrón full-bottom,
+   todo hoja). Así, durante los morphs, el hueco que se abre entre el header
+   claro y la hoja asoma el color claro del header y no un corte oscuro. El body
+   no se sobredimensiona con colas artificiales (`BODY_TAIL`) ni overscans.
+
+> **Contrato de slots dinámicos:** el contenido de una sección `content`/
+> `minFillRest` se monta **dos veces** (proxy + visible). Debe ser puro e
+> idempotente: sin efectos destructivos al montar. Cuando las pantallas
+> pre-crean los elementos de slot a nivel de módulo (referencia estable), React
+> hace bailout de los re-renders y el costo es un único montaje doble.
+
+La matemática del motor (`computeSectionTargets`, `selectPageBackground`,
+`seedNaturals`, `shouldResetScroll`, …) vive aislada y sin dependencias de
+`react-native` en `layoutMath.ts`, y está cubierta por tests con vitest
+(`layoutMath.test.ts`).
+
+---
+
+## 5c. Instrumentación (`layoutDebug`)
+
+El motor emite eventos estructurados (`seed`, `measure`, `apply`, `route`,
+`pageScroll`) con la ruta, la sección, la altura medida, los naturales y los
+targets derivados. **No cambia el comportamiento: solo observa.**
+
+- Se activa con `EXPO_PUBLIC_LAYOUT_DEBUG=1` (requiere reiniciar Metro) o en
+  runtime con `__ANTONELLA_LAYOUT_DEBUG__(true)`; también con la prop
+  `debug` de `<AppLayout>`.
+- El buffer (últimos 400 eventos) **siempre** se llena. Para volcarlo:
+  `__ANTONELLA_LAYOUT_DUMP__()` (imprime y devuelve) o el array crudo
+  `__ANTONELLA_LAYOUT_LOG__`.
+
+---
+
 
 ## 6. Ejemplo completo
 
@@ -211,7 +287,7 @@ const gallery: AppRoute = {
 };
 
 export function MainApp() {
-  return <AppLayout initialRoute={home} debug />;
+  return <AppLayout initialRoute={home} animateTransitions />;
 }
 ```
 
@@ -219,11 +295,12 @@ export function MainApp() {
 
 ## 7. Props de `AppLayout`
 
-| Prop             | Tipo      | Default | Descripción                                          |
-|------------------|-----------|---------|------------------------------------------------------|
-| `initialRoute`   | `AppRoute`| —       | Ruta inicial (raíz de la pila).                      |
-| `showBackButton` | `boolean` | `true`  | Muestra el botón de volver global cuando `canGoBack`.|
-| `debug`          | `boolean` | `false` | Logs de transición en consola (`[APP] transition`).  |
+| Prop                 | Tipo                    | Default    | Descripción                                                                 |
+|----------------------|-------------------------|------------|------------------------------------------------------------------------------|
+| `initialRoute`       | `AppRoute`              | —          | Ruta inicial (raíz de la pila).                                              |
+| `showBackButton`     | `boolean`               | `true`     | Muestra el botón de volver global cuando `canGoBack`.                        |
+| `animateTransitions` | `boolean`               | `false`    | Anima transiciones de estado con layout transitions (morph de altura).       |
+| `contentReveal`      | `"always"` \| `"after"` | `"always"` | Cuándo revelar el contenido visible durante una transición animada.          |
 
 ---
 

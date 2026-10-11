@@ -8,7 +8,9 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "publishConfig": {
     "access": "public"
@@ -17,7 +19,9 @@
     "dist"
   ],
   "devDependencies": {
-    "expo-camera": "~57.0.5"
+    "expo-camera": "~57.0.5",
+    "vite": "^8.0.0",
+    "vitest": "^5.0.0"
   },
   "dependencies": {
     "@william-callao/antonella-theme": "^1.0.0",
