@@ -5,6 +5,7 @@ export * from "./MainLayout";
 export * from "./AppLayout";
 export * from "./AppShell";
 export * from "./Divisor";
+export * from "./layoutDebug";
 export * from "./composition";
 export * from "./transitions";
 export * from "./types";
