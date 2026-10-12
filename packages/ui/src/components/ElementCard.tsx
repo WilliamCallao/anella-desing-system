@@ -27,6 +27,14 @@ export type ElementCardProps = {
   trailing?: IconName;
   /** Llamado al presionar el ícono de la derecha. Si no se pasa, el ícono no es táctil. */
   onTrailingPress?: () => void;
+  /**
+   * Etiqueta de accesibilidad del ícono de la derecha. Obligatoria cuando hay
+   * `onTrailingPress`: sin ella el botón queda con `content-desc=""`, invisible
+   * para lectores de pantalla y para los selectores de tests E2E.
+   */
+  trailingLabel?: string;
+  /** Alias para compatibilidad con algunos llamadores. */
+  trailingAccessibilityLabel?: string;
   /** Elemento oculto/inactivo: atenúa la card. */
   dimmed?: boolean;
   style?: ElementCardStyle;
@@ -61,6 +69,8 @@ export function ElementCard({
   onPress,
   trailing = "chevron-forward",
   onTrailingPress,
+  trailingLabel,
+  trailingAccessibilityLabel,
   dimmed = false,
   style = ElementCardStyle.DEFAULT,
   containerStyle,
@@ -105,11 +115,12 @@ export function ElementCard({
           </Text>
         ) : null}
       </View>
-      {onTrailingPress ? (
+       {onTrailingPress ? (
         <Pressable
           onPress={onTrailingPress}
           hitSlop={8}
           accessibilityRole="button"
+          accessibilityLabel={trailingLabel ?? trailingAccessibilityLabel}
           style={styles.trailingTouch}
         >
           <Icon name={trailing} size={18} color={ctx.icon.subtle} />
