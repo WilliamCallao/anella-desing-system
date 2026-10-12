@@ -49,7 +49,14 @@ export function SheetOverlay({
   }, [embedded, mounted, dismissible, onClose]);
 
   const overlay = (
-    <View style={styles.container} pointerEvents={embedded ? "box-none" : undefined}>
+    <View
+      style={styles.container}
+      pointerEvents={embedded ? "box-none" : undefined}
+      // En embedded el host (expo-router transparentModal) monta el overlay como
+      // hermano de la pantalla de abajo: marcarlo como modal hace que VoiceOver
+      // ignore esa pantalla. Sin RNModal no hay otra aislación (APP-006).
+      accessibilityViewIsModal={embedded}
+    >
       {!embedded && (
         <Pressable
           onPress={dismissible ? onClose : undefined}

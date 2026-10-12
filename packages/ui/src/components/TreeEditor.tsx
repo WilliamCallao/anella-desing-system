@@ -668,6 +668,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: space.space1,
     minHeight: 44,
+    // No dejar que el CTA de alta se comprima a altura cero cuando el árbol es
+    // largo y el contenedor queda acotado (APP-002: "Agregar raíz" degeneraba a
+    // bounds con y1 == y2 y dejaba de ser accionable).
+    flexShrink: 0,
     paddingHorizontal: space.space2,
     borderRadius: radius.sm,
   },

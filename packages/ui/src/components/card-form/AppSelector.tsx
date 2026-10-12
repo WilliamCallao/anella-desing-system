@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Animated, Easing, Keyboard, StyleSheet, TouchableOpacity, View } from "react-native";
 import { appInputCard, cta1, space, spacing, text, TextType } from "@william-callao/antonella-theme";
 import { Icon } from "../Icon";
 import { Text } from "../text/Text";
@@ -73,6 +73,10 @@ export function AppSelector({
 
   const toggle = () => {
     if (disabled) return;
+    // Con el teclado abierto la fila (y sus opciones inline) puede quedar fuera
+    // del viewport del sheet; cerrarlo libera el espacio antes de expandir
+    // (APP-001: el primer tap lo consumía el IME).
+    if (!open) Keyboard.dismiss();
     setOpen((o) => !o);
   };
 
