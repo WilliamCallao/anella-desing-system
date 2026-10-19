@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Keyboard, StyleSheet, TouchableOpacity, View } from "react-native";
-import { appInputCard, cta1, space, spacing, text, TextType } from "@william-callao/antonella-theme";
+import { appInput, appInputCard, cta1, space, spacing, text, TextType } from "@william-callao/antonella-theme";
 import { Icon } from "../Icon";
 import { Text } from "../text/Text";
 import type { AppInputProps } from "./AppInput";
@@ -26,6 +26,7 @@ const ANIM_DURATION = 220;
 export function AppSelector({
   label,
   labelWidth,
+  error,
   value,
   onChange,
   options,
@@ -115,6 +116,12 @@ export function AppSelector({
         </Animated.View>
       </TouchableOpacity>
 
+      {error ? (
+        <Text variant={TextType.Caption} color={appInput.error} style={styles.error}>
+          {error}
+        </Text>
+      ) : null}
+
       <Animated.View style={{ height, overflow: "hidden" }}>
         <Animated.View
           style={{ opacity: contentOpacity }}
@@ -182,6 +189,12 @@ const styles = StyleSheet.create({
   optionSeparated: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: appInputCard.separator,
+  },
+  error: {
+    marginTop: -spacing.sm,
+    paddingHorizontal: space.space4,
+    paddingBottom: spacing.sm,
+    textAlign: "right",
   },
   optionText: {
     flex: 1,

@@ -1,5 +1,18 @@
 # @william-callao/antonella-ui
 
+## 1.2.0
+
+### Added
+
+- `TreeEditor`: prop opcional `nodeActions` (`"menu" | "longPress"`, default `"menu"`).
+  Con `"longPress"` no se renderiza el botón de tres puntos por fila. En ambos modos una
+  pulsación larga sobre el nodo abre el menú de acciones; la fila expone además una acción
+  accesible ("Acciones") para lectores de pantalla. Retrocompatible: sin el prop, el
+  componente se comporta igual que antes.
+- `TreeEditor`: prop opcional `onPressNode`, invocado en el toque corto de un nodo hoja
+  (los grupos siguen expandiendo/colapsando). Permite abrir un detalle de solo lectura sin
+  tocar la gestualidad del árbol.
+
 ## 1.0.5
 
 ### Added

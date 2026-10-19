@@ -4,11 +4,12 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  View,
   type KeyboardTypeOptions,
   type NativeSyntheticEvent,
   type TextInputContentSizeChangeEventData,
 } from "react-native";
-import { spacing, text, texts, TextType, space } from "@william-callao/antonella-theme";
+import { appInput, spacing, text, texts, TextType, space } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
 import { Icon, type IconName } from "../Icon";
 import type { AppInputProps } from "./AppInput";
@@ -44,6 +45,7 @@ export type AppTextInputProps = AppInputProps & {
 export function AppTextInput({
   label,
   labelWidth,
+  error,
   value,
   onChangeText,
   placeholder,
@@ -75,70 +77,80 @@ export function AppTextInput({
   };
 
   return (
-    <TouchableOpacity
-      style={[
-        styles.row,
-        inputHeight != null && inputHeight > SINGLE_LINE_HEIGHT && styles.rowGrown,
-        !editable && styles.rowDisabled,
-      ]}
-      onPress={() => (onPressOverride ? onPressOverride() : focus())}
-      disabled={!editable && !readOnly}
-      activeOpacity={1}
-    >
-      <Text
-        variant={TextType.Label}
-        numberOfLines={1}
-        style={[styles.label, labelWidth != null && { width: labelWidth }]}
-      >
-        {label}
-      </Text>
-      <TextInput
-        ref={inputRef}
+    <View style={styles.wrapper}>
+      <TouchableOpacity
         style={[
-          styles.value,
-          {
-            fontSize: texts.caption.fontSize,
-            lineHeight: texts.caption.lineHeight,
-            color: text.default,
-          },
-          inputHeight != null && {
-            height: Math.max(inputHeight, SINGLE_LINE_HEIGHT),
-          },
+          styles.row,
+          inputHeight != null && inputHeight > SINGLE_LINE_HEIGHT && styles.rowGrown,
+          !editable && styles.rowDisabled,
         ]}
-        value={value}
-        onChangeText={onChangeText}
-        onContentSizeChange={handleContentSizeChange}
-        onSubmitEditing={handleSubmitEditing}
-        placeholder={placeholder}
-        placeholderTextColor={texts.placeholder.color}
-        autoCapitalize={autoCapitalize}
-        keyboardType={keyboardType}
-        maxLength={maxLength}
-        editable={canType}
-        selectionColor={text.default}
-        underlineColorAndroid="transparent"
-        multiline
-        scrollEnabled={false}
-        textAlignVertical="top"
-        blurOnSubmit
-        submitBehavior="blurAndSubmit"
-      />
-      {trailingAction ? (
-        <Pressable
-          onPress={trailingAction.onPress}
-          hitSlop={8}
-          style={styles.trailingAction}
-          accessibilityRole="button"
-          accessibilityLabel={trailingAction.accessibilityLabel}
+        onPress={() => (onPressOverride ? onPressOverride() : focus())}
+        disabled={!editable && !readOnly}
+        activeOpacity={1}
+      >
+        <Text
+          variant={TextType.Label}
+          numberOfLines={1}
+          style={[styles.label, labelWidth != null && { width: labelWidth }]}
         >
-          <Icon name={trailingAction.icon} size={20} color={text.secondary} />
-        </Pressable>
+          {label}
+        </Text>
+        <TextInput
+          ref={inputRef}
+          style={[
+            styles.value,
+            {
+              fontSize: texts.caption.fontSize,
+              lineHeight: texts.caption.lineHeight,
+              color: text.default,
+            },
+            inputHeight != null && {
+              height: Math.max(inputHeight, SINGLE_LINE_HEIGHT),
+            },
+          ]}
+          value={value}
+          onChangeText={onChangeText}
+          onContentSizeChange={handleContentSizeChange}
+          onSubmitEditing={handleSubmitEditing}
+          placeholder={placeholder}
+          placeholderTextColor={texts.placeholder.color}
+          autoCapitalize={autoCapitalize}
+          keyboardType={keyboardType}
+          maxLength={maxLength}
+          editable={canType}
+          selectionColor={text.default}
+          underlineColorAndroid="transparent"
+          multiline
+          scrollEnabled={false}
+          textAlignVertical="top"
+          blurOnSubmit
+          submitBehavior="blurAndSubmit"
+        />
+        {trailingAction ? (
+          <Pressable
+            onPress={trailingAction.onPress}
+            hitSlop={8}
+            style={styles.trailingAction}
+            accessibilityRole="button"
+            accessibilityLabel={trailingAction.accessibilityLabel}
+          >
+            <Icon name={trailingAction.icon} size={20} color={text.secondary} />
+          </Pressable>
+        ) : null}
+      </TouchableOpacity>
+      {error ? (
+        <Text variant={TextType.Caption} color={appInput.error} style={styles.error}>
+          {error}
+        </Text>
       ) : null}
-    </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    alignItems: "stretch",
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -167,5 +179,10 @@ const styles = StyleSheet.create({
   trailingAction: {
     marginLeft: spacing.xs,
     justifyContent: "center",
+  },
+  error: {
+    marginTop: spacing.xs,
+    paddingHorizontal: space.space4,
+    textAlign: "right",
   },
 });

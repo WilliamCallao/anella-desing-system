@@ -131,6 +131,14 @@ export type TreeEditorProps = {
   onRequestEdit?: (node: TreeNode) => void;
   /** Called when the user confirms deletion of a node. When provided, the built-in removal is bypassed (the node is NOT deleted). */
   onRequestDelete?: (node: TreeNode) => void;
+  /**
+   * Menú de acciones en modo edición: `"menu"` (default) muestra el botón de
+   * tres puntos por fila; `"longPress"` lo oculta. En ambos casos una pulsación
+   * larga sobre la fila abre las acciones.
+   */
+  nodeActions?: "menu" | "longPress";
+  /** Toque corto en una hoja (nodo sin hijas). Los grupos siguen expandiendo/colapsando. */
+  onPressNode?: (node: TreeNode) => void;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -258,8 +266,10 @@ const NODE_ICON_SIZE = 18;
 // (un número siempre es comparable; un booleano sucio se queda en true).
 type TreeRenderContext = {
   isEdit: boolean;
+  actionsOnLongPress: boolean;
   onToggle: (id: string) => void;
   onOpenActions: (id: string) => void;
+  onPressNode?: (node: TreeNode) => void;
   renderNode?: (node: TreeNode, defaultContent: React.ReactNode) => React.ReactNode;
   vt: VariantTokens;
   getCollapsed: () => Record<string, boolean>;
@@ -452,13 +462,31 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
     </View>
   );
 
+  // Un nodo es interactivo si expande/colapsa, si abre su detalle (hoja con
+  // `onPressNode`) o si expone acciones (menú o pulsación larga).
+  const canToggle = hasChildren;
+  const canOpenDetail = !hasChildren && ctx.onPressNode != null;
+  const canOpenActions = ctx.isEdit;
+  const interactive = canToggle || canOpenDetail || canOpenActions;
+
+  const handlePress = canToggle
+    ? () => ctx.onToggle(node.id)
+    : canOpenDetail
+      ? () => ctx.onPressNode?.(node)
+      : undefined;
+  // La pulsación larga abre acciones en modo edición sin importar el estilo del
+  // menú; el botón de tres puntos se mantiene cuando `nodeActions="menu"`.
+  const handleLongPress = ctx.isEdit ? () => ctx.onOpenActions(node.id) : undefined;
+
   return (
     <>
       <View style={styles.nodeRow}>
         <NodeGutter depth={depth} lineColor={ctx.vt.lineColor} terminal={terminalElbow} />
           <Pressable
-            onPress={hasChildren ? () => ctx.onToggle(node.id) : undefined}
-            disabled={!hasChildren}
+            onPress={handlePress}
+            onLongPress={handleLongPress}
+            delayLongPress={450}
+            disabled={!interactive}
             style={({ pressed }) => [
               styles.nodeCard,
               {
@@ -471,15 +499,30 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
                     : ctx.vt.cardBg,
               },
             ]}
-            accessibilityRole={hasChildren ? "button" : undefined}
+            accessibilityRole={interactive ? "button" : undefined}
             accessibilityState={hasChildren ? { expanded: !isCollapsed } : undefined}
-            accessibilityLabel={hasChildren ? `${isCollapsed ? "Expandir" : "Colapsar"} ${node.name}` : undefined}
+            accessibilityLabel={
+              hasChildren
+                ? `${isCollapsed ? "Expandir" : "Colapsar"} ${node.name}`
+                : canOpenDetail
+                  ? `${node.name}, ver detalle`
+                  : undefined
+            }
+            accessibilityHint={
+              ctx.isEdit ? "Mantené presionado para ver las acciones" : undefined
+            }
+            accessibilityActions={
+              ctx.isEdit ? [{ name: "actions", label: "Acciones" }] : undefined
+            }
+            onAccessibilityAction={(event) => {
+              if (event.nativeEvent.actionName === "actions") ctx.onOpenActions(node.id);
+            }}
           >
             <View style={styles.rowContent}>
               {ctx.renderNode ? ctx.renderNode(node, defaultContent) : defaultContent}
             </View>
           </Pressable>
-          {ctx.isEdit ? (
+          {ctx.isEdit && !ctx.actionsOnLongPress ? (
             <Pressable
               onPress={() => ctx.onOpenActions(node.id)}
               hitSlop={12}
@@ -504,7 +547,7 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
 // Componente
 // ----------------------------------------------------------------
 
-export function TreeEditor({ value, onChange, mode = "view", variant = "default", collapsed: collapsedProp, onCollapsedChange, rootLabel = "Agregar raíz", renderNode, onRequestAdd, onRequestEdit, onRequestDelete, style }: TreeEditorProps) {
+export function TreeEditor({ value, onChange, mode = "view", variant = "default", collapsed: collapsedProp, onCollapsedChange, rootLabel = "Agregar raíz", renderNode, onRequestAdd, onRequestEdit, onRequestDelete, nodeActions = "menu", onPressNode, style }: TreeEditorProps) {
   const [internalCollapsed, setInternalCollapsed] = useState<Record<string, boolean>>({});
   const source = collapsedProp ?? internalCollapsed;
   const needsImplicitInit = value.length > 0 && Object.keys(source).length === 0;
@@ -585,6 +628,7 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
 
   const vt = VARIANT_TOKENS[variant];
   const isEdit = mode === "edit";
+  const actionsOnLongPress = nodeActions === "longPress";
 
   const getCollapsed = useCallback(() => collapsedRef.current, []);
 
@@ -620,14 +664,16 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
   const ctx: TreeRenderContext = useMemo(
     () => ({
       isEdit,
+      actionsOnLongPress,
       onToggle: toggleCollapse,
       onOpenActions,
+      onPressNode,
       renderNode,
       vt,
       getCollapsed,
       getVersion,
     }),
-    [isEdit, toggleCollapse, onOpenActions, renderNode, vt, getCollapsed, getVersion],
+    [isEdit, actionsOnLongPress, toggleCollapse, onOpenActions, onPressNode, renderNode, vt, getCollapsed, getVersion],
   );
 
   return (
