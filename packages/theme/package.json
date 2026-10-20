@@ -1,6 +1,6 @@
 {
   "name": "@william-callao/antonella-theme",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Theme de Antonella: colores, tipografía, spacing y modos claro/oscuro.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

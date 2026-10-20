@@ -1,5 +1,27 @@
 # @william-callao/antonella-ui
 
+## 1.3.0
+
+### Minor Changes
+
+- [`840da33`](https://github.com/WilliamCallao/anella-desing-system/commit/840da33b513dfb90af3c047690526248e3abd00f) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - feat(ui): `AppButton` acepta `loading` — spinner a la derecha del texto
+  
+  - Nueva prop opcional `loading?: boolean`: mientras está activa renderiza un `ActivityIndicator`
+    a la derecha del label (con el color del texto) y marca el botón como no accionable
+    (`accessibilityState.busy`), evitando dobles taps sin grisear el botón.
+  - Compatible hacia atrás: default `false`, sin cambios para los consumidores existentes.
+
+### Patch Changes
+
+- [#29](https://github.com/WilliamCallao/anella-desing-system/pull/29) [`ff8cb40`](https://github.com/WilliamCallao/anella-desing-system/commit/ff8cb4057dba66ec23f4da3a45cb87bf4d7acbe4) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - fix(ui): motor `AppLayout` — medición del alto natural robusta, sin vestigios de altura entre pantallas y fondo del page claro
+  
+  - Se elimina `_withBottomHold` (retención del alto del `bottom` entre rutas) y la siembra con los naturales de la ruta previa.
+  - Proxy de medición fuera del recorte de transición + relecturas con `measure()` hasta estabilizar (no mide alturas "capadas" por animaciones de descendientes).
+  - Instrumentación `layoutDebug` (`EXPO_PUBLIC_LAYOUT_DEBUG=1`, `__ANTONELLA_LAYOUT_DEBUG__(true)`, dump `__ANTONELLA_LAYOUT_DUMP__()`).
+  - Fondo del page = color del cuerpo/`mid` cuando está visible.
+- Updated dependencies [[`f97be82`](https://github.com/WilliamCallao/anella-desing-system/commit/f97be822eaf8902401847cd4bbdcbf06f1dfa1e2)]:
+  - @william-callao/antonella-theme@1.0.1
+
 ## 1.2.0
 
 ### Added
