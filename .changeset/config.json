@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
-  "changelog": ["@changesets/changelog-github", { "repo": "WilliamCallao/desing-system-react-native" }],
+  "changelog": ["@changesets/changelog-github", { "repo": "WilliamCallao/anella-desing-system" }],
   "commit": false,
   "fixed": [],
   "linked": [],

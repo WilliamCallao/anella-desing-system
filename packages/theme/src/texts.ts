@@ -47,15 +47,15 @@ export type TextType = (typeof TextType)[keyof typeof TextType];
  * y puede sobreescribir el color con la prop `color`.
  */
 export const texts = {
-  title: { fontSize: 28, fontWeight: "700", lineHeight: 34, color: text.default },
-  subtitle: { fontSize: 22, fontWeight: "700", lineHeight: 28, color: text.default },
-  heading: { fontSize: 20, fontWeight: "600", lineHeight: 25, color: text.default },
-  bodyBold: { fontSize: 17, fontWeight: "600", lineHeight: 22, color: text.default },
-  body: { fontSize: 17, fontWeight: "400", lineHeight: 22, color: text.default },
-  bodyMedium: { fontSize: 16, fontWeight: "500", lineHeight: 21, color: text.default },
-  label: { fontSize: 15, fontWeight: "600", lineHeight: 20, color: text.default },
-  caption: { fontSize: 13, fontWeight: "400", lineHeight: 18, color: text.secondary },
-  captionMedium: { fontSize: 13, fontWeight: "500", lineHeight: 18, color: text.secondary },
+  title: { fontSize: 28, fontWeight: "700", lineHeight: 33, letterSpacing: -0.6, color: text.default },
+  subtitle: { fontSize: 22, fontWeight: "700", lineHeight: 27, letterSpacing: -0.4, color: text.default },
+  heading: { fontSize: 20, fontWeight: "600", lineHeight: 24, letterSpacing: -0.3, color: text.default },
+  bodyBold: { fontSize: 17, fontWeight: "600", lineHeight: 21, letterSpacing: -0.2, color: text.default },
+  body: { fontSize: 17, fontWeight: "400", lineHeight: 21, letterSpacing: -0.2, color: text.default },
+  bodyMedium: { fontSize: 16, fontWeight: "500", lineHeight: 20, letterSpacing: -0.2, color: text.default },
+  label: { fontSize: 15, fontWeight: "600", lineHeight: 19, letterSpacing: -0.2, color: text.default },
+  caption: { fontSize: 13, fontWeight: "400", lineHeight: 17, letterSpacing: -0.1, color: text.secondary },
+  captionMedium: { fontSize: 13, fontWeight: "500", lineHeight: 17, letterSpacing: -0.1, color: text.secondary },
   overline: {
     fontSize: 11,
     fontWeight: "600",
@@ -64,5 +64,5 @@ export const texts = {
     textTransform: "uppercase",
     color: text.secondary,
   },
-  placeholder: { fontSize: 17, fontWeight: "400", lineHeight: 22, color: text.placeholder },
+  placeholder: { fontSize: 17, fontWeight: "400", lineHeight: 21, letterSpacing: -0.2, color: text.placeholder },
 } as const;
