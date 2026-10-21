@@ -11,7 +11,7 @@
     "build": "turbo build",
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
-    "release": "changeset version",
+    "release": "changeset version && pnpm install --lockfile-only",
     "publish:packages": "changeset publish"
   },
   "devDependencies": {
