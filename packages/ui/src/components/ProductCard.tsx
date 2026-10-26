@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Pressable, StyleSheet, TextInput, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, TextInput, View, type StyleProp, type ViewStyle } from "react-native";
 import { TextType, cta1, lightSemantic, resolveSemantic, space } from "@william-callao/antonella-theme";
 import { Text } from "./text";
 import { Icon } from "./Icon";
+import { TrackedPressable } from "./TrackedPressable";
 import type { IconName } from "./Icon";
 
 // ── Style enum ──────────────────────────────────────────────
@@ -150,13 +151,14 @@ export function ProductCard({
         <View style={styles.column}>
           {quantity >= 1 ? (
           <View style={[styles.stepper, { backgroundColor: ctx.bg.default }]}>
-            <Pressable
+            <TrackedPressable
               onPress={() => {
                 const q = Math.max(0, quantity - 1);
                 setQuantity(q);
                 setDraft(String(q));
                 onQuantityChange?.(q);
               }}
+              tracking={{ component: "ProductCard", label: "Disminuir cantidad", kind: "button", data: { name } }}
               style={({ pressed }) => [
                 styles.stepperButton,
                 { backgroundColor: ctx.bg.subtle },
@@ -166,7 +168,7 @@ export function ProductCard({
               accessibilityLabel="Disminuir cantidad"
             >
               <Text variant={TextType.BodyMedium} color={cta1}>−</Text>
-            </Pressable>
+            </TrackedPressable>
             {editing ? (
               <TextInput
                 style={[styles.quantityInput, { color: ctx.text.default }]}
@@ -180,13 +182,18 @@ export function ProductCard({
                 returnKeyType="done"
               />
             ) : (
-              <Pressable onPress={startEditing} accessibilityRole="button" accessibilityLabel="Editar cantidad">
+              <TrackedPressable
+                onPress={startEditing}
+                tracking={{ component: "ProductCard", label: "Editar cantidad", kind: "button", data: { name, quantity } }}
+                accessibilityRole="button"
+                accessibilityLabel="Editar cantidad"
+              >
                 <Text variant={TextType.BodyMedium} color={ctx.text.default} style={styles.quantity}>
                   {quantity}
                 </Text>
-              </Pressable>
+              </TrackedPressable>
             )}
-            <Pressable
+            <TrackedPressable
               onPress={() => {
                 if (atMax) return;
                 const q = quantity + 1;
@@ -194,6 +201,7 @@ export function ProductCard({
                 setDraft(String(q));
                 onQuantityChange?.(q);
               }}
+              tracking={{ component: "ProductCard", label: "Aumentar cantidad", kind: "button", data: { name, quantity } }}
               style={({ pressed }) => [
                 styles.stepperButton,
                 { backgroundColor: ctx.bg.subtle },
@@ -205,15 +213,16 @@ export function ProductCard({
               accessibilityState={{ disabled: atMax }}
             >
               <Icon name="add" size={16} color={cta1} />
-            </Pressable>
+            </TrackedPressable>
           </View>
           ) : (
-          <Pressable
+          <TrackedPressable
             onPress={() => {
               setQuantity(1);
               setDraft("1");
               onQuantityChange?.(1);
             }}
+            tracking={{ component: "ProductCard", label: "Añadir al carrito", kind: "button", data: { name } }}
             disabled={hasMax && max <= 0}
             style={({ pressed }) => [
               styles.addButton,
@@ -228,7 +237,7 @@ export function ProductCard({
           >
             <Icon name="add" size={16} color={hasMax && max <= 0 ? ctx.text.subtle : cta1} />
             <Text variant={TextType.Caption} color={hasMax && max <= 0 ? ctx.text.subtle : cta1}>Añadir</Text>
-          </Pressable>
+          </TrackedPressable>
           )}
         </View>
       </View>

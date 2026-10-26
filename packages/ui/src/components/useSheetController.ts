@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { PanResponder, useWindowDimensions } from "react-native";
 import Animated, {
   Easing,
+  ReduceMotion,
   runOnJS,
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -98,11 +99,12 @@ export function useSheetController({
       progress.value = withTiming(1, {
         duration: inMs,
         easing: Easing.out(Easing.cubic),
+        reduceMotion: ReduceMotion.System,
       });
     } else {
       progress.value = withTiming(
         0,
-        { duration: outMs, easing: Easing.in(Easing.cubic) },
+        { duration: outMs, easing: Easing.in(Easing.cubic), reduceMotion: ReduceMotion.System },
         (finished) => {
           if (finished) runOnJS(setMounted)(false);
         },
@@ -165,7 +167,11 @@ export function useSheetController({
     if (!dragToDismiss || !dismissible) return undefined;
 
     const snapBack = () =>
-      withTiming(0, { duration: inMs, easing: Easing.out(Easing.cubic) });
+      withTiming(0, {
+        duration: inMs,
+        easing: Easing.out(Easing.cubic),
+        reduceMotion: ReduceMotion.System,
+      });
 
     return PanResponder.create({
       onMoveShouldSetPanResponder: (_, gesture) =>
@@ -182,7 +188,7 @@ export function useSheetController({
         if (shouldClose) {
           offsetY.value = withTiming(
             screenHeight,
-            { duration: outMs, easing: Easing.in(Easing.cubic) },
+            { duration: outMs, easing: Easing.in(Easing.cubic), reduceMotion: ReduceMotion.System },
             (finished) => {
               if (finished) runOnJS(onClose)();
             },

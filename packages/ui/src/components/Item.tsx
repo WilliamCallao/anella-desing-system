@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { space, brand as brandPalette, neutrals, TextType } from "@william-callao/antonella-theme";
 import { Text } from "./text";
 import { Icon } from "./Icon";
+import { TrackedPressable } from "./TrackedPressable";
 import type { IconName } from "./Icon";
 
 // ── Style enum ──────────────────────────────────────────────
@@ -50,8 +51,9 @@ export function Item({
   const iconBg = selected ? c.iconSelectedColor + "18" : c.iconCircleBg;
 
   return (
-    <Pressable
+    <TrackedPressable
       onPress={onPress}
+      tracking={{ component: "Item", label, kind: "tab", data: { selected } }}
       style={({ pressed }) => [
         styles.row,
         { backgroundColor: c.rowBg },
@@ -67,7 +69,7 @@ export function Item({
       <Text variant={TextType.Caption} color={textColor} style={styles.label}>
         {label}
       </Text>
-    </Pressable>
+    </TrackedPressable>
   );
 }
 

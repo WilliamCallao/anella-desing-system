@@ -2,12 +2,12 @@ import React from "react";
 import {
   ActivityIndicator,
   StyleSheet,
-  TouchableOpacity,
   View,
   type ViewStyle,
 } from "react-native";
 import { appButton, border, radius, space, text } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
+import { TrackedPressable } from "../TrackedPressable";
 
 export type AppButtonVariant = "solid" | "outline" | "ghost";
 
@@ -47,8 +47,9 @@ export function AppButton({
     : textColor ?? (variant === "solid" ? appButton.text.default : text.default);
 
   return (
-    <TouchableOpacity
-      style={[
+    <TrackedPressable
+      tracking={{ component: "AppButton", label, kind: "button", data: { variant } }}
+      style={({ pressed }) => [
         styles.button,
         { backgroundColor: background },
         variant === "outline" && {
@@ -60,10 +61,10 @@ export function AppButton({
           borderColor: borderColor ?? border.divider.secondary,
         },
         style,
+        pressed && styles.pressed,
       ]}
       onPress={onPress}
       disabled={interactiveDisabled}
-      activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityState={{ disabled: interactiveDisabled, busy: loading }}
     >
@@ -75,7 +76,7 @@ export function AppButton({
           <ActivityIndicator size="small" color={foreground} style={styles.spinner} />
         ) : null}
       </View>
-    </TouchableOpacity>
+    </TrackedPressable>
   );
 }
 
@@ -98,5 +99,8 @@ const styles = StyleSheet.create({
   },
   spinner: {
     marginLeft: space.space2,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

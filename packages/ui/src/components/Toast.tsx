@@ -59,6 +59,8 @@ export function Toast({
         { backgroundColor: c.bg, marginTop: (topInset || 0) + BASE_VPAD },
         containerStyle,
       ]}
+      // Anuncia el mensaje a TalkBack cuando el aviso aparece o cambia.
+      accessibilityLiveRegion="polite"
     >
       <Icon name={TONE_ICONS[tone]} size={20} color={c.content} />
       <Text variant={TextType.Body} color={c.content} style={styles.message}>
@@ -85,16 +87,18 @@ const _white = neutrals.N0;
 const BASE_VPAD = space.space3 + 2;
 
 const STYLE_COLORS: Record<ToastStyle, Record<ToastTone, { bg: string; content: string }>> = {
+  // Los tonos usan la escala 600/700: con 500/600 el texto blanco quedaba por
+  // debajo de 4.5:1 (success 3.30:1, warning 3.19:1) y fallaba WCAG AA.
   [ToastStyle.DEFAULT]: {
-    [ToastTone.Success]: { bg: success.S600, content: _white },
+    [ToastTone.Success]: { bg: success.S700, content: _white },
     [ToastTone.Error]: { bg: danger.D600, content: _white },
-    [ToastTone.Warning]: { bg: warning.W600, content: _white },
+    [ToastTone.Warning]: { bg: warning.W700, content: _white },
     [ToastTone.Info]: { bg: neutrals.N700, content: _white },
   },
   [ToastStyle.DARKNESS]: {
-    [ToastTone.Success]: { bg: success.S500, content: _white },
-    [ToastTone.Error]: { bg: danger.D500, content: _white },
-    [ToastTone.Warning]: { bg: warning.W500, content: _white },
+    [ToastTone.Success]: { bg: success.S700, content: _white },
+    [ToastTone.Error]: { bg: danger.D600, content: _white },
+    [ToastTone.Warning]: { bg: warning.W700, content: _white },
     [ToastTone.Info]: { bg: neutrals.N700, content: _white },
   },
 };

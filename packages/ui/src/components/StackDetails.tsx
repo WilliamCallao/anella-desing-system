@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { neutrals, TextType, lightSemantic, resolveSemantic, space } from "@william-callao/antonella-theme";
 import { Text } from "./text";
 import { Icon, type IconName } from "./Icon";
+import { TrackedPressable } from "./TrackedPressable";
 
 // ── Style enum ──────────────────────────────────────────────
 
@@ -86,15 +87,16 @@ export function StackDetails({
               ) : null}
               {row.actions && row.actions.length > 0 ? (
                 row.actions.map((action, actionIndex) => (
-                  <Pressable
+                  <TrackedPressable
                     key={actionIndex}
                     onPress={action.onPress}
+                    tracking={{ component: "StackDetails", label: action.icon, kind: "button", data: { row: row.label } }}
                     hitSlop={8}
                     accessibilityRole="button"
                     style={styles.actionTouch}
                   >
                     <Icon name={action.icon} size={18} color={ctx.icon.subtle} />
-                  </Pressable>
+                  </TrackedPressable>
                 ))
               ) : row.onPress ? (
                 <Icon name="chevron-forward" size={14} color={ctx.icon.subtle} />
@@ -108,9 +110,14 @@ export function StackDetails({
             style={[styles.row, notLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: config.divider }]}
           >
             {row.onPress ? (
-              <Pressable onPress={row.onPress} style={styles.rowFlex} accessibilityRole="button">
+              <TrackedPressable
+                onPress={row.onPress}
+                tracking={{ component: "StackDetails", label: row.label, kind: "item" }}
+                style={styles.rowFlex}
+                accessibilityRole="button"
+              >
                 {inner}
-              </Pressable>
+              </TrackedPressable>
             ) : (
               <View style={styles.rowFlex}>{inner}</View>
             )}

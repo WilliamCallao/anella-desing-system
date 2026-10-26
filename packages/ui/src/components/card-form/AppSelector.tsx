@@ -1,5 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, Keyboard, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  AccessibilityInfo,
+  Animated,
+  Easing,
+  Keyboard,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { appInput, appInputCard, cta1, space, spacing, text, TextType } from "@william-callao/antonella-theme";
 import { Icon } from "../Icon";
 import { Text } from "../text/Text";
@@ -35,10 +43,24 @@ export function AppSelector({
 }: AppSelectorProps) {
   const [open, setOpen] = useState(false);
   const [contentHeight, setContentHeight] = useState(0);
+  // Reduce Motion: las animaciones de altura/opacidad se vuelven instantáneas.
+  const [reduceMotion, setReduceMotion] = useState(false);
   const chevron = useRef(new Animated.Value(0)).current;
   const height = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const selected = options.find((o) => o.value === value);
+
+  useEffect(() => {
+    let mounted = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then((reduced) => {
+      if (mounted) setReduceMotion(reduced);
+    });
+    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduceMotion);
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, []);
 
   const chevronRotate = useMemo(
     () => chevron.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "180deg"] }),
@@ -48,29 +70,29 @@ export function AppSelector({
   useEffect(() => {
     Animated.timing(chevron, {
       toValue: open ? 1 : 0,
-      duration: 180,
+      duration: reduceMotion ? 0 : 180,
       easing: Easing.out(Easing.quad),
       useNativeDriver: false,
     }).start();
-  }, [open, chevron]);
+  }, [open, chevron, reduceMotion]);
 
   useEffect(() => {
     const animation = Animated.parallel([
       Animated.timing(height, {
         toValue: open ? Math.max(contentHeight, options.length * OPTION_ROW_HEIGHT) : 0,
-        duration: ANIM_DURATION,
+        duration: reduceMotion ? 0 : ANIM_DURATION,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: false,
       }),
       Animated.timing(contentOpacity, {
         toValue: open ? 1 : 0,
-        duration: open ? 180 : 120,
+        duration: reduceMotion ? 0 : open ? 180 : 120,
         useNativeDriver: false,
       }),
     ]);
     animation.start();
     return () => animation.stop();
-  }, [open, contentHeight, options.length, height, contentOpacity]);
+  }, [open, contentHeight, options.length, height, contentOpacity, reduceMotion]);
 
   const toggle = () => {
     if (disabled) return;
@@ -104,7 +126,7 @@ export function AppSelector({
           {label}
         </Text>
         <Text
-          variant={TextType.Caption}
+          variant={TextType.BodyMedium}
           color={selected ? text.default : text.placeholder}
           numberOfLines={1}
           style={styles.value}
@@ -117,12 +139,25 @@ export function AppSelector({
       </TouchableOpacity>
 
       {error ? (
-        <Text variant={TextType.Caption} color={appInput.error} style={styles.error}>
+        <Text
+          variant={TextType.Caption}
+          color={appInput.error}
+          style={styles.error}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+        >
           {error}
         </Text>
       ) : null}
 
-      <Animated.View style={{ height, overflow: "hidden" }}>
+      <Animated.View
+        style={{ height, overflow: "hidden" }}
+        // Cerrada, la lista sigue montada (para medirla) pero no debe existir
+        // para el lector de pantalla: si no, TalkBack enfoca opciones invisibles.
+        accessibilityElementsHidden={!open}
+        importantForAccessibility={open ? "auto" : "no-hide-descendants"}
+        pointerEvents={open ? "auto" : "none"}
+      >
         <Animated.View
           style={{ opacity: contentOpacity }}
           onLayout={(event) => setContentHeight(event.nativeEvent.layout.height)}
@@ -136,9 +171,10 @@ export function AppSelector({
                 onPress={() => handleSelect(option)}
                 activeOpacity={0.7}
                 accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
               >
                 <Text
-                  variant={TextType.Caption}
+                  variant={TextType.BodyMedium}
                   color={isSelected ? cta1 : text.default}
                   numberOfLines={1}
                   style={styles.optionText}

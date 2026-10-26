@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Easing, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Animated, Easing, StyleSheet, View } from "react-native";
 import { cta1, space, spacing, text, TextType } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
+import { TrackedPressable } from "../TrackedPressable";
 import type { AppInputProps } from "./AppInput";
 
 const TRACK_W = 51;
@@ -58,10 +59,10 @@ export function AppToggle({
   };
 
   return (
-    <TouchableOpacity
-      style={[styles.row, disabled && styles.rowDisabled]}
+    <TrackedPressable
+      tracking={{ component: "AppToggle", label, kind: "button", data: { value } }}
+      style={({ pressed }) => [styles.row, disabled && styles.rowDisabled, pressed && styles.pressed]}
       onPress={toggle}
-      activeOpacity={0.7}
       disabled={disabled}
       accessibilityRole="switch"
       accessibilityState={{ checked: value, disabled }}
@@ -83,7 +84,7 @@ export function AppToggle({
           />
         </Animated.View>
       </View>
-    </TouchableOpacity>
+    </TrackedPressable>
   );
 }
 
@@ -98,6 +99,9 @@ const styles = StyleSheet.create({
   },
   rowDisabled: {
     opacity: 0.5,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   label: {
     flexShrink: 0,

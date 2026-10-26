@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import {
   appInputCard,
   background,
@@ -13,6 +13,7 @@ import {
 } from "@william-callao/antonella-theme";
 import { Icon } from "./Icon";
 import { Text } from "./text/Text";
+import { TrackedPressable } from "./TrackedPressable";
 
 export type AppCheckItemStatus = "pending" | "ok" | "not-ok";
 
@@ -100,8 +101,9 @@ export function AppCheckItem({
       </View>
 
       {hasMessages && !noActions && !readOnly ? (
-        <Pressable
+        <TrackedPressable
           onPress={onOpenMessages}
+          tracking={{ component: "AppCheckItem", label: "Abrir mensajes", kind: "button", data: { item: label } }}
           hitSlop={8}
           android_ripple={{ color: "rgba(15,23,42,0.08)" }}
           style={({ pressed }) => [styles.messagesButton, pressed && styles.pressed]}
@@ -109,15 +111,16 @@ export function AppCheckItem({
           accessibilityLabel="Abrir mensajes"
         >
           <Icon name="chatbubble" size={20} color={text.secondary} />
-        </Pressable>
+        </TrackedPressable>
       ) : null}
     </>
   );
 
   return (
     <View style={[styles.card, style]}>
-      <Pressable
+      <TrackedPressable
         onPress={handleRowPress}
+        tracking={{ component: "AppCheckItem", label, kind: "item", data: { resolved, open } }}
         disabled={disabled}
         android_ripple={{ color: "rgba(15,23,42,0.06)" }}
         style={({ pressed }) => [styles.row, pressed && styles.pressed]}
@@ -132,12 +135,13 @@ export function AppCheckItem({
         accessibilityLabel={label}
       >
         {rowContent}
-      </Pressable>
+      </TrackedPressable>
 
       {!readOnly && open ? (
         <View style={styles.options}>
-          <Pressable
+          <TrackedPressable
             onPress={() => select("ok")}
+            tracking={{ component: "AppCheckItem", label: "Marcar como correcto", kind: "button", data: { item: label } }}
             android_ripple={{ color: "rgba(22,163,74,0.12)" }}
             style={({ pressed }) => [styles.option, styles.optionOk, pressed && styles.pressed]}
             accessibilityRole="button"
@@ -147,9 +151,10 @@ export function AppCheckItem({
             <Text variant={TextType.BodyMedium} color={success.S700}>
               Correcto
             </Text>
-          </Pressable>
-          <Pressable
+          </TrackedPressable>
+          <TrackedPressable
             onPress={() => select("not-ok")}
+            tracking={{ component: "AppCheckItem", label: "Marcar como incorrecto", kind: "button", data: { item: label } }}
             android_ripple={{ color: "rgba(220,38,38,0.12)" }}
             style={({ pressed }) => [styles.option, styles.optionNotOk, pressed && styles.pressed]}
             accessibilityRole="button"
@@ -159,7 +164,7 @@ export function AppCheckItem({
             <Text variant={TextType.BodyMedium} color={danger.D700}>
               Incorrecto
             </Text>
-          </Pressable>
+          </TrackedPressable>
         </View>
       ) : null}
     </View>

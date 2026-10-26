@@ -31,6 +31,7 @@ export * from "./components/DrawerMenu";
 export * from "./components/Item";
 export * from "./components/ListItem";
 export * from "./components/ProductCard";
+export * from "./components/TrackedPressable";
 export * from "./components/ElementCard";
 export * from "./components/KeyValueList";
 export * from "./components/StackDetails";

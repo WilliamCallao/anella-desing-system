@@ -8,7 +8,7 @@ import React, {
   useState,
   type ReactNode,
 } from "react";
-import { StyleSheet, View } from "react-native";
+import { AccessibilityInfo, StyleSheet, View } from "react-native";
 import Animated, {
   cancelAnimation,
   Easing,
@@ -102,6 +102,9 @@ function ToastHost({ toast, onDismiss }: { toast: ActiveToast | null; onDismiss:
     if (toast) {
       // Entrada (o reemplazo del toast anterior).
       setCurrent(toast);
+      // El toast es la única señal de éxito/error en varios flujos: sin anuncio
+      // explícito, un usuario con lector de pantalla no se entera del resultado.
+      AccessibilityInfo.announceForAccessibility(toast.message);
       cancelAnimation(progress);
       progress.value = 0;
       progress.value = withTiming(1, {

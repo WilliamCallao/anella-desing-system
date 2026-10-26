@@ -5,8 +5,11 @@ export const palette = {
   surface: "#FFFFFF",
   border: "#E5E5EA",
   text: "#000000",
-  textMuted: "#8E8E93",
-  danger: "#FF3B30",
+  // #6E6E73 da 4.74:1 sobre card (#F7F7FA) y 5.07:1 sobre blanco: pasa WCAG AA
+  // para texto normal. #8E8E93 daba 3.05:1 y fallaba.
+  textMuted: "#6E6E73",
+  // D600 da 4.51:1 sobre card y 4.83:1 con texto blanco encima: pasa AA.
+  danger: "#DC2626",
   success: "#34C759",
   warning: "#FF9500",
 } as const;
@@ -78,9 +81,11 @@ export const background = {
  */
 export const text = {
   default: "#000000",
-  secondary: "#8E8E93",
-  subtle: "#8E8E93",
-  placeholder: "#C7C7CC",
+  // 4.74:1 sobre card y 5.07:1 sobre blanco (WCAG AA, texto normal).
+  secondary: "#6E6E73",
+  subtle: "#6E6E73",
+  // El placeholder también es texto: #C7C7CC daba 1.51:1 y era ilegible.
+  placeholder: "#6E6E73",
   inverse: "#FFFFFF",
 } as const;
 

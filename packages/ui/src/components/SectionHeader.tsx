@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { Text } from "./text";
 import { Icon, type IconName } from "./Icon";
 import { Label, LabelStyle } from "./Label";
+import { TrackedPressable } from "./TrackedPressable";
 import { TextType, resolveSemantic, lightSemantic, space, neutrals } from "@william-callao/antonella-theme";
 
 // ── Style enum ──────────────────────────────────────────────
@@ -92,9 +93,14 @@ export function SectionHeader({
           style={labelStyle}
         />
       ) : actionIcon ? (
-        <Pressable onPress={handleIcon} hitSlop={8} style={styles.iconTouch}>
+        <TrackedPressable
+          onPress={handleIcon}
+          tracking={{ component: "SectionHeader", label: title, kind: "header", data: { action: actionIcon } }}
+          hitSlop={8}
+          style={styles.iconTouch}
+        >
           <Icon name={actionIcon} size={16} color={ctx.text.default} />
-        </Pressable>
+        </TrackedPressable>
       ) : null}
     </View>
   );

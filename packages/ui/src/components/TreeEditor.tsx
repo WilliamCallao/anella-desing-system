@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Animated,
   Easing,
-  Pressable,
   StyleSheet,
   View,
   type StyleProp,
@@ -12,6 +11,7 @@ import { brand, card, cta1, neutrals, radius, resolveSemantic, lightSemantic, sp
 import { Text } from "./text/Text";
 import { Icon } from "./Icon";
 import { AppIcon } from "../AppIcons";
+import { TrackedPressable } from "./TrackedPressable";
 
 export type TreeNode = {
   id: string;
@@ -482,8 +482,14 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
     <>
       <View style={styles.nodeRow}>
         <NodeGutter depth={depth} lineColor={ctx.vt.lineColor} terminal={terminalElbow} />
-          <Pressable
+          <TrackedPressable
             onPress={handlePress}
+            tracking={{
+              component: "TreeEditor",
+              label: node.name,
+              kind: "item",
+              data: { code: node.code, depth, hasChildren, expanded: hasChildren ? !isCollapsed : undefined },
+            }}
             onLongPress={handleLongPress}
             delayLongPress={450}
             disabled={!interactive}
@@ -521,17 +527,18 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
             <View style={styles.rowContent}>
               {ctx.renderNode ? ctx.renderNode(node, defaultContent) : defaultContent}
             </View>
-          </Pressable>
+          </TrackedPressable>
           {ctx.isEdit && !ctx.actionsOnLongPress ? (
-            <Pressable
+            <TrackedPressable
               onPress={() => ctx.onOpenActions(node.id)}
+              tracking={{ component: "TreeEditor", label: `Acciones de ${node.name}`, kind: "button", data: { code: node.code } }}
               hitSlop={12}
               style={({ pressed }) => [styles.actions, pressed && { backgroundColor: ctx.vt.pressedBg }]}
               accessibilityRole="button"
               accessibilityLabel={`Acciones de ${node.name}`}
             >
               <Icon name="more-vertical" size={20} color={ctx.vt.actionsColor} />
-            </Pressable>
+            </TrackedPressable>
           ) : null}
       </View>
       {hasChildren && !isCollapsed ? (
@@ -685,8 +692,9 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
       </View>
 
       {isEdit ? (
-        <Pressable
+        <TrackedPressable
           onPress={() => onRequestAdd?.(null)}
+          tracking={{ component: "TreeEditor", label: rootLabel, kind: "button" }}
           style={({ pressed }) => [
             styles.addRoot,
             pressed && { backgroundColor: vt.pressedBg },
@@ -699,7 +707,7 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
           <Text variant={TextType.BodyMedium} color={vt.addRootText}>
             {rootLabel}
           </Text>
-        </Pressable>
+        </TrackedPressable>
       ) : null}
     </View>
   );

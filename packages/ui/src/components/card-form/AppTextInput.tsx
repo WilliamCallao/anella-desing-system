@@ -87,10 +87,17 @@ export function AppTextInput({
         onPress={() => (onPressOverride ? onPressOverride() : focus())}
         disabled={!editable && !readOnly}
         activeOpacity={1}
+        // La fila solo enfoca el campo: no es un control propio para lectores de
+        // pantalla (el nombre accesible vive en el TextInput).
+        accessible={false}
       >
         <Text
           variant={TextType.Label}
           numberOfLines={1}
+          // El nombre del campo lo anuncia el TextInput; sin esto TalkBack lee el
+          // label como un nodo suelto y después el campo sin nombre.
+          accessibilityElementsHidden
+          importantForAccessibility="no"
           style={[styles.label, labelWidth != null && { width: labelWidth }]}
         >
           {label}
@@ -100,8 +107,8 @@ export function AppTextInput({
           style={[
             styles.value,
             {
-              fontSize: texts.caption.fontSize,
-              lineHeight: texts.caption.lineHeight,
+              fontSize: texts.bodyMedium.fontSize,
+              lineHeight: texts.bodyMedium.lineHeight,
               color: text.default,
             },
             inputHeight != null && {
@@ -118,6 +125,7 @@ export function AppTextInput({
           keyboardType={keyboardType}
           maxLength={maxLength}
           editable={canType}
+          accessibilityLabel={label}
           selectionColor={text.default}
           underlineColorAndroid="transparent"
           multiline
@@ -139,7 +147,13 @@ export function AppTextInput({
         ) : null}
       </TouchableOpacity>
       {error ? (
-        <Text variant={TextType.Caption} color={appInput.error} style={styles.error}>
+        <Text
+          variant={TextType.Caption}
+          color={appInput.error}
+          style={styles.error}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+        >
           {error}
         </Text>
       ) : null}

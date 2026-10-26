@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import { neutrals, space, texts } from "@william-callao/antonella-theme";
 import { Icon, type IconName } from "./Icon";
 import { Text } from "./text/Text";
+import { TrackedPressable } from "./TrackedPressable";
 
 export type ChipVariant = "subtle" | "solid" | "outlined";
 export type ChipSize = "sm" | "md";
@@ -86,9 +87,13 @@ export function Chip({
 
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+      <TrackedPressable
+        onPress={onPress}
+        tracking={{ component: "Chip", label, kind: "chip" }}
+        style={({ pressed }) => pressed && styles.pressed}
+      >
         {content}
-      </Pressable>
+      </TrackedPressable>
     );
   }
 

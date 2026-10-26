@@ -24,7 +24,11 @@ export function DialogHeader({
       {icon ? <Icon name={icon} size={28} color={text.default} /> : null}
       {title || caption ? (
         <View style={styles.titles}>
-          {title ? <Text variant={TextType.Subtitle}>{title}</Text> : null}
+          {title ? (
+            <Text variant={TextType.Subtitle} accessibilityRole="header">
+              {title}
+            </Text>
+          ) : null}
           {caption ? <Text variant={TextType.Caption}>{caption}</Text> : null}
         </View>
       ) : null}

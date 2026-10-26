@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { neutrals, radius, space, TextType } from "@william-callao/antonella-theme";
 import { Text } from "./text/Text";
 import { Icon, type IconName } from "./Icon";
+import { TrackedPressable } from "./TrackedPressable";
 
 // ── Style enum ──────────────────────────────────────────────
 
@@ -81,8 +82,9 @@ export function Label({
   const color = selected ? ACTIVE[style] : INACTIVE[style];
 
   return (
-    <Pressable
+    <TrackedPressable
       onPress={onPress}
+      tracking={{ component: "Label", label, kind: "tab", data: { selected } }}
       style={({ pressed }) => [
         styles.base,
         { borderColor: BORDER[style], backgroundColor: selected ? FILL[style] : "transparent" },
@@ -97,7 +99,7 @@ export function Label({
       <Text variant={TextType.Caption} color={color} numberOfLines={1}>
         {label}
       </Text>
-    </Pressable>
+    </TrackedPressable>
   );
 }
 

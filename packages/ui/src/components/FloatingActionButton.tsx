@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { AppIcon } from "../AppIcons";
 import { Icon } from "./Icon";
 import { cta1, cta1Contrast } from "@william-callao/antonella-theme";
+import { TrackedPressable } from "./TrackedPressable";
 import type { IconName } from "./Icon";
 
 export type FloatingActionButtonPosition = "bottom-right" | "bottom-left";
@@ -30,14 +31,15 @@ export function FloatingActionButton({
       ]}
       pointerEvents="box-none"
     >
-      <Pressable
+      <TrackedPressable
         onPress={onPress}
+        tracking={{ component: "FloatingActionButton", label: icon, kind: "fab" }}
         android_ripple={{ color: "rgba(255,255,255,0.3)", borderless: true }}
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         accessibilityRole="button"
       >
         <Icon name={icon} size={22} color={cta1Contrast} />
-      </Pressable>
+      </TrackedPressable>
     </View>
   );
 }
