@@ -85,7 +85,11 @@ export const text = {
   secondary: "#6E6E73",
   subtle: "#6E6E73",
   // El placeholder también es texto: #C7C7CC daba 1.51:1 y era ilegible.
-  placeholder: "#6E6E73",
+  placeholder: "#6E6E73", // Piso AA sobre el relleno del input (#F2F2F7): 4.54:1.
+  // Dato fijo (fila de solo lectura): mas oscuro que el placeholder para que
+  // "sin dato" y "dato que no se puede editar" no se confundan. 6.83:1 sobre
+  // card y 7.3:1 sobre blanco.
+  readOnly: "#56565B",
   inverse: "#FFFFFF",
 } as const;
 
@@ -123,8 +127,8 @@ export const border = {
 export const appInput = {
   background: background.content.primary, // #F2F2F7 (systemGray6)
   text: text.default,                     // #000000 (label)
-  placeholder: text.placeholder,          // #C7C7CC (systemGray3)
-  error: palette.danger,                  // #FF3B30 (systemRed)
+  placeholder: text.placeholder,          // gris AA, ver `text.placeholder`
+  error: palette.danger,                  // #DC2626 (AA sobre card)
 } as const;
 
 /**
@@ -142,8 +146,13 @@ export const appInputCard = {
   separator: "#E5E5EA",
   text: {
     label: text.default,
-    value: text.secondary,
-    placeholder: text.placeholder,
+    // Valor de una fila NO editable: gris oscuro (Settings). Un valor
+    // editable se pinta negro (`text.default`), como Contacts. Asi el
+    // usuario ve de un vistazo que fila puede tocar.
+    value: text.readOnly,
+    // Placeholder de la familia card: el gris mas claro que sigue siendo AA
+    // sobre el fondo del card (#F7F7FA) = 4.60:1.
+    placeholder: "#707076",
   },
 } as const;
 

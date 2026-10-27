@@ -9,12 +9,11 @@ import {
   type NativeSyntheticEvent,
   type TextInputContentSizeChangeEventData,
 } from "react-native";
-import { appInput, spacing, text, texts, TextType, space } from "@william-callao/antonella-theme";
+import { appInput, appInputCard, spacing, text, texts, TextType } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
 import { Icon, type IconName } from "../Icon";
 import type { AppInputProps } from "./AppInput";
-
-const SINGLE_LINE_HEIGHT = 18;
+import { CARD_ERROR, CARD_ROW, CARD_TEXT, SINGLE_LINE_HEIGHT } from "./cardForm";
 
 export type AppTextInputProps = AppInputProps & {
   type?: "text";
@@ -61,6 +60,11 @@ export function AppTextInput({
   const [inputHeight, setInputHeight] = useState<number | undefined>(undefined);
 
   const canType = editable && !readOnly;
+  // Fila que no se puede usar: o el campo esta deshabilitado, o es de solo
+  // lectura sin accion asociada. El label queda negro (nombre legible) y el
+  // valor pasa a gris, igual que una fila de solo lectura; nunca se baja la
+  // opacidad de toda la fila (label 3.99:1, valor 1.96:1).
+  const looksInactive = !editable || (readOnly && !onPressOverride);
 
   const focus = () => {
     if (canType) inputRef.current?.focus();
@@ -81,11 +85,10 @@ export function AppTextInput({
       <TouchableOpacity
         style={[
           styles.row,
-          inputHeight != null && inputHeight > SINGLE_LINE_HEIGHT && styles.rowGrown,
-          !editable && styles.rowDisabled,
+          inputHeight != null && inputHeight > SINGLE_LINE_HEIGHT + 1 && styles.rowGrown,
         ]}
         onPress={() => (onPressOverride ? onPressOverride() : focus())}
-        disabled={!editable && !readOnly}
+        disabled={looksInactive}
         activeOpacity={1}
         // La fila solo enfoca el campo: no es un control propio para lectores de
         // pantalla (el nombre accesible vive en el TextInput).
@@ -94,11 +97,12 @@ export function AppTextInput({
         <Text
           variant={TextType.Label}
           numberOfLines={1}
+          color={error ? appInput.error : undefined}
           // El nombre del campo lo anuncia el TextInput; sin esto TalkBack lee el
           // label como un nodo suelto y después el campo sin nombre.
           accessibilityElementsHidden
           importantForAccessibility="no"
-          style={[styles.label, labelWidth != null && { width: labelWidth }]}
+          style={[styles.label, CARD_TEXT, labelWidth != null && { width: labelWidth }]}
         >
           {label}
         </Text>
@@ -107,9 +111,11 @@ export function AppTextInput({
           style={[
             styles.value,
             {
-              fontSize: texts.bodyMedium.fontSize,
-              lineHeight: texts.bodyMedium.lineHeight,
-              color: text.default,
+              fontSize: CARD_TEXT.fontSize,
+              lineHeight: CARD_TEXT.lineHeight,
+              letterSpacing: CARD_TEXT.letterSpacing,
+              fontWeight: texts.value.fontWeight,
+              color: looksInactive ? text.readOnly : text.default,
             },
             inputHeight != null && {
               height: Math.max(inputHeight, SINGLE_LINE_HEIGHT),
@@ -120,12 +126,13 @@ export function AppTextInput({
           onContentSizeChange={handleContentSizeChange}
           onSubmitEditing={handleSubmitEditing}
           placeholder={placeholder}
-          placeholderTextColor={texts.placeholder.color}
+          placeholderTextColor={appInputCard.text.placeholder}
           autoCapitalize={autoCapitalize}
           keyboardType={keyboardType}
           maxLength={maxLength}
           editable={canType}
           accessibilityLabel={label}
+          accessibilityState={{ disabled: looksInactive }}
           selectionColor={text.default}
           underlineColorAndroid="transparent"
           multiline
@@ -168,16 +175,10 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-    minHeight: 52,
-    paddingHorizontal: space.space4,
-    paddingVertical: space.space4,
+    ...CARD_ROW,
   },
   rowGrown: {
     alignItems: "flex-start",
-  },
-  rowDisabled: {
-    opacity: 0.5,
   },
   label: {
     flexShrink: 0,
@@ -189,14 +190,15 @@ const styles = StyleSheet.create({
     paddingRight: 2,
     textAlign: "right",
     outlineWidth: 0,
+    // Android: sin el padding extra de fuente, `contentSize` es exactamente el
+    // interlineado y la fila no cambia de alto entre vacio y una linea.
+    includeFontPadding: false,
   },
   trailingAction: {
     marginLeft: spacing.xs,
     justifyContent: "center",
   },
   error: {
-    marginTop: spacing.xs,
-    paddingHorizontal: space.space4,
-    textAlign: "right",
+    ...CARD_ERROR,
   },
 });

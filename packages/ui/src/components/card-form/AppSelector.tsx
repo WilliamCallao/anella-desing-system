@@ -12,6 +12,7 @@ import { appInput, appInputCard, cta1, space, spacing, text, TextType } from "@w
 import { Icon } from "../Icon";
 import { Text } from "../text/Text";
 import type { AppInputProps } from "./AppInput";
+import { CARD_ERROR, CARD_ROW, CARD_TEXT } from "./cardForm";
 
 export type AppSelectorOption = {
   label: string;
@@ -116,25 +117,26 @@ export function AppSelector({
         activeOpacity={0.6}
         accessibilityRole="button"
         accessibilityState={{ expanded: open, disabled }}
+        accessibilityLabel={`${label}: ${selected?.label ?? placeholder}`}
       >
         <Text
           variant={TextType.Label}
-          color={disabled ? text.placeholder : undefined}
           numberOfLines={1}
-          style={[styles.label, labelWidth != null && { width: labelWidth }]}
+          color={error ? appInput.error : undefined}
+          style={[styles.label, CARD_TEXT, labelWidth != null && { width: labelWidth }]}
         >
           {label}
         </Text>
         <Text
-          variant={TextType.BodyMedium}
-          color={selected ? text.default : text.placeholder}
+          variant={TextType.Value}
+          color={disabled ? text.readOnly : selected ? text.default : appInputCard.text.placeholder}
           numberOfLines={1}
-          style={styles.value}
+          style={[styles.value, CARD_TEXT]}
         >
           {selected?.label ?? placeholder}
         </Text>
         <Animated.View style={{ transform: [{ rotate: chevronRotate }] }}>
-          <Icon name="chevron-down" size={16} color={disabled ? text.placeholder : text.default} />
+          <Icon name="chevron-down" size={16} color={disabled ? text.readOnly : text.default} />
         </Animated.View>
       </TouchableOpacity>
 
@@ -177,7 +179,7 @@ export function AppSelector({
                   variant={TextType.BodyMedium}
                   color={isSelected ? cta1 : text.default}
                   numberOfLines={1}
-                  style={styles.optionText}
+                  style={[styles.optionText, CARD_TEXT]}
                 >
                   {option.label}
                 </Text>
@@ -198,10 +200,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-    minHeight: 52,
-    paddingHorizontal: space.space4,
-    paddingVertical: space.space4,
+    ...CARD_ROW,
     overflow: "hidden",
   },
   label: {
@@ -227,10 +226,7 @@ const styles = StyleSheet.create({
     borderTopColor: appInputCard.separator,
   },
   error: {
-    marginTop: -spacing.sm,
-    paddingHorizontal: space.space4,
-    paddingBottom: spacing.sm,
-    textAlign: "right",
+    ...CARD_ERROR,
   },
   optionText: {
     flex: 1,
