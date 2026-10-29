@@ -3,19 +3,33 @@ import { StyleSheet, View, type ViewStyle } from "react-native";
 import { appInputCard, radius, background, border } from "@william-callao/antonella-theme";
 import type { AppInputElement, AppInputProps } from "./AppInput";
 
+export type AppFormCardVariant = "filled" | "outlined";
+
 export type AppFormCardProps = {
   children: AppInputElement | AppInputElement[];
   labelWidth?: number;
+  variant?: AppFormCardVariant;
   style?: ViewStyle;
 };
 
-export function AppFormCard({ children, labelWidth, style }: AppFormCardProps) {
+export function AppFormCard({
+  children,
+  labelWidth,
+  variant = "filled",
+  style,
+}: AppFormCardProps) {
   const items = React.Children.toArray(children)
     .filter((child) => React.isValidElement<AppInputProps>(child))
     .map((child) => child as AppInputElement);
 
   return (
-    <View style={[styles.container, style]}>
+    <View
+      style={[
+        styles.container,
+        variant === "outlined" ? styles.outlined : undefined,
+        style,
+      ]}
+    >
       {items.map((child, index) => (
         <View key={index} style={styles.row}>
           {index > 0 ? <View style={styles.divider} /> : null}
@@ -33,6 +47,11 @@ const styles = StyleSheet.create({
     backgroundColor: background.surface,
     borderRadius: radius.md,
     overflow: "hidden",
+  },
+  outlined: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: border.divider.secondary,
   },
   row: {
     overflow: "hidden",

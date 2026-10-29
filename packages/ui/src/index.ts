@@ -5,6 +5,7 @@ export * from "./components/Card";
 export * from "./components/CardTitle";
 export * from "./components/Chip";
 export * from "./components/ChipTabs";
+export * from "./components/AppStepIndicator";
 export * from "./components/Label";
 export * from "./components/SectionTitle";
 export * from "./components/SearchBar";

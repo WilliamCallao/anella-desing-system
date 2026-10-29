@@ -13,9 +13,13 @@ export type BottomSheetProps = {
   visible: boolean;
   onClose: () => void;
   mode?: AppDialogMode;
+  /** Muestra la X aunque `mode` sea Required (cierre solo por botón). */
+  showCloseButton?: boolean;
   icon?: IconName;
   title?: string;
   caption?: string;
+  /** Contenido opcional centrado sobre el header (p. ej. indicador de pasos). */
+  headerAccessory?: React.ReactNode;
   children: React.ReactNode;
   contentStyle?: React.ComponentProps<typeof Sheet>["contentStyle"];
   snapPoints?: React.ComponentProps<typeof Sheet>["snapPoints"];
@@ -29,9 +33,11 @@ export function BottomSheet({
   visible,
   onClose,
   mode = AppDialogMode.Dismissable,
+  showCloseButton,
   icon,
   title,
   caption,
+  headerAccessory,
   children,
   contentStyle,
   snapPoints,
@@ -41,6 +47,7 @@ export function BottomSheet({
   const { width } = useWindowDimensions();
   const isTablet = width >= 600;
   const dismissible = mode === AppDialogMode.Dismissable;
+  const resolvedShowCloseButton = showCloseButton ?? dismissible;
 
   if (isTablet) {
     return (
@@ -48,10 +55,11 @@ export function BottomSheet({
         visible={visible}
         onClose={onClose}
         dismissible={dismissible}
-        showCloseButton={dismissible}
+        showCloseButton={resolvedShowCloseButton}
         icon={icon}
         title={title}
         caption={caption}
+        headerAccessory={headerAccessory}
         actions={actions}
         children={children}
         contentStyle={contentStyle}
@@ -64,10 +72,11 @@ export function BottomSheet({
       visible={visible}
       onClose={onClose}
       dismissible={dismissible}
-      showCloseButton={dismissible}
+      showCloseButton={resolvedShowCloseButton}
       icon={icon}
       title={title}
       caption={caption}
+      headerAccessory={headerAccessory}
       snapPoints={snapPoints}
       actions={actions}
       children={children}

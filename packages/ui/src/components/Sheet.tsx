@@ -24,6 +24,8 @@ export type SheetProps = {
   icon?: IconName;
   title?: string;
   caption?: string;
+  /** Contenido opcional centrado sobre el header (p. ej. indicador de pasos). */
+  headerAccessory?: React.ReactNode;
   children: React.ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
   snapPoints?: Array<string | number>;
@@ -45,6 +47,7 @@ export function Sheet({
   icon,
   title,
   caption,
+  headerAccessory,
   children,
   contentStyle,
   snapPoints,
@@ -78,11 +81,12 @@ export function Sheet({
           {...(controller.panResponder?.panHandlers ?? {})}
         >
           <View style={styles.handleBar} />
-          {title || icon || caption || showCloseButton ? (
+          {title || icon || caption || showCloseButton || headerAccessory ? (
             <DialogHeader
               icon={icon}
               title={title}
               caption={caption}
+              headerAccessory={headerAccessory}
               onClose={onClose}
               showCloseButton={showCloseButton}
             />

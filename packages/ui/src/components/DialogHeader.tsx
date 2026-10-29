@@ -8,6 +8,7 @@ export type DialogHeaderProps = {
   icon?: IconName;
   title?: string;
   caption?: string;
+  headerAccessory?: React.ReactNode;
   onClose?: () => void;
   showCloseButton?: boolean;
 };
@@ -16,6 +17,7 @@ export function DialogHeader({
   icon,
   title,
   caption,
+  headerAccessory,
   onClose,
   showCloseButton,
 }: DialogHeaderProps) {
@@ -30,6 +32,17 @@ export function DialogHeader({
             </Text>
           ) : null}
           {caption ? <Text variant={TextType.Caption}>{caption}</Text> : null}
+        </View>
+      ) : null}
+      {headerAccessory ? (
+        <View
+          style={[
+            styles.accessory,
+            showCloseButton ? styles.accessoryWithClose : undefined,
+          ]}
+          pointerEvents="box-none"
+        >
+          {headerAccessory}
         </View>
       ) : null}
       {showCloseButton ? (
@@ -49,9 +62,20 @@ export function DialogHeader({
 
 const styles = StyleSheet.create({
   header: {
+    position: "relative",
     paddingBottom: space.space1,
     marginBottom: space.space2,
     gap: space.space2,
+  },
+  accessory: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    alignItems: "flex-end",
+    zIndex: 1,
+  },
+  accessoryWithClose: {
+    right: space.space8,
   },
   titles: {
     gap: space.space1,
