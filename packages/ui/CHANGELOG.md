@@ -1,5 +1,15 @@
 # @william-callao/antonella-ui
 
+## 2.0.1
+
+### Patch Changes
+
+- [#33](https://github.com/WilliamCallao/anella-desing-system/pull/33) [`bfae49a`](https://github.com/WilliamCallao/anella-desing-system/commit/bfae49a94bdecf68fd1007ec734ed6c1a75a402a) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - fix(ui): desmonta las capas salientes al retroceder
+  
+  - `AppLayout` ya no conserva el contenido de la sección que deja de estar visible al volver atrás.
+  - Evita que una capa anterior quede por encima del body restaurado y bloquee el touch en Android release.
+  - El contenido entrante mantiene su fade; solo se elimina la capa saliente.
+
 ## 2.0.0
 
 ### Major Changes
