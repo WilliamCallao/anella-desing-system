@@ -1,8 +1,16 @@
 import React from "react";
-import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
-import { neutrals, radius, space, TextType } from "@william-callao/antonella-theme";
+import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import {
+  cta1,
+  cta1Contrast,
+  neutrals,
+  radius,
+  space,
+  TextType,
+} from "@william-callao/antonella-theme";
 import { Text } from "./text/Text";
 import { Icon, type IconName } from "./Icon";
+import { TrackedPressable } from "./TrackedPressable";
 
 // ── Style enum ──────────────────────────────────────────────
 
@@ -10,6 +18,8 @@ export enum LabelStyle {
   DEFAULT = "DEFAULT",
   LIGHT = "LIGHT",
   DARKNESS = "DARKNESS",
+  /** Acción de alto contraste sobre superficies oscuras. */
+  DARKNESS_ACTION = "DARKNESS_ACTION",
 }
 
 // ── Types ───────────────────────────────────────────────────
@@ -39,6 +49,7 @@ const INACTIVE: Record<LabelStyle, string> = {
   [LabelStyle.DEFAULT]: neutrals.N500,
   [LabelStyle.LIGHT]: neutrals.N500,
   [LabelStyle.DARKNESS]: neutrals.N400,
+  [LabelStyle.DARKNESS_ACTION]: cta1Contrast,
 };
 
 // Relleno del estado seleccionado y borde: sin token semántico dedicado, se
@@ -48,12 +59,14 @@ const FILL: Record<LabelStyle, string> = {
   [LabelStyle.DEFAULT]: neutrals.N200,
   [LabelStyle.LIGHT]: neutrals.N200,
   [LabelStyle.DARKNESS]: neutrals.N800,
+  [LabelStyle.DARKNESS_ACTION]: cta1,
 };
 
 const BORDER: Record<LabelStyle, string> = {
   [LabelStyle.DEFAULT]: neutrals.N200,
   [LabelStyle.LIGHT]: neutrals.N200,
   [LabelStyle.DARKNESS]: neutrals.N800,
+  [LabelStyle.DARKNESS_ACTION]: cta1,
 };
 
 // Texto activo (seleccionado): en contraste con el relleno — blanco sobre la
@@ -62,6 +75,7 @@ const ACTIVE: Record<LabelStyle, string> = {
   [LabelStyle.DEFAULT]: neutrals.N950,
   [LabelStyle.LIGHT]: neutrals.N950,
   [LabelStyle.DARKNESS]: "#FFFFFF",
+  [LabelStyle.DARKNESS_ACTION]: cta1Contrast,
 };
 
 // ── Component ───────────────────────────────────────────────
@@ -81,11 +95,18 @@ export function Label({
   const color = selected ? ACTIVE[style] : INACTIVE[style];
 
   return (
-    <Pressable
+    <TrackedPressable
       onPress={onPress}
+      tracking={{ component: "Label", label, kind: "tab", data: { selected } }}
       style={({ pressed }) => [
         styles.base,
-        { borderColor: BORDER[style], backgroundColor: selected ? FILL[style] : "transparent" },
+        {
+          borderColor: BORDER[style],
+          backgroundColor:
+            selected || style === LabelStyle.DARKNESS_ACTION
+              ? FILL[style]
+              : "transparent",
+        },
         pressed && styles.pressed,
         containerStyle,
       ]}
@@ -97,7 +118,7 @@ export function Label({
       <Text variant={TextType.Caption} color={color} numberOfLines={1}>
         {label}
       </Text>
-    </Pressable>
+    </TrackedPressable>
   );
 }
 

@@ -8,6 +8,10 @@
 
 ## Unreleased
 
+### Major Changes
+
+- Se elimina `TransitionView`: la transición de aparición/desaparición y cambio de contenido queda centralizada en `AppLayout`. También se retiran todos sus usos en la app y el playground.
+
 ### Minor Changes
 
 - `FadeIn` (componente) y `useFadeIn` (hook): fade de entrada controlado por hook (opacity inicial -> 1), pensado para contenidos que viven en slots del layout que se montan/remontan donde las animaciones `entering` de Reanimated se degradan. `FadeIn` soporta `contentKey` para re-lanzar la animación al cambiar de selección.

@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { border, palette, space, text, TextType } from "@william-callao/antonella-theme";
 import { Icon, type IconName } from "./Icon";
 import { Text } from "./text/Text";
+import { TrackedPressable } from "./TrackedPressable";
 
 export enum OptionListItemVariant {
   Default = "default",
@@ -37,8 +38,9 @@ export function OptionListItem({
   const iconTint = iconColor ?? (destructive ? palette.danger : text.default);
 
   return (
-    <Pressable
+    <TrackedPressable
       onPress={onPress}
+      tracking={{ component: "OptionListItem", label: title, kind: "item" }}
       style={({ pressed }) => [
         styles.row,
         showSeparator && styles.separator,
@@ -59,7 +61,7 @@ export function OptionListItem({
         ) : null}
       </View>
       <Icon name={trailing} size={18} color={text.secondary} />
-    </Pressable>
+    </TrackedPressable>
   );
 }
 
@@ -68,7 +70,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: space.space3,
-    paddingVertical: space.space3,
+    // 14 + 20 (title) + 14 = 48dp: mínimo de target táctil de Material.
+    paddingVertical: 14,
   },
   separator: {
     borderBottomWidth: StyleSheet.hairlineWidth,

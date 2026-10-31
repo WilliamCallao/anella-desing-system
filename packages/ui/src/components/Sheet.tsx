@@ -10,6 +10,7 @@ import { background, radius, space } from "@william-callao/antonella-theme";
 import { DialogHeader } from "./DialogHeader";
 import type { IconName } from "./Icon";
 import { SheetOverlay } from "./SheetOverlay";
+import { useEmbeddedBackHandler } from "./useEmbeddedBackHandler";
 import { useSheetController } from "./useSheetController";
 
 const ANIM_IN_TIMING = 260;
@@ -24,6 +25,8 @@ export type SheetProps = {
   icon?: IconName;
   title?: string;
   caption?: string;
+  /** Contenido opcional centrado sobre el header (p. ej. indicador de pasos). */
+  headerAccessory?: React.ReactNode;
   children: React.ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
   snapPoints?: Array<string | number>;
@@ -45,6 +48,7 @@ export function Sheet({
   icon,
   title,
   caption,
+  headerAccessory,
   children,
   contentStyle,
   snapPoints,
@@ -60,6 +64,11 @@ export function Sheet({
     dragToDismiss: true,
     timings: { inMs: ANIM_IN_TIMING, outMs: ANIM_OUT_TIMING, backdropOpacity: BACKDROP_OPACITY },
   });
+
+  // En modo `embedded` el host modal (expo-router) tiene su propio BackHandler
+  // que cierra el diálogo sin conocer `dismissible`. Este listener se registra
+  // después y bloquea el back cuando el formulario exige cierre explícito.
+  useEmbeddedBackHandler({ embedded, visible, dismissible, onClose });
 
   return (
     <SheetOverlay
@@ -78,11 +87,12 @@ export function Sheet({
           {...(controller.panResponder?.panHandlers ?? {})}
         >
           <View style={styles.handleBar} />
-          {title || icon || caption || showCloseButton ? (
+          {title || icon || caption || showCloseButton || headerAccessory ? (
             <DialogHeader
               icon={icon}
               title={title}
               caption={caption}
+              headerAccessory={headerAccessory}
               onClose={onClose}
               showCloseButton={showCloseButton}
             />

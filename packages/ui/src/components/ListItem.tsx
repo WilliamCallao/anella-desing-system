@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { space, neutrals, TextType } from "@william-callao/antonella-theme";
 import { Text } from "./text";
 import { Icon, type IconName } from "./Icon";
+import { TrackedPressable } from "./TrackedPressable";
 
 // ── Style enum ──────────────────────────────────────────────
 
@@ -42,8 +43,9 @@ export function ListItem({
   const c = STYLE_COLORS[style];
 
   return (
-    <Pressable
+    <TrackedPressable
       onPress={onPress}
+      tracking={{ component: "ListItem", label: title, kind: "item" }}
       style={({ pressed }) => [
         styles.row,
         pressed && styles.pressed,
@@ -64,7 +66,7 @@ export function ListItem({
         ) : null}
       </View>
       <Icon name={trailing} size={18} color={c.icon} />
-    </Pressable>
+    </TrackedPressable>
   );
 }
 

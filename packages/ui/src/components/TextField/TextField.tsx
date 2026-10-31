@@ -7,7 +7,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { appInput, spacing, texts, TextType } from "@william-callao/antonella-theme";
+import { appInput, brand, spacing, texts, TextType } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
 
 export interface TextFieldProps {
@@ -69,7 +69,7 @@ export function TextField({
         autoCapitalize={autoCapitalize}
         maxLength={maxLength}
         multiline={multiline}
-        selectionColor={appInput.text}
+        selectionColor={brand.M300}
         underlineColorAndroid="transparent"
       />
       {error ? (

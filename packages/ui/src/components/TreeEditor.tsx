@@ -2,21 +2,25 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Animated,
   Easing,
-  Pressable,
   StyleSheet,
   View,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { brand, card, cta1, neutrals, radius, resolveSemantic, lightSemantic, space, text, TextType } from "@william-callao/antonella-theme";
+import { brand, cta1, neutrals, radius, space, TextType } from "@william-callao/antonella-theme";
 import { Text } from "./text/Text";
 import { Icon } from "./Icon";
 import { AppIcon } from "../AppIcons";
+import { TrackedPressable } from "./TrackedPressable";
+
+export type TreeNodeKind = "group" | "item";
 
 export type TreeNode = {
   id: string;
   code: string;
   name: string;
+  /** Contenedor (grupo/cuenta título) o contenido (artículo/cuenta movimiento). */
+  kind: TreeNodeKind;
   children: TreeNode[];
 };
 
@@ -26,87 +30,53 @@ export type TreeEditorVariant = "default" | "darkness";
 
 type VariantTokens = {
   containerBg: string;
-  cardBg: string;
-  /** Color de estructura: conectores del árbol (token semántico subtle). */
-  lineColor: string;
-  /** Icono de carpeta abierta en grupos expandidos (brand). */
-  iconExpanded: string;
-  /** Relleno y texto del chip de código (espejo del resaltado de Item). */
-  chipBg: string;
-  chipText: string;
-  /** Chip inactivo (grupo colapsado): sin relleno, borde gris discreto. */
-  neutralChipBg: string;
-  neutralChipBorder: string;
-  neutralChipText: string;
-  /** Item activo (grupo expandido): fondo brand y textos con contraste ajustado. */
-  activeCardBg: string;
-  activeTextPrimary: string;
-  activeTextSecondary: string;
-  activeIconColor: string;
-  activeChipBg: string;
-  activeChipText: string;
-  activePressedBg: string;
-  textPrimary: string;
-  textSecondary: string;
-  codeColor: string;
-  chevronColor: string;
+  groupIcon: string;
+  itemIcon: string;
+  groupText: string;
+  itemText: string;
+  groupMeta: string;
+  codeText: string;
+  groupTileBg: string;
+  groupRowExpandedBg: string;
+  groupRowPressedBg: string;
+  rowPressedBg: string;
   addRootText: string;
   actionsColor: string;
-  pressedBg: string;
 };
-
-const _semantic = resolveSemantic(lightSemantic);
 
 const VARIANT_TOKENS: Record<TreeEditorVariant, VariantTokens> = {
   default: {
     containerBg: "transparent",
-    cardBg: card.background,
-    lineColor: neutrals.N700,
-    iconExpanded: brand.M500,
-    chipBg: brand.M100,
-    chipText: brand.M700,
-    neutralChipBg: "transparent",
-    neutralChipBorder: neutrals.N300,
-    neutralChipText: _semantic.default.text.default,
-    activeCardBg: brand.M100,
-    activeTextPrimary: brand.M900,
-    activeTextSecondary: brand.M700,
-    activeIconColor: brand.M700,
-    activeChipBg: neutrals.N0,
-    activeChipText: brand.M800,
-    activePressedBg: "rgba(0,0,0,0.08)",
-    textPrimary: card.text.primary,
-    textSecondary: card.text.secondary,
-    codeColor: card.text.secondary,
-    chevronColor: text.secondary,
+    groupIcon: brand.M600,
+    itemIcon: neutrals.N500,
+    groupText: neutrals.N900,
+    itemText: neutrals.N700,
+    groupMeta: neutrals.N500,
+    codeText: neutrals.N500,
+    groupTileBg: brand.M50,
+    groupRowExpandedBg: neutrals.N100,
+    groupRowPressedBg: neutrals.N200,
+    rowPressedBg: "rgba(0,0,0,0.04)",
     addRootText: cta1,
-    actionsColor: text.secondary,
-    pressedBg: "rgba(0,0,0,0.04)",
+    actionsColor: neutrals.N500,
   },
   darkness: {
     containerBg: "transparent",
-    cardBg: _semantic.darkness.bg.subtle,
-    lineColor: _semantic.darkness.text.subtlest,
-    iconExpanded: brand.M300,
-    chipBg: brand.M700,
-    chipText: _semantic.darkness.text.default,
-    neutralChipBg: "transparent",
-    neutralChipBorder: _semantic.darkness.text.subtlest,
-    neutralChipText: _semantic.darkness.text.subtle,
-    activeCardBg: brand.M700,
-    activeTextPrimary: _semantic.darkness.text.default,
-    activeTextSecondary: _semantic.darkness.text.subtle,
-    activeIconColor: _semantic.darkness.icon.default,
-    activeChipBg: "rgba(255,255,255,0.18)",
-    activeChipText: _semantic.darkness.text.default,
-    activePressedBg: "rgba(255,255,255,0.10)",
-    textPrimary: _semantic.darkness.text.default,
-    textSecondary: _semantic.darkness.text.subtle,
-    codeColor: _semantic.darkness.text.subtle,
-    chevronColor: _semantic.darkness.icon.subtle,
-    addRootText: brand.M400,
-    actionsColor: _semantic.darkness.icon.subtle,
-    pressedBg: "rgba(255,255,255,0.06)",
+    groupIcon: brand.M300,
+    itemIcon: neutrals.N500,
+    groupText: neutrals.N0,
+    itemText: neutrals.N300,
+    groupMeta: neutrals.N400,
+    codeText: neutrals.N500,
+    groupTileBg: "rgba(100,164,215,0.16)",
+    // Equivalente sólido del rgba(255,255,255,0.07) sobre N950. El borde usa
+    // este mismo valor sin alpha: si ambos fueran rgba, el borde compone dos
+    // capas y se ve más claro que el fondo.
+    groupRowExpandedBg: "#181D26",
+    groupRowPressedBg: "rgba(255,255,255,0.10)",
+    rowPressedBg: "rgba(255,255,255,0.04)",
+    addRootText: brand.M300,
+    actionsColor: neutrals.N400,
   },
 };
 
@@ -146,11 +116,17 @@ export type TreeEditorProps = {
 // Helpers puros: mutan copias del bosque y devuelven nuevos arrays
 // ----------------------------------------------------------------
 
-export function createNode(code: string, name: string, children: TreeNode[] = []): TreeNode {
+export function createNode(
+  code: string,
+  name: string,
+  children: TreeNode[] = [],
+  kind: TreeNodeKind = "item",
+): TreeNode {
   return {
     id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
     code,
     name,
+    kind,
     children,
   };
 }
@@ -244,18 +220,20 @@ export function buildInitialCollapsed(nodes: TreeNode[]): Record<string, boolean
 // anima/clipea con overflow hidden.
 // ----------------------------------------------------------------
 
-const INDENT = 28;
-const ROW_HEIGHT = 72;
-const CARD_MARGIN = 12;
-const CARD_PADDING_H = space.space4;
-const CARD_RADIUS = 24;
-/** Offset del riel vertical dentro de su columna de indentación. */
-const LINE_X = 10;
+const INDENT = 20;
+const GROUP_ROW_HEIGHT = 56;
+const ITEM_ROW_HEIGHT = 68;
+const CARD_RADIUS = radius.lg;
+const ROW_VERTICAL_PADDING = space.space1;
+const ROW_LEFT_PADDING = space.space1;
+const ROW_RIGHT_PADDING = space.space3;
+const FOLDER_TILE_WIDTH = 48;
+// Radio concéntrico: el radio interior se reduce por el padding que lo separa
+// del borde exterior de la fila.
+const FOLDER_TILE_RADIUS = CARD_RADIUS - ROW_LEFT_PADDING;
 
 const EXPAND_FADE = 180;
 
-/** Icono de nodo (folder/file) alineado con el título. */
-const NODE_ICON_SIZE = 18;
 
 // Contexto compartido entre el render recursivo y las filas.
 // No incluye mapas mutables (`collapsed`/versiones): se leen por referencia vía
@@ -282,59 +260,25 @@ type TreeRenderContext = {
 // sobre la fila ni padding intermedio), la alineación entre filas es exacta por
 // construcción. `terminal` cierra el codo en el centro de la fila: es el "└"
 // del último item visible del nivel.
-const NodeGutter = React.memo(function NodeGutter({
-  depth,
-  lineColor,
-  terminal,
-}: {
-  depth: number;
-  lineColor: string;
-  terminal: boolean;
-}) {
+const NodeGutter = React.memo(function NodeGutter({ depth }: { depth: number }) {
   if (depth === 0) return null;
-  const columns = [];
-  for (let k = 0; k < depth; k++) {
-    const isElbow = k === depth - 1;
-    columns.push(
-      <View key={`g${k}`} style={styles.gutterCol}>
-        <View
-          style={[
-            styles.gutterRail,
-            {
-              left: LINE_X,
-              backgroundColor: lineColor,
-              top: 0,
-              bottom: isElbow && terminal ? "50%" : 0,
-            },
-          ]}
-        />
-        {isElbow ? (
-          <View style={[styles.gutterStub, { left: LINE_X, backgroundColor: lineColor }]} />
-        ) : null}
-      </View>,
-    );
-  }
-  return <>{columns}</>;
+  return <View style={{ width: INDENT * depth }} />;
 });
 
-// Fila compacta "+ Agregar" de un nivel. El riel del padre termina en el chip,
-// así el botón se lee como el último item del nivel y queda conectado.
+// Renderiza el bosque visible; el colapso se resuelve en cada nodo.
 function renderForest(
   ctx: TreeRenderContext,
   nodes: TreeNode[],
   depth: number,
-  parentName?: string,
 ): React.ReactNode {
   const collapsed = ctx.getCollapsed();
   return (
     <>
-      {nodes.map((node, i) => (
+      {nodes.map((node) => (
         <TreeNodeItem
           key={node.id}
           node={node}
           depth={depth}
-          isLast={i === nodes.length - 1}
-          parentName={parentName}
           isCollapsed={!!collapsed[node.id]}
           branchVersion={ctx.getVersion(node.id)}
           ctx={ctx}
@@ -368,26 +312,20 @@ function markSubtreeDirty(node: TreeNode, acc: Set<string>) {
 const TreeNodeItem = React.memo(function TreeNodeItem({
   node,
   depth,
-  isLast,
-  parentName,
   isCollapsed,
   branchVersion,
   ctx,
 }: {
   node: TreeNode;
   depth: number;
-  isLast: boolean;
-  parentName?: string;
   isCollapsed: boolean;
   branchVersion: number;
   ctx: TreeRenderContext;
 }) {
+  const isGroup = node.kind === "group";
   const hasChildren = node.children.length > 0;
-  // Activo: grupo expandido. Pinta el card de brand con textos contrastados.
-  const isActive = hasChildren && !isCollapsed;
-
-  // El "└" del riel cierra en el último hijo visible del nivel.
-  const terminalElbow = isLast;
+  const canToggle = isGroup && hasChildren;
+  const isExpanded = canToggle && !isCollapsed;
 
   const contentOpacity = useRef(new Animated.Value(0)).current;
 
@@ -406,66 +344,73 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
     return () => animation.stop();
   }, [isCollapsed, node.id, node.name, contentOpacity]);
 
-  // Fila 1: icono + título. Fila 2: descripción alineada con el título.
-  // Grupos: folder cerrado/abierto según colapso; hojas: file.
   const defaultContent = (
-    <View style={styles.textBlock}>
-      <View style={styles.titleRow}>
-        <Icon
-          name={hasChildren ? (isCollapsed ? AppIcon.Folder : AppIcon.FolderOpen) : AppIcon.File}
-          size={NODE_ICON_SIZE}
-          color={isActive ? ctx.vt.activeIconColor : hasChildren ? ctx.vt.chevronColor : ctx.vt.codeColor}
-        />
-        <Text
-          variant={TextType.Caption}
-          color={isActive ? ctx.vt.activeTextPrimary : ctx.vt.textPrimary}
-          numberOfLines={1}
-        >
-          {node.name}
-        </Text>
-      </View>
-      <View style={styles.captionRow}>
-        <View
-          style={[
-            styles.codeChip,
-            isActive
-              ? { backgroundColor: ctx.vt.activeChipBg }
-              : !hasChildren
-                ? { backgroundColor: ctx.vt.chipBg }
-                : {
-                    backgroundColor: ctx.vt.neutralChipBg,
-                    borderWidth: 1,
-                    borderColor: ctx.vt.neutralChipBorder,
-                  },
-          ]}
-        >
-          <Text
-            variant={TextType.Caption}
-            color={
-              isActive ? ctx.vt.activeChipText : !hasChildren ? ctx.vt.chipText : ctx.vt.neutralChipText
-            }
-            numberOfLines={1}
+    <>
+      {isGroup ? (
+        <>
+          <View
+            style={[
+              styles.folderTile,
+              { backgroundColor: ctx.vt.groupTileBg },
+            ]}
           >
-            {node.code}
+            <Icon
+              name={isExpanded ? AppIcon.FolderOpen : AppIcon.Folder}
+              size={20}
+              color={ctx.vt.groupIcon}
+            />
+          </View>
+          <View style={styles.groupTextBlock}>
+            <Text
+              variant={TextType.BodyMedium}
+              color={ctx.vt.groupText}
+              numberOfLines={1}
+              style={styles.groupName}
+            >
+              {node.name}
+            </Text>
+            <Text
+              variant={TextType.Caption}
+              color={ctx.vt.groupMeta}
+              numberOfLines={1}
+            >
+              {node.code}
+            </Text>
+          </View>
+        </>
+      ) : (
+        <View style={styles.itemBody}>
+          <View style={styles.itemTopRow}>
+            <Icon
+              name={AppIcon.File}
+              size={16}
+              color={ctx.vt.itemIcon}
+            />
+            <Text
+              variant={TextType.Caption}
+              color={ctx.vt.codeText}
+              numberOfLines={1}
+              style={styles.codeText}
+            >
+              {node.code}
+            </Text>
+          </View>
+          <Text
+            variant={TextType.BodyMedium}
+            color={ctx.vt.itemText}
+            numberOfLines={1}
+            style={styles.itemName}
+          >
+            {node.name}
           </Text>
         </View>
-        {parentName ? (
-          <Text
-            variant={TextType.Caption}
-            color={isActive ? ctx.vt.activeTextSecondary : ctx.vt.textSecondary}
-            numberOfLines={1}
-          >
-            {parentName}
-          </Text>
-        ) : null}
-      </View>
-    </View>
+      )}
+    </>
   );
 
-  // Un nodo es interactivo si expande/colapsa, si abre su detalle (hoja con
-  // `onPressNode`) o si expone acciones (menú o pulsación larga).
-  const canToggle = hasChildren;
-  const canOpenDetail = !hasChildren && ctx.onPressNode != null;
+  // Un nodo es interactivo si expande/colapsa, si abre su detalle (nodo sin
+  // hijos) o si expone acciones (menú o pulsación larga).
+  const canOpenDetail = !canToggle && ctx.onPressNode != null;
   const canOpenActions = ctx.isEdit;
   const interactive = canToggle || canOpenDetail || canOpenActions;
 
@@ -477,33 +422,53 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
   // La pulsación larga abre acciones en modo edición sin importar el estilo del
   // menú; el botón de tres puntos se mantiene cuando `nodeActions="menu"`.
   const handleLongPress = ctx.isEdit ? () => ctx.onOpenActions(node.id) : undefined;
+  const pressedRowBg = isGroup
+    ? ctx.vt.groupRowPressedBg
+    : ctx.vt.rowPressedBg;
+  const selectedRowBg = isExpanded
+    ? ctx.vt.groupRowExpandedBg
+    : "transparent";
 
   return (
     <>
       <View style={styles.nodeRow}>
-        <NodeGutter depth={depth} lineColor={ctx.vt.lineColor} terminal={terminalElbow} />
-          <Pressable
+        <NodeGutter depth={depth} />
+          <TrackedPressable
             onPress={handlePress}
+            tracking={{
+              component: "TreeEditor",
+              label: node.name,
+              kind: "item",
+              data: {
+                code: node.code,
+                depth,
+                kind: node.kind,
+                childCount: isGroup ? node.children.length : undefined,
+                expanded: canToggle ? !isCollapsed : undefined,
+              },
+            }}
             onLongPress={handleLongPress}
             delayLongPress={450}
             disabled={!interactive}
             style={({ pressed }) => [
               styles.nodeCard,
               {
-                backgroundColor: pressed
-                  ? isActive
-                    ? ctx.vt.activePressedBg
-                    : ctx.vt.pressedBg
-                  : isActive
-                    ? ctx.vt.activeCardBg
-                    : ctx.vt.cardBg,
+                minHeight: isGroup ? GROUP_ROW_HEIGHT : ITEM_ROW_HEIGHT,
+                marginTop: isGroup ? space.space1 : 0,
+                marginBottom: isGroup ? space.space1 : 2,
+                borderColor: ctx.vt.groupRowExpandedBg,
+                backgroundColor: pressed ? pressedRowBg : selectedRowBg,
               },
             ]}
             accessibilityRole={interactive ? "button" : undefined}
-            accessibilityState={hasChildren ? { expanded: !isCollapsed } : undefined}
+            accessibilityState={
+              isGroup
+                ? { expanded: canToggle ? !isCollapsed : false }
+                : undefined
+            }
             accessibilityLabel={
-              hasChildren
-                ? `${isCollapsed ? "Expandir" : "Colapsar"} ${node.name}`
+              isGroup
+                ? `${node.name}, ${canToggle ? (isCollapsed ? "grupo colapsado" : "grupo expandido") : "grupo sin subelementos"}`
                 : canOpenDetail
                   ? `${node.name}, ver detalle`
                   : undefined
@@ -518,25 +483,31 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
               if (event.nativeEvent.actionName === "actions") ctx.onOpenActions(node.id);
             }}
           >
-            <View style={styles.rowContent}>
+            <View
+              style={[
+                styles.rowContent,
+                !isGroup && styles.itemRowContent,
+              ]}
+            >
               {ctx.renderNode ? ctx.renderNode(node, defaultContent) : defaultContent}
             </View>
-          </Pressable>
+          </TrackedPressable>
           {ctx.isEdit && !ctx.actionsOnLongPress ? (
-            <Pressable
+            <TrackedPressable
               onPress={() => ctx.onOpenActions(node.id)}
+              tracking={{ component: "TreeEditor", label: `Acciones de ${node.name}`, kind: "button", data: { code: node.code } }}
               hitSlop={12}
-              style={({ pressed }) => [styles.actions, pressed && { backgroundColor: ctx.vt.pressedBg }]}
+              style={({ pressed }) => [styles.actions, pressed && { backgroundColor: ctx.vt.rowPressedBg }]}
               accessibilityRole="button"
               accessibilityLabel={`Acciones de ${node.name}`}
             >
               <Icon name="more-vertical" size={20} color={ctx.vt.actionsColor} />
-            </Pressable>
+            </TrackedPressable>
           ) : null}
       </View>
-      {hasChildren && !isCollapsed ? (
+      {canToggle && !isCollapsed ? (
         <Animated.View style={[styles.subtreeFade, { opacity: contentOpacity }]}>
-          {renderForest(ctx, node.children, depth + 1, node.name)}
+          {renderForest(ctx, node.children, depth + 1)}
         </Animated.View>
       ) : null}
     </>
@@ -685,11 +656,12 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
       </View>
 
       {isEdit ? (
-        <Pressable
+        <TrackedPressable
           onPress={() => onRequestAdd?.(null)}
+          tracking={{ component: "TreeEditor", label: rootLabel, kind: "button" }}
           style={({ pressed }) => [
             styles.addRoot,
-            pressed && { backgroundColor: vt.pressedBg },
+            pressed && { backgroundColor: vt.rowPressedBg },
           ]}
           accessibilityRole="button"
         >
@@ -699,7 +671,7 @@ export function TreeEditor({ value, onChange, mode = "view", variant = "default"
           <Text variant={TextType.BodyMedium} color={vt.addRootText}>
             {rootLabel}
           </Text>
-        </Pressable>
+        </TrackedPressable>
       ) : null}
     </View>
   );
@@ -725,62 +697,70 @@ const styles = StyleSheet.create({
     position: "relative",
     flex: 1,
     borderRadius: CARD_RADIUS,
-    minHeight: ROW_HEIGHT,
+    borderWidth: 1,
     justifyContent: "center",
     overflow: "hidden",
-    marginBottom: CARD_MARGIN,
   },
   nodeRow: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  gutterCol: {
-    width: INDENT,
-    alignSelf: "stretch",
-  },
-  gutterRail: {
-    position: "absolute",
-    width: 1,
-  },
-  gutterStub: {
-    position: "absolute",
-    height: 1,
-    right: 0,
-    top: "50%",
-    marginTop: -0.5,
   },
   rowContent: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: space.space2,
-    paddingHorizontal: CARD_PADDING_H,
-    paddingVertical: space.space1,
+    paddingTop: ROW_VERTICAL_PADDING,
+    paddingBottom: ROW_VERTICAL_PADDING,
+    paddingLeft: ROW_LEFT_PADDING,
+    paddingRight: ROW_RIGHT_PADDING,
   },
-  titleRow: {
-    flexDirection: "row",
+  itemRowContent: {
+    paddingTop: space.space3,
+    paddingBottom: space.space3,
+    paddingLeft: space.space4,
+    paddingRight: space.space4,
+  },
+  folderTile: {
+    width: FOLDER_TILE_WIDTH,
+    alignSelf: "stretch",
     alignItems: "center",
-    gap: space.space2,
+    justifyContent: "center",
+    borderRadius: FOLDER_TILE_RADIUS,
+    flexShrink: 0,
   },
-  captionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.space2,
-    marginLeft: NODE_ICON_SIZE + space.space2,
+  groupTextBlock: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: "center",
+    gap: 1,
   },
-  codeChip: {
-    borderRadius: 999,
-    paddingHorizontal: space.space4,
-    paddingVertical: 2,
+  codeText: {
+    textAlign: "left",
   },
-  textBlock: {
-    flex: 0,
+  itemBody: {
+    flex: 1,
+    minWidth: 0,
     gap: space.space1,
+  },
+  itemTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.space1,
+  },
+  groupName: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: "600",
+  },
+  itemName: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: "400",
   },
   actions: {
     padding: space.space2,
     marginLeft: space.space1,
-    marginBottom: CARD_MARGIN,
     borderRadius: radius.sm,
   },
   subtreeFade: {

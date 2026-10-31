@@ -8,6 +8,7 @@ import {
 import Animated from "react-native-reanimated";
 import { space } from "@william-callao/antonella-theme";
 import { SheetOverlay } from "./SheetOverlay";
+import { useEmbeddedBackHandler } from "./useEmbeddedBackHandler";
 import { useSheetController } from "./useSheetController";
 
 const ANIM_IN_TIMING = 260;
@@ -51,6 +52,8 @@ export function AppBottomSheet({
     dragToDismiss: true,
     timings: { inMs: ANIM_IN_TIMING, outMs: ANIM_OUT_TIMING, backdropOpacity: BACKDROP_OPACITY },
   });
+
+  useEmbeddedBackHandler({ embedded, visible, dismissible, onClose });
 
   return (
     <SheetOverlay

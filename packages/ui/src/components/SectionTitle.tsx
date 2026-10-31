@@ -27,13 +27,10 @@ export function SectionTitle({ title, description, style }: SectionTitleProps) {
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    gap: space.space1,
+    gap: space.space2,
   },
   title: {
     textAlign: "center",
-    letterSpacing: -0.5,
-    fontWeight: "800",
-    transform: [{ scaleY: 1.05 }, { scaleX: 0.96 }],
   },
   description: {
     textAlign: "center",

@@ -7,8 +7,7 @@ export type SectionKey =
   | "contenido"
   | "iconos"
   | "layouts"
-  | "colores"
-  | "animaciones";
+  | "colores";
 
 export type VariantDemo = {
   id: string;

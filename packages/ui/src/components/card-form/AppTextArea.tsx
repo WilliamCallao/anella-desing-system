@@ -8,11 +8,11 @@ import {
   type NativeSyntheticEvent,
   type TextInputContentSizeChangeEventData,
 } from "react-native";
-import { appInput, spacing, text, texts, TextType, space } from "@william-callao/antonella-theme";
+import { appInput, appInputCard, brand, text, texts, TextType, space } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
 import type { AppInputProps } from "./AppInput";
+import { CARD_ERROR, CARD_TEXT, SINGLE_LINE_HEIGHT } from "./cardForm";
 
-const SINGLE_LINE_HEIGHT = 18;
 const MIN_AREA_HEIGHT = 72;
 
 export type AppTextAreaProps = AppInputProps & {
@@ -59,49 +59,81 @@ export function AppTextArea({
         style={[
           styles.container,
           inputHeight != null && inputHeight > SINGLE_LINE_HEIGHT && styles.containerGrown,
-          !editable && styles.containerDisabled,
         ]}
         onPress={focus}
         disabled={!editable}
         activeOpacity={1}
       >
-        <Text variant={TextType.Label} numberOfLines={1} style={styles.label}>
+        <Text
+          variant={TextType.Label}
+          numberOfLines={1}
+          color={error ? appInput.error : undefined}
+          style={[styles.label, CARD_TEXT]}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        >
           {label}
         </Text>
-        <TextInput
-          ref={inputRef}
-          style={[
-            styles.value,
-            {
-              fontSize: texts.caption.fontSize,
-              lineHeight: texts.caption.lineHeight,
-              color: text.default,
-            },
-            inputHeight != null && {
-              height: Math.max(inputHeight, SINGLE_LINE_HEIGHT),
-            },
-          ]}
-          value={value}
-          onChangeText={onChangeText}
-          onContentSizeChange={handleContentSizeChange}
-          onSubmitEditing={handleSubmitEditing}
-          placeholder={placeholder}
-          placeholderTextColor={texts.placeholder.color}
-          autoCapitalize={autoCapitalize}
-          keyboardType={keyboardType}
-          maxLength={maxLength}
-          editable={editable}
-          selectionColor={text.default}
-          underlineColorAndroid="transparent"
-          multiline
-          scrollEnabled={false}
-          textAlignVertical="top"
-          blurOnSubmit
-          submitBehavior="blurAndSubmit"
-        />
+        <View style={styles.inputArea}>
+          <TextInput
+            ref={inputRef}
+            style={[
+              styles.value,
+              {
+                fontSize: CARD_TEXT.fontSize,
+                lineHeight: CARD_TEXT.lineHeight,
+                letterSpacing: CARD_TEXT.letterSpacing,
+                fontWeight: texts.value.fontWeight,
+                color: editable ? text.default : text.readOnly,
+              },
+              inputHeight != null && {
+                height: Math.max(inputHeight, SINGLE_LINE_HEIGHT),
+              },
+            ]}
+            value={value}
+            onChangeText={onChangeText}
+            onContentSizeChange={handleContentSizeChange}
+            onSubmitEditing={handleSubmitEditing}
+            autoCapitalize={autoCapitalize}
+            keyboardType={keyboardType}
+            maxLength={maxLength}
+            editable={editable}
+            accessibilityLabel={label}
+            accessibilityState={{ disabled: !editable }}
+            selectionColor={brand.M300}
+            underlineColorAndroid="transparent"
+            multiline
+            scrollEnabled={false}
+            textAlignVertical="top"
+            blurOnSubmit
+            submitBehavior="blurAndSubmit"
+          />
+          {value === "" && placeholder != null && placeholder !== "" ? (
+            <View
+              style={styles.placeholderOverlay}
+              pointerEvents="none"
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              <Text
+                variant={TextType.Value}
+                color={appInputCard.text.placeholder}
+                style={[CARD_TEXT, styles.placeholder]}
+              >
+                {placeholder}
+              </Text>
+            </View>
+          ) : null}
+        </View>
       </TouchableOpacity>
       {error ? (
-        <Text variant={TextType.Caption} color={appInput.error} style={styles.error}>
+        <Text
+          variant={TextType.Caption}
+          color={appInput.error}
+          style={styles.error}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+        >
           {error}
         </Text>
       ) : null}
@@ -122,11 +154,24 @@ const styles = StyleSheet.create({
   containerGrown: {
     justifyContent: "flex-start",
   },
-  containerDisabled: {
-    opacity: 0.5,
-  },
   label: {
     flexShrink: 0,
+  },
+  inputArea: {
+    flex: 1,
+  },
+  placeholderOverlay: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  },
+  placeholder: {
+    fontWeight: "300",
+    textAlign: "left",
+    paddingRight: 2,
+    includeFontPadding: false,
   },
   value: {
     flex: 1,
@@ -135,11 +180,9 @@ const styles = StyleSheet.create({
     paddingRight: 2,
     textAlign: "left",
     outlineWidth: 0,
+    includeFontPadding: false,
   },
   error: {
-    marginTop: spacing.xs,
-    paddingHorizontal: space.space4,
-    paddingBottom: spacing.sm,
-    textAlign: "left",
+    ...CARD_ERROR,
   },
 });

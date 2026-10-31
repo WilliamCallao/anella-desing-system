@@ -1,7 +1,8 @@
 import React from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import { resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 import { Icon } from "./Icon";
+import { TrackedPressable } from "./TrackedPressable";
 import type { IconName } from "./Icon";
 
 // ── Style enum ──────────────────────────────────────────────
@@ -48,8 +49,9 @@ export function TopAction({
   };
 
   return (
-    <Pressable
+    <TrackedPressable
       onPress={onPress}
+      tracking={{ component: "TopAction", label: accessibilityLabel, kind: "button" }}
       style={({ pressed }) => [
         styles.button,
         { backgroundColor: pressed ? c.buttonPressedBg : c.buttonBg },
@@ -59,7 +61,7 @@ export function TopAction({
       accessibilityLabel={accessibilityLabel}
     >
       <Icon name={icon} size={20} color={c.iconColor} />
-    </Pressable>
+    </TrackedPressable>
   );
 }
 

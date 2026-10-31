@@ -55,8 +55,7 @@ const STATE_DEFAULTS: Record<StateMessageType, { icon: IconName; title: string }
 
 // ── Component ───────────────────────────────────────────────
 // Mensaje centrado de icono + texto para estados de carga o vacío.
-// Para intercambiarlo animado con el contenido real, envolverlo en un
-// `TransitionView` (de @william-callao/antonella-animations) usando `contentKey`.
+// El intercambio con el contenido real lo anima el contenedor de layout.
 
 export function StateMessage({
   state,

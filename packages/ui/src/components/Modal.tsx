@@ -11,6 +11,7 @@ import { background, radius, space } from "@william-callao/antonella-theme";
 import { DialogHeader } from "./DialogHeader";
 import type { IconName } from "./Icon";
 import { SheetOverlay } from "./SheetOverlay";
+import { useEmbeddedBackHandler } from "./useEmbeddedBackHandler";
 import { useSheetController } from "./useSheetController";
 
 const ANIM_IN_TIMING = 220;
@@ -26,6 +27,8 @@ export type ModalProps = {
   icon?: IconName;
   title?: string;
   caption?: string;
+  /** Contenido opcional centrado sobre el header (p. ej. indicador de pasos). */
+  headerAccessory?: React.ReactNode;
   children: React.ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
   /** Zona de acciones fija al pie del modal. */
@@ -46,6 +49,7 @@ export function Modal({
   icon,
   title,
   caption,
+  headerAccessory,
   children,
   contentStyle,
   actions,
@@ -59,6 +63,7 @@ export function Modal({
     timings: { inMs: ANIM_IN_TIMING, outMs: ANIM_OUT_TIMING, backdropOpacity: BACKDROP_OPACITY },
   });
 
+  useEmbeddedBackHandler({ embedded, visible, dismissible, onClose });
   const panelStyle = useAnimatedStyle(
     () => ({
       opacity: controller.progress.value,
@@ -83,11 +88,12 @@ export function Modal({
         pointerEvents="box-none"
       >
         <Animated.View style={[styles.panel, controller.heightStyle, panelStyle, contentStyle]}>
-          {title || icon || caption || showCloseButton ? (
+          {title || icon || caption || showCloseButton || headerAccessory ? (
             <DialogHeader
               icon={icon}
               title={title}
               caption={caption}
+              headerAccessory={headerAccessory}
               onClose={onClose}
               showCloseButton={showCloseButton}
             />

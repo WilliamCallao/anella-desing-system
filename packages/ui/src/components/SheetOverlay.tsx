@@ -81,7 +81,7 @@ export function SheetOverlay({
       statusBarTranslucent
       animationType="none"
       hardwareAccelerated
-      onRequestClose={dismissible ? onClose : undefined}
+      onRequestClose={dismissible ? onClose : () => {}}
     >
       {overlay}
     </RNModal>

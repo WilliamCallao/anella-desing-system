@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import { brand, radius, space, TextType, resolveSemantic, lightSemantic } from "@william-callao/antonella-theme";
 import { Text } from "./text/Text";
 import { Icon, type IconName } from "./Icon";
+import { TrackedPressable } from "./TrackedPressable";
 
 // ── Style enum ──────────────────────────────────────────────
 
@@ -36,8 +37,9 @@ export function DrawerMenuItem({
   const accent = selected ? c.selectedColor : null;
 
   return (
-    <Pressable
+    <TrackedPressable
       onPress={onPress}
+      tracking={{ component: "DrawerMenuItem", label, kind: "item", data: { selected } }}
       style={({ pressed }) => [styles.row, pressed && { backgroundColor: c.pressedBg }]}
       accessibilityRole="button"
       accessibilityState={{ selected }}
@@ -52,7 +54,7 @@ export function DrawerMenuItem({
         {label}
       </Text>
       <Icon name="chevron-forward" size={18} color={accent ?? c.chevronColor} />
-    </Pressable>
+    </TrackedPressable>
   );
 }
 

@@ -17,7 +17,9 @@ import {
 } from "react-native";
 import Animated, {
   CurvedTransition,
+  FadeIn,
   LinearTransition,
+  interpolateColor,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -32,6 +34,7 @@ import {
   FULLBOTTOM_DIVISOR_H,
   bottomOverflows,
   computeSectionTargets,
+  fullBottomTransitionDuration,
   initialNaturals,
   isValidMeasurement,
   layoutStates,
@@ -68,11 +71,19 @@ export {
 const LAYOUT_DURATION = 300;
 const REVEAL_DELAY_MS = 380;
 const REVEAL_DURATION_MS = 200;
+// Crossfade de contenido entre rutas: la salida es un poco más lenta que la
+// entrada para que el cambio no se sienta como un corte.
+const CONTENT_FADE_OUT_MS = 180;
+const CONTENT_FADE_IN_MS = 140;
+// Al volver, la pantalla que se va tiene que ceder rápido y la anterior entrar
+// con más aire; si no, ambas se pisan y el retroceso se siente pesado.
+const CONTENT_FADE_OUT_BACK_MS = 100;
+const CONTENT_FADE_IN_BACK_MS = 180;
 
 // Relecturas del proxy de medición. Un descendiente que anima su PROPIO alto en
-// el hilo UI (p. ej. `TransitionView`, que arranca en 0 y crece) hace que el
-// `onLayout` de JS del proxy quede con la altura de un frame intermedio y no se
-// vuelva a disparar de forma confiable en iOS. Para no medir un alto "capado por
+// el hilo UI y arranca en 0 hace que el `onLayout` de JS del proxy quede con la
+// altura de un frame intermedio y no se vuelva a disparar de forma confiable en
+// iOS. Para no medir un alto "capado por
 // animación", además del onLayout re-leemos con `measure()` hasta que la altura
 // queda estable (dos lecturas iguales) o pasa el tope de tiempo.
 const PROBE_INTERVAL_MS = 150;
@@ -81,6 +92,24 @@ const PROBE_MAX_MS = 4000;
 
 const _sanitize = (v: number): number =>
   typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : 0;
+
+function isFullBottomLayout(state: LayoutState | null): boolean {
+  return (
+    !!state &&
+    !state.sections.top?.visible &&
+    !state.sections.mid?.visible &&
+    !!state.sections.bottom?.visible
+  );
+}
+
+function isOnlyCenterLayout(state: LayoutState | null): boolean {
+  return (
+    !!state &&
+    !state.sections.top?.visible &&
+    !!state.sections.mid?.visible &&
+    !state.sections.bottom?.visible
+  );
+}
 
 export type AppNavigation = {
   navigate: (route: AppRoute) => void;
@@ -149,9 +178,10 @@ export type AppLayoutProps = {
  *  - El scroll de página e interno se resetea al tope SOLO cuando cambia el
  *    nombre de ruta; los cambios de contenido dentro de la misma ruta preservan
  *    la posición.
- *  - El fondo del page toma el color del cuerpo/mid (`selectPageBackground`):
- *    durante los morphs se asoma el color del header (claro), no un corte
- *    oscuro, y no hace falta sobredimensionar el body con colas.
+ *  - El fondo del page toma el color del cuerpo/mid (`selectPageBackground`) y
+ *    se interpola durante la transición: el lienzo no salta a negro antes de que
+ *    el header claro termine de contraerse, y no hace falta sobredimensionar el
+ *    body con colas.
  *
  * Contrato de slots dinámicos: el contenido de una sección `content`/
  * `minFillRest` se monta DOS veces (proxy + visible). Debe ser puro e
@@ -169,17 +199,37 @@ export function AppLayout({
   HRef.current = H;
 
   const reduceMotion = useReducedMotion();
-  const transition = reduceMotion
-    ? LinearTransition.duration(0)
-    : CurvedTransition.duration(LAYOUT_DURATION);
   const revealProgress = useSharedValue(1);
   const revealStyle = useAnimatedStyle(() => ({ opacity: revealProgress.value }));
+  const contentOutProgress = useSharedValue(0);
+  const contentOutStyle = useAnimatedStyle(() => ({ opacity: contentOutProgress.value }));
+
+  // El fondo del page tambien es parte de la transicion. Antes cambiaba de
+  // golpe con el estado destino: al entrar a fullBottom el lienzo claro pasaba
+  // a negro en el primer frame, mientras el header claro todavia se estaba
+  // contrayendo. Ahora interpola entre el color anterior y el nuevo durante la
+  // misma ventana que las alturas.
+  const initialPageBg = selectPageBackground(resolveLayoutState(initialRoute.state));
+  const pageBgFrom = useSharedValue(initialPageBg);
+  const pageBgTo = useSharedValue(initialPageBg);
+  const pageBgProgress = useSharedValue(1);
+  const pageBgTargetRef = useRef(initialPageBg);
+  const pageBgStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      pageBgProgress.value,
+      [0, 1],
+      [pageBgFrom.value, pageBgTo.value],
+    ),
+  }));
 
   const [stack, setStack] = useState<AppRoute[]>([initialRoute]);
   const [prevRoute, setPrevRoute] = useState<AppRoute | null>(null);
+  const prevRouteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasTransition = animateTransitions && prevRoute !== null;
 
-  const initialNaturalsValue = useRef(initialNaturals(H)).current;
+  const initialNaturalsValue = useRef(
+    initialNaturals(H, resolveLayoutState(initialRoute.state)),
+  ).current;
   const [layoutHeights, setLayoutHeights] = useState<SectionHeights>(() =>
     computeSectionTargets(resolveLayoutState(initialRoute.state), initialNaturalsValue, H)
   );
@@ -210,6 +260,20 @@ export function AppLayout({
   const [pageCanScroll, setPageCanScroll] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const innerScrollRef = useRef<ScrollView>(null);
+  // Offset de la página partida. Se usa al entrar a fullBottom para no animar
+  // una cabecera que el usuario ya scrolleó fuera de pantalla.
+  const pageScrollYRef = useRef(0);
+  // Offset capturado antes de navegar: el render de la ruta nueva puede ocurrir
+  // después de resetear el ScrollView, así que no alcanza con leerlo en render.
+  const pendingNavigationScrollRef = useRef(0);
+  const navigationDirectionRef = useRef<"forward" | "back">("forward");
+  // La duración se decide una sola vez por cambio de ruta: después del primer
+  // render el reset de scroll ya dejó el offset en 0 y recalcularla convertiría
+  // un salto intencional en una animación completa.
+  const transitionLatchRef = useRef({
+    route: initialRoute.name,
+    duration: LAYOUT_DURATION,
+  });
 
   // Medición: refs a los proxies por sección + estado de las relecturas.
   const proxyRefs = useRef<Partial<Record<SectionKey, View | null>>>({});
@@ -224,6 +288,7 @@ export function AppLayout({
   useEffect(() => {
     return () => {
       if (revealTimer.current) clearTimeout(revealTimer.current);
+      if (prevRouteTimer.current) clearTimeout(prevRouteTimer.current);
       SECTION_KEYS.forEach((k) => {
         const t = probeTimers.current[k];
         if (t) clearInterval(t);
@@ -238,15 +303,22 @@ export function AppLayout({
     setStack((s) => (s[0]?.name === initialRoute.name ? s : [initialRoute]));
   }, [initialRoute.name]);
 
+  const captureScrollForNavigation = useCallback((direction: "forward" | "back") => {
+    pendingNavigationScrollRef.current = pageScrollYRef.current;
+    navigationDirectionRef.current = direction;
+  }, []);
   const navigate = useCallback((route: AppRoute) => {
+    captureScrollForNavigation("forward");
     setStack((s) => [...s, route]);
-  }, []);
+  }, [captureScrollForNavigation]);
   const replace = useCallback((route: AppRoute) => {
+    captureScrollForNavigation("forward");
     setStack((s) => [...s.slice(0, -1), route]);
-  }, []);
+  }, [captureScrollForNavigation]);
   const back = useCallback(() => {
+    captureScrollForNavigation("back");
     setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
-  }, []);
+  }, [captureScrollForNavigation]);
   const canGoBack = stack.length > 1;
   const currentRoute = stack[stack.length - 1];
 
@@ -291,8 +363,94 @@ export function AppLayout({
   const prevLayoutState: LayoutState | null = prevRoute
     ? resolveLayoutState(prevRoute.state)
     : null;
+  const routeChanged = !!prevRoute && prevRoute.name !== currentRoute.name;
+  const contentFadeEnabled =
+    routeChanged && animateTransitions && !reduceMotion && !revealEnabled;
+  // Salir de fullBottom no es un crossfade: la hoja deja de existir como tal.
+  // El contenido saliente se apaga en el mismo frame; el destino entra normal.
+  const leavingFullBottom =
+    contentFadeEnabled &&
+    isFullBottomLayout(prevLayoutState) &&
+    !isFullBottomLayout(state);
+  // Entrar a fullBottom desde un layout partido: la hoja anterior no se
+  // desvanece, se apaga enseguida para que no se vean dos bodies superpuestos.
+  const enteringFullBottom =
+    contentFadeEnabled &&
+    !isFullBottomLayout(prevLayoutState) &&
+    isFullBottomLayout(state);
+  // El home (onlyCenter) no tiene header ni footer propios. Al pasar a un
+  // layout con secciones, su cuerpo no debe quedar 180 ms encima del header
+  // nuevo: se apaga en el mismo frame y el destino empieza a renderizarse.
+  const leavingOnlyCenter =
+    contentFadeEnabled &&
+    isOnlyCenterLayout(prevLayoutState) &&
+    !isOnlyCenterLayout(state);
+  // Al volver a onlyCenter, el cuerpo destino ocupa el centro completo. El
+  // centro saliente (por ejemplo el header del layout `bottom`) no se conserva
+  // como capa: se apaga en el mismo frame para no quedar encima del body nuevo.
+  const enteringOnlyCenter =
+    contentFadeEnabled &&
+    !isOnlyCenterLayout(prevLayoutState) &&
+    isOnlyCenterLayout(state);
+  const skipContentFadeOut = leavingFullBottom || leavingOnlyCenter;
+  const goingBack = navigationDirectionRef.current === "back";
+  const contentFadeOutMs = goingBack ? CONTENT_FADE_OUT_BACK_MS : CONTENT_FADE_OUT_MS;
+  const contentFadeInMs = goingBack ? CONTENT_FADE_IN_BACK_MS : CONTENT_FADE_IN_MS;
+
+  // La capa saliente tiene que nacer visible en el mismo render en que aparece
+  // la ruta nueva; si esperamos al layout effect, el primer frame pinta el
+  // contenido nuevo a opacidad 1 y recién después arranca el fade.
+  if (contentFadeEnabled) {
+    contentOutProgress.value = skipContentFadeOut ? 0 : 1;
+  }
+
+  // La cabecera solo existe mientras su parte visible no salió por arriba. Si
+  // el usuario dejó la página partida scrolleada, no hay nada que colapsar: la
+  // hoja ya está cubriendo esa zona. La ventana del morph se acorta en
+  // proporción a lo que queda visible, y desaparece si la cabecera ya pasó.
+  const transitionDuration = (() => {
+    if (transitionLatchRef.current.route === currentRoute.name) {
+      return transitionLatchRef.current.duration;
+    }
+    const duration =
+      animateTransitions && !reduceMotion && prevRoute
+        ? fullBottomTransitionDuration(
+            prevLayoutState,
+            state,
+            naturalsRef.current.mid,
+            Math.max(pageScrollYRef.current, pendingNavigationScrollRef.current),
+            LAYOUT_DURATION,
+          )
+        : LAYOUT_DURATION;
+    transitionLatchRef.current = { route: currentRoute.name, duration };
+    pendingNavigationScrollRef.current = 0;
+    return duration;
+  })();
+
+  const transition =
+    transitionDuration <= 0
+      ? LinearTransition.duration(0)
+      : CurvedTransition.duration(transitionDuration);
+  const animateLayout = hasTransition && animateTransitions && transitionDuration > 0;
 
   const pageBg = selectPageBackground(state);
+
+  useLayoutEffect(() => {
+    const next = pageBg;
+    if (!animateTransitions || reduceMotion) {
+      pageBgFrom.value = next;
+      pageBgTo.value = next;
+      pageBgProgress.value = 1;
+      pageBgTargetRef.current = next;
+      return;
+    }
+    if (next === pageBgTargetRef.current) return;
+    pageBgFrom.value = pageBgTargetRef.current;
+    pageBgTo.value = next;
+    pageBgTargetRef.current = next;
+    pageBgProgress.value = 0;
+    pageBgProgress.value = withTiming(1, { duration: LAYOUT_DURATION });
+  }, [animateTransitions, pageBg, reduceMotion, pageBgFrom, pageBgTo, pageBgProgress]);
 
   const topVisible = !!state.sections.top?.visible;
   const midVisible = !!state.sections.mid?.visible;
@@ -359,6 +517,7 @@ export function AppLayout({
         // ancla el scroll de página al tope.
         if (!overflows && bodyOverflowRef.current) {
           scrollRef.current?.scrollTo({ y: 0, animated: false });
+          pageScrollYRef.current = 0;
         }
         bodyOverflowRef.current = overflows;
       }
@@ -425,6 +584,7 @@ export function AppLayout({
     if (reset) {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       innerScrollRef.current?.scrollTo({ y: 0, animated: false });
+      pageScrollYRef.current = 0;
     }
     currentRouteNameRef.current = currentRoute.name;
 
@@ -437,7 +597,7 @@ export function AppLayout({
     naturalsRef.current = seedNaturals(
       routeSnapshotRef.current,
       currentRoute.name,
-      initialNaturals(HRef.current)
+      initialNaturals(HRef.current, state)
     );
     layoutDebug("seed", {
       route: currentRoute.name,
@@ -461,7 +621,28 @@ export function AppLayout({
     if (revealEnabled && prevRoute) {
       startReveal();
     }
-    setPrevRoute(currentRoute);
+
+    if (contentFadeEnabled && !skipContentFadeOut) {
+      contentOutProgress.value = 1;
+      contentOutProgress.value = withTiming(0, { duration: contentFadeOutMs });
+    } else {
+      contentOutProgress.value = 0;
+    }
+
+    // `prevRoute` no se pisa en el mismo commit: es la ruta saliente que
+    // `renderSection` necesita para mantener su contenido montado mientras el
+    // morph la contrae. Si se reemplaza acá, la sección desaparece en el
+    // siguiente render y la transición queda a medias. Se libera recién al
+    // terminar la ventana de animación.
+    if (prevRouteTimer.current) clearTimeout(prevRouteTimer.current);
+    if (!prevRoute) {
+      setPrevRoute(currentRoute);
+    } else {
+      prevRouteTimer.current = setTimeout(() => {
+        prevRouteTimer.current = null;
+        setPrevRoute(currentRoute);
+      }, reduceMotion ? 0 : LAYOUT_DURATION);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRoute.name]);
 
@@ -503,10 +684,60 @@ export function AppLayout({
       <View style={styles.sectionContent}>{content}</View>
     );
 
+    // En una sección que sigue visible en ambas rutas (p. ej. el bottom de
+    // bottom→fullBottom), el slot cambia de contenido sin desmontarse. Para que
+    // no haya un corte, la ruta nueva entra y la anterior queda como capa
+    // absoluta desvaneciéndose.
+    const hidePreviousBody = enteringFullBottom && k === "bottom";
+    const skipPreviousCenter = enteringOnlyCenter && k === "mid";
+    const previousSlot =
+      contentFadeEnabled &&
+      !skipContentFadeOut &&
+      !skipPreviousCenter &&
+      !hidePreviousBody &&
+      !usePrevContent
+        ? prevB?.slot
+        : undefined;
+    const previousContent = previousSlot
+      ? prevRoute?.slots?.[previousSlot]
+      : null;
+    const currentLayer = (
+      <Animated.View
+        key={usePrevContent ? `out:${k}` : `in:${currentRoute.name}:${k}`}
+        entering={
+          !usePrevContent && contentFadeEnabled
+            ? FadeIn.duration(contentFadeInMs)
+            : undefined
+        }
+        style={[styles.contentLayer, usePrevContent ? contentOutStyle : undefined]}
+        pointerEvents={usePrevContent ? "none" : "auto"}
+      >
+        {body}
+      </Animated.View>
+    );
+    const previousLayer = previousContent ? (
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.previousLayer, contentOutStyle]}
+      >
+        {prevB?.scroll ? (
+          <ScrollView
+            style={styles.innerScroll}
+            scrollEnabled={false}
+            showsVerticalScrollIndicator={false}
+          >
+            {previousContent}
+          </ScrollView>
+        ) : (
+          <View style={styles.sectionContent}>{previousContent}</View>
+        )}
+      </Animated.View>
+    ) : null;
+
     return (
       <Animated.View
         key={k}
-        layout={hasTransition && animateTransitions ? transition : undefined}
+        layout={animateLayout ? transition : undefined}
         collapsable={false}
         style={[
           styles.colBlock,
@@ -534,7 +765,10 @@ export function AppLayout({
               <Animated.View style={[styles.reveal, revealStyle]}>{body}</Animated.View>
             </View>
           ) : (
-            body
+            <>
+              {previousLayer}
+              {currentLayer}
+            </>
           )}
         </View>
       </Animated.View>
@@ -543,20 +777,24 @@ export function AppLayout({
 
   return (
     <AppNavigationContext.Provider value={navigationValue}>
-      <View style={[styles.root, { backgroundColor: pageBg }]}>
+      <Animated.View style={[styles.root, pageBgStyle]}>
         <ScrollView
           ref={scrollRef}
           style={styles.pageScroll}
-          contentContainerStyle={[styles.pageContent, { backgroundColor: pageBg }]}
+          contentContainerStyle={styles.pageContent}
           scrollEnabled={!!state.pageScroll && pageCanScroll}
           bounces={false}
           overScrollMode="never"
           showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={(event) => {
+            pageScrollYRef.current = event.nativeEvent.contentOffset.y;
+          }}
         >
           {renderSection("top")}
           {showTopDivisor && (
             <Animated.View
-              layout={hasTransition && animateTransitions ? transition : undefined}
+              layout={animateLayout ? transition : undefined}
               collapsable={false}
             >
               <Divisor position="top" handle={currentRoute.state === "top"} />
@@ -565,15 +803,29 @@ export function AppLayout({
           {renderSection("mid")}
           {(showBottomDivisor || showFullBottomDivisor) && (
             <Animated.View
-              layout={hasTransition && animateTransitions ? transition : undefined}
+              layout={animateLayout ? transition : undefined}
               collapsable={false}
             >
-              <Divisor
-                position="bottom"
-                handle={currentRoute.state === "bottom" || showFullBottomDivisor}
-                height={FULLBOTTOM_DIVISOR_H}
-                style={showFullBottomDivisor ? undefined : { transform: [{ translateY: 5 }] }}
-              />
+              {showFullBottomDivisor ? (
+                // FullBottom ya es una superficie oscura de borde a borde: no
+                // hay header claro detrás ni esquinas que insinuar.
+                <View
+                  style={{
+                    height: FULLBOTTOM_DIVISOR_H,
+                    backgroundColor: SECTION_DEFAULT_COLORS.bottom,
+                  }}
+                />
+              ) : (
+                <Divisor
+                  position="bottom"
+                  handle={currentRoute.state === "bottom"}
+                  height={FULLBOTTOM_DIVISOR_H}
+                  // El fondo de la muesca debe ser el page animado, no un claro
+                  // fijo: así el arco cambia de color junto con el header.
+                  baseColor="transparent"
+                  style={{ transform: [{ translateY: 5 }] }}
+                />
+              )}
             </Animated.View>
           )}
           {renderSection("bottom")}
@@ -583,7 +835,7 @@ export function AppLayout({
             <Button variant="secondary" size="sm" label="← Volver" onPress={back} />
           </View>
         )}
-      </View>
+      </Animated.View>
     </AppNavigationContext.Provider>
   );
 }
@@ -606,6 +858,17 @@ const styles = StyleSheet.create({
   // transición se agrega encima (styles.clip) solo cuando hay morph.
   sectionFill: {
     flex: 1,
+  },
+  contentLayer: {
+    flex: 1,
+  },
+  previousLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
   },
   clip: {
     overflow: "hidden",

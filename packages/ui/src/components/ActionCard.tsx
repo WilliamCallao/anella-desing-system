@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { lightSemantic, radius, resolveSemantic, space, TextType } from "@william-callao/antonella-theme";
 import { Text } from "./text/Text";
 import { Icon, type IconName } from "./Icon";
+import { TrackedPressable } from "./TrackedPressable";
 
 // ── Style enum ──────────────────────────────────────────────
 
@@ -82,8 +83,9 @@ export function ActionCard({
 
   if (onPress) {
     return (
-      <Pressable
+      <TrackedPressable
         onPress={onPress}
+        tracking={{ component: "ActionCard", label, kind: "card" }}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel ?? label}
         style={({ pressed }) => [
@@ -92,7 +94,7 @@ export function ActionCard({
         ]}
       >
         {content}
-      </Pressable>
+      </TrackedPressable>
     );
   }
 

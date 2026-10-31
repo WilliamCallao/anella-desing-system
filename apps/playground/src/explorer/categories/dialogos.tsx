@@ -12,7 +12,6 @@ import {
 import type { ComponentCategory } from "../types";
 import { demoStyles } from "./shared";
 import { palette, spacing } from "@william-callao/antonella-theme";
-import { TransitionView } from "@william-callao/antonella-animations";
 
 function SheetDemo() {
   const [open, setOpen] = useState(false);
@@ -116,8 +115,7 @@ function AppBottomSheetOptionsDemo() {
             onPress={() => setConfirmVisible(true)}
           />
         </Card>
-        <TransitionView contentKey={confirmVisible ? "confirm" : "none"}>
-          {confirmVisible ? (
+        {confirmVisible ? (
             <Card>
               <View style={styles.confirmTexts}>
                 <Text variant="bodyMedium" color={palette.danger}>
@@ -143,8 +141,7 @@ function AppBottomSheetOptionsDemo() {
                 />
               </View>
             </Card>
-          ) : null}
-        </TransitionView>
+        ) : null}
       </AppBottomSheet>
     </View>
   );

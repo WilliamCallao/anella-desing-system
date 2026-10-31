@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { background, border, cta1, cta1Contrast, space, text, TextType } from "@william-callao/antonella-theme";
 import { Text } from "./text/Text";
+import { TrackedPressable } from "./TrackedPressable";
 
 export type AppFilterChipOption = {
   label: string;
@@ -30,9 +31,10 @@ export function AppFilterChips({ options, value, onChange, style }: AppFilterChi
       {options.map((option) => {
         const isSelected = option.value === selected;
         return (
-          <Pressable
+          <TrackedPressable
             key={option.value}
             onPress={() => handlePress(option.value)}
+            tracking={{ component: "AppFilterChips", label: option.label, kind: "chip", data: { value: option.value } }}
             style={({ pressed }) => [
               styles.chip,
               isSelected ? styles.chipSelected : styles.chipIdle,
@@ -44,7 +46,7 @@ export function AppFilterChips({ options, value, onChange, style }: AppFilterChi
             <Text variant={TextType.BodyMedium} color={isSelected ? cta1Contrast : text.default}>
               {option.label}
             </Text>
-          </Pressable>
+          </TrackedPressable>
         );
       })}
     </View>

@@ -13,6 +13,7 @@ export const TextType = {
   Body: "body",
   BodyMedium: "bodyMedium",
   BodyBold: "bodyBold",
+  Value: "value",
   Label: "label",
   Caption: "caption",
   CaptionMedium: "captionMedium",
@@ -37,6 +38,7 @@ export type TextType = (typeof TextType)[keyof typeof TextType];
  * - bodyBold    : texto destacado en cards/listas, labels de botones.
  * - body        : texto base, valor de inputs.
  * - bodyMedium  : énfasis medio (chips, títulos de card).
+ * - value       : valor de un campo de formulario (peso regular).
  * - label       : labels de formularios (peso 600 por legibilidad).
  * - caption     : descripciones secundarias.
  * - captionMedium: caption con énfasis.
@@ -53,7 +55,12 @@ export const texts = {
   bodyBold: { fontSize: 17, fontWeight: "600", lineHeight: 21, letterSpacing: -0.2, color: text.default },
   body: { fontSize: 17, fontWeight: "400", lineHeight: 21, letterSpacing: -0.2, color: text.default },
   bodyMedium: { fontSize: 16, fontWeight: "500", lineHeight: 20, letterSpacing: -0.2, color: text.default },
-  label: { fontSize: 15, fontWeight: "600", lineHeight: 19, letterSpacing: -0.2, color: text.default },
+  // Valor de un campo (fila editable o de solo lectura): mismo tamano que
+  // bodyMedium pero peso regular, para que el dato no compita con el label.
+  value: { fontSize: 16, fontWeight: "400", lineHeight: 20, letterSpacing: -0.2, color: text.default },
+  // Mismo tamano que `value`: el label se distingue por peso (600), no por
+  // tamano.
+  label: { fontSize: 16, fontWeight: "600", lineHeight: 20, letterSpacing: -0.2, color: text.default },
   caption: { fontSize: 13, fontWeight: "400", lineHeight: 17, letterSpacing: -0.1, color: text.secondary },
   captionMedium: { fontSize: 13, fontWeight: "500", lineHeight: 17, letterSpacing: -0.1, color: text.secondary },
   overline: {

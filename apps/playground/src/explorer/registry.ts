@@ -1,4 +1,3 @@
-import { animaciones } from "./categories/animaciones";
 import { arbol } from "./categories/arbol";
 import { botones } from "./categories/botones";
 import { bottomBars } from "./categories/bottom-bars";
@@ -31,7 +30,7 @@ import type { ComponentCategory, SectionMeta, SectionWithCategories } from "./ty
 
 export type { ComponentCategory, ComponentEntry, VariantDemo, SectionMeta, SectionWithCategories } from "./types";
 
-export const componentCategories = [formularios, inputs, animaciones, botones, dialogos, checklists, filtros, arbol, other, tipografia, bottomBars, composingOrb, drawerMenu, drawerMenuItem, topBar, searchBar, sectionHeader, actionCard, shortcutCard, stackDetails, layout, sheetLayout, mainLayout, mainLayoutApp, iconos, toast, camara];
+export const componentCategories = [formularios, inputs, botones, dialogos, checklists, filtros, arbol, other, tipografia, bottomBars, composingOrb, drawerMenu, drawerMenuItem, topBar, searchBar, sectionHeader, actionCard, shortcutCard, stackDetails, layout, sheetLayout, mainLayout, mainLayoutApp, iconos, toast, camara];
 
 export const sectionCategories: ComponentCategory[] = [colores, semanticTokens];
 
@@ -77,13 +76,6 @@ export const sections: SectionMeta[] = [
     icon: "palette",
     order: 6,
     items: ["colores", "semanticTokens"],
-  },
-  {
-    key: "animaciones",
-    title: "Animaciones",
-    icon: "loader",
-    order: 7,
-    items: ["animaciones"],
   },
 ];
 

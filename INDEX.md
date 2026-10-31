@@ -39,7 +39,7 @@
 - **Skeleton / SkeletonText / SkeletonCircle / SkeletonCard** — Placeholders de carga (línea, círculo, tarjeta).
 
 ### card-form (formularios con label)
-- **AppFormCard** — Tarjeta contenedora de un formulario con filas separadas por divisores.
+- **AppFormCard** — Tarjeta de formulario con `variant="filled" | "outlined" | "readOnly"`; `readOnly` la convierte explícitamente en lista de datos sin fondo ni borde.
 - **AppInput** — Tipos base (`label`, `labelWidth`) que comparten los campos de formulario.
 - **AppTextInput** — Campo de texto con label dentro de `AppFormCard`.
 - **AppTextArea** — Área de texto con label dentro de `AppFormCard`.
@@ -66,7 +66,7 @@
 - **shellTokens** — Tokens de medidas/colores del `DashboardShell`.
 
 ## @antonella/animations — Animaciones de Reanimated
-- **TransitionView** — Envuelve contenido de altura variable: al cambiar anima la altura (sin saltos) y hace fade in del contenido nuevo (`contentKey` para disparar el fade); sin parpadeos, todo en el UI thread.
+- **FadeIn / useFadeIn** — Fade de entrada hook-driven para contenidos que se montan o remontan en slots del layout; `contentKey` vuelve a lanzar la animación.
 - **entering / exiting** — Presets de animaciones de entrada/salida (`fade`, `fadeInDown`, `slideRight`, `zoom`, …).
 - **staggeredFadeInDown** — Helper para animar listas en cascada (retardo incremental).
 

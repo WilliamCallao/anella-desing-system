@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import { neutrals, space, texts } from "@william-callao/antonella-theme";
 import { Icon, type IconName } from "./Icon";
 import { Text } from "./text/Text";
+import { TrackedPressable } from "./TrackedPressable";
 
 export type ChipVariant = "subtle" | "solid" | "outlined";
 export type ChipSize = "sm" | "md";
@@ -15,6 +16,9 @@ export type ChipProps = {
   size?: ChipSize;
   icon?: IconName;
   uppercase?: boolean;
+  /** Marca el chip como seleccionado para el lector de pantalla (filtros,
+   *  selectores). El estilo visual lo define el caller con `variant`/`color`. */
+  selected?: boolean;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   onPress?: () => void;
@@ -28,6 +32,7 @@ export function Chip({
   size = "sm",
   icon,
   uppercase = false,
+  selected,
   style,
   textStyle,
   onPress,
@@ -86,9 +91,16 @@ export function Chip({
 
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+      <TrackedPressable
+        onPress={onPress}
+        tracking={{ component: "Chip", label, kind: "chip" }}
+        style={({ pressed }) => pressed && styles.pressed}
+        hitSlop={4}
+        accessibilityRole="button"
+        accessibilityState={selected === undefined ? undefined : { selected }}
+      >
         {content}
-      </Pressable>
+      </TrackedPressable>
     );
   }
 
@@ -99,15 +111,18 @@ const styles = StyleSheet.create({
   base: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     alignSelf: "flex-start",
     borderRadius: 999,
     gap: space.space1,
   },
   sm: {
+    minHeight: 32,
     paddingHorizontal: space.space2,
     paddingVertical: 2,
   },
   md: {
+    minHeight: 40,
     paddingHorizontal: space.space3,
     paddingVertical: 4,
   },

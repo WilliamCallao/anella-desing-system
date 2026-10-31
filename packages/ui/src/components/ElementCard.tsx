@@ -1,9 +1,10 @@
 import React from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { TextType, lightSemantic, resolveSemantic, space } from "@william-callao/antonella-theme";
 import { Text } from "./text";
 import { Icon, type IconName } from "./Icon";
 import { TopAction, TopActionStyle } from "./TopAction";
+import { TrackedPressable } from "./TrackedPressable";
 
 // ── Style enum ──────────────────────────────────────────────
 
@@ -80,8 +81,9 @@ export function ElementCard({
   const ctx = resolveSemantic(lightSemantic)[STYLE_CONTEXT[style]];
 
   return (
-    <Pressable
+    <TrackedPressable
       onPress={onPress}
+      tracking={{ component: "ElementCard", label: name, kind: "card", data: { name } }}
       style={({ pressed }) => [
         styles.card,
         styles.rowCard,
@@ -99,6 +101,7 @@ export function ElementCard({
         onPress={onPress ?? (() => {})}
         style={TOP_ACTION_STYLE[style]}
         borderRadius={20}
+        accessibilityLabel={name}
         colors={{
           buttonBg: visualBg ?? ctx.bg.default,
           buttonPressedBg: visualBg ?? ctx.bg.default,
@@ -116,19 +119,25 @@ export function ElementCard({
         ) : null}
       </View>
        {onTrailingPress ? (
-        <Pressable
+        <TrackedPressable
           onPress={onTrailingPress}
+          tracking={{
+            component: "ElementCard:trailing",
+            label: trailingLabel ?? trailingAccessibilityLabel ?? name,
+            kind: "button",
+            data: { name },
+          }}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={trailingLabel ?? trailingAccessibilityLabel}
           style={styles.trailingTouch}
         >
           <Icon name={trailing} size={18} color={ctx.icon.subtle} />
-        </Pressable>
+        </TrackedPressable>
       ) : (
         <Icon name={trailing} size={18} color={ctx.icon.subtle} />
       )}
-    </Pressable>
+    </TrackedPressable>
   );
 }
 

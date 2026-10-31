@@ -37,7 +37,7 @@ Se importan como `layoutStates` y se referencian por nombre (`LayoutStateName`):
 |---------------|-------------------------------|---------------|---------------------|--------------------------------------------------------------------------------|
 | `stacked`     | top, mid, bottom (1/3 c/u)    | ninguno       | header, body, footer| Tres bloques iguales, sin scroll.                                              |
 | `bottom`      | mid (header), bottom (footer) | de **página** | header, footer      | Header se **desvanece** al scrollear; el footer es la lista que scrollea.     |
-| `fullBottom`  | bottom (footer)               | de **página** | footer              | Solo el body ocupa la pantalla (inmersivo).                                    |
+| `fullBottom`  | bottom (footer)               | de **página** | footer              | Solo el body ocupa la pantalla (inmersivo); la hoja llena el viewport como mínimo y scrollea con la página. |
 | `onlyCenter`  | mid (body)                    | **interno**   | body                | Un solo bloque que llena y scrollea internamente.                              |
 | `top`         | top (header), mid (body)      | **interno**   | header, body        | Header sticky que crece con su contenido; el body scrollea debajo.            |
 
@@ -186,8 +186,8 @@ robustez viene de la estructura:
 3. **Medición que resiste hijos que animan su alto.** El proxy vive **fuera** del
    wrapper que recorta (`overflow:hidden`) durante las transiciones, así el
    recorte nunca "capa" la altura medida. Además, como un descendiente puede
-   animar su propio alto en el hilo UI (`TransitionView` arranca en 0 y crece),
-   el `onLayout` de JS puede quedar con un frame intermedio y no volver a
+   animar su propio alto en el hilo UI y arrancar en 0, el `onLayout` de JS
+   puede quedar con un frame intermedio y no volver a
    dispararse en iOS; por eso el motor re-lee con `measure()` (cada 150 ms) hasta
    que la altura queda **estable** (dos lecturas iguales) o pasa el tope de 4 s.
    Nunca se mide un alto a medio animar de forma permanente.
@@ -197,12 +197,33 @@ robustez viene de la estructura:
    cambios intra-ruta (categorías ↔ subcategorías, filtros de búsqueda) preservan
    la posición.
 
-5. **Fondo del page = color del cuerpo/mid.** `selectPageBackground` devuelve el
-   color del `mid` (el header/cuerpo, claro) cuando está visible, y solo cae al
-   color de la última sección visible cuando no hay `mid` (patrón full-bottom,
-   todo hoja). Así, durante los morphs, el hueco que se abre entre el header
-   claro y la hoja asoma el color claro del header y no un corte oscuro. El body
+5. **Fondo del page = color del cuerpo/mid, interpolado.** `selectPageBackground`
+   devuelve el color del `mid` (el header/cuerpo, claro) cuando está visible, y
+   solo cae al color de la última sección visible cuando no hay `mid` (patrón
+   full-bottom, todo hoja). Durante un cambio de estado el fondo **no salta** al
+   color destino: `AppLayout` interpola del color anterior al nuevo con la misma
+   duración que las alturas. Sin esto, entrar a `fullBottom` pintaba el lienzo
+   negro en el primer frame mientras el header claro todavía se contraía. El body
    no se sobredimensiona con colas artificiales (`BODY_TAIL`) ni overscans.
+
+6. **Entrada a `fullBottom` consciente del scroll.** La página partida puede estar
+   scrolleada; la cabecera visible es `max(0, midNatural - scrollY)`. La ventana
+   del morph se acorta en proporción a esa parte y es 0 si la cabecera ya salió
+   por arriba. Así no se reanima un header que el usuario ya no ve.
+
+7. **Crossfade de contenido.** Con `contentReveal="always"` y transiciones
+   activas, al avanzar el contenido saliente se desvanece en 180 ms y el entrante
+   aparece en 140 ms. Al retroceder, la pantalla que se va cede más rápido (100 ms)
+   y la anterior aparece con más aire (180 ms). Las secciones que siguen visibles
+   en ambas rutas conservan el contenido anterior como capa absoluta mientras
+   entra el nuevo. Al salir de `fullBottom`, su contenido se apaga en el mismo
+   frame: no es un crossfade, la hoja deja de existir como tal. Al entrar a
+   `fullBottom` desde un layout partido, el body saliente también se apaga de
+   inmediato para no superponer dos hojas; el header sí conserva su morph. Al
+   salir de `onlyCenter`, su cuerpo se apaga en el mismo frame para que el
+   header y el resto del layout destino aparezcan sin quedar tapados. Al volver
+   a `onlyCenter`, el contenido saliente del centro no se conserva como capa:
+   desaparece en el mismo frame.
 
 > **Contrato de slots dinámicos:** el contenido de una sección `content`/
 > `minFillRest` se monta **dos veces** (proxy + visible). Debe ser puro e

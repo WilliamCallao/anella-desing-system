@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View } from "react-native";
-import { AppButton, AppFormCard, AppSelector, AppTextArea, AppTextInput } from "@william-callao/antonella-ui";
+import { AppButton, AppFormCard, AppReadOnlyField, AppSelector, AppTextArea, AppTextInput } from "@william-callao/antonella-ui";
 import type { ComponentCategory } from "../types";
 import { PROVINCE_OPTIONS, noop } from "./shared";
 import { spacing } from "@william-callao/antonella-theme";
@@ -86,6 +86,16 @@ function FormBasicDemo() {
   );
 }
 
+function ReadOnlyDemo() {
+  return (
+    <AppFormCard variant="readOnly">
+      <AppReadOnlyField label="Grupo" value="Bebidas (01)" />
+      <AppReadOnlyField label="Código final" value="01-001" />
+      <AppReadOnlyField label="Descripción" value={undefined} emptyLabel="-" />
+    </AppFormCard>
+  );
+}
+
 function FormCompleteDemo() {
   const [name, setName] = useState("Antonella García");
   const [province, setProvince] = useState("cba");
@@ -114,6 +124,7 @@ export const formularios: ComponentCategory = {
       variants: [
         { id: "basico", label: "Básico", render: () => <FormBasicDemo /> },
         { id: "completo", label: "Completo", render: () => <FormCompleteDemo /> },
+        { id: "read-only", label: "Solo lectura", render: () => <ReadOnlyDemo /> },
       ],
     },
     {

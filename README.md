@@ -2,6 +2,13 @@ Plataforma compartida para todas las aplicaciones React Native + Expo de iKonSof
 
 Plataforma reutilizable que contiene Design System, Theme, Componentes UI, Animaciones, Auth, API, Storage, Hooks y Utilidades. Cualquier aplicación (Inventario, POS, CRM, Ventas, etc.) consume Antonella como dependencia y **nunca** contiene su código.
 
+## Documentación vigente
+
+> **La documentación vigente vive en `C:\Projects\iKonSoft\Documentacion`.** Si este README o
+> los docs del repo la contradicen, manda `Documentacion`. Ahí solo se escribe información
+> **verdadera y verificada**, sin relleno; todo documento lleva cabecera con su **última fecha
+> de edición** y **hay que preguntar antes de agregar información**.
+
 ## Estructura
 
 ```
