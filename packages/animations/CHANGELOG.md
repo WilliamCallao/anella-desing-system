@@ -1,5 +1,17 @@
 # @william-callao/antonella-animations
 
+## 2.0.0
+
+### Major Changes
+
+- [#31](https://github.com/WilliamCallao/anella-desing-system/pull/31) [`3b66371`](https://github.com/WilliamCallao/anella-desing-system/commit/3b663719f87401f7fd40026594f2926bd606e867) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - feat(animations): centralizar transiciones en AppLayout
+  
+  ### Breaking
+  
+  - Se elimina `TransitionView`. La transición de aparición/desaparición y cambio de contenido queda a cargo de `AppLayout`.
+  
+  `FadeIn` y `useFadeIn` siguen disponibles.
+
 ## 1.0.1
 
 ### Patch Changes

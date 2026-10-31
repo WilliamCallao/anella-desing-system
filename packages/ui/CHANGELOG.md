@@ -1,5 +1,35 @@
 # @william-callao/antonella-ui
 
+## 2.0.0
+
+### Major Changes
+
+- [#31](https://github.com/WilliamCallao/anella-desing-system/pull/31) [`3b66371`](https://github.com/WilliamCallao/anella-desing-system/commit/3b663719f87401f7fd40026594f2926bd606e867) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - feat(ui): formularios de lectura, árbol mobile y notas semánticas
+  
+  ### Breaking
+  
+  - `TreeEditor`: `TreeNode.kind` (`"group" | "item"`) ahora es obligatorio. Los consumidores deben declararlo en cada nodo para distinguir grupos de elementos aunque el grupo esté vacío.
+  - `AppFormCard`: el estilo de lista de lectura se declara con `variant="readOnly"`; ya no se infiere de los hijos. Funciona igual con wrappers, fragmentos y condicionales.
+  
+  ### Added
+  
+  - `AppReadOnlyField` con tonos claro/oscuro, valor vacío, acción y métricas compartidas de `card-form`.
+  - `AppFormCard tone="dark"` y `variant="readOnly"` con divisores a sangre.
+  - `AppStepIndicator`, `BottomDialog`, `InfoNote`, `PropertySummary`, `SelectableTable`, `ScreenOverlay` y `TrackedPressable`.
+  - `AppTextInput`: `readOnly`, `onPress`, `trailingAction`, `trailingIcon` y `selectable`.
+  - `TreeEditor`: rediseño mobile con grupos/elementos, acciones por nodo y soporte de contexto oscuro.
+  
+  ### Fixed
+  
+  - Selección de texto visible en `AppTextInput`, `AppTextArea` y `TextField` (`brand.M300`).
+  - `AppLayout`: medición del alto natural, transiciones `onlyCenter`/`fullBottom` y fades sin vestigios entre pantallas.
+  - Contraste de labels, captions, placeholders y acciones oscuras.
+
+### Patch Changes
+
+- Updated dependencies [[`3b66371`](https://github.com/WilliamCallao/anella-desing-system/commit/3b663719f87401f7fd40026594f2926bd606e867)]:
+  - @william-callao/antonella-theme@1.1.0
+
 ## 1.3.0
 
 ### Minor Changes
