@@ -118,11 +118,22 @@ export const layoutStates: Record<LayoutStateName, LayoutState> = {
     },
   },
   fullBottom: {
-    pageScroll: true,
+    // Hoja inmersiva: el bottom llena el viewport y scrollea por dentro. Antes
+    // era `content` + pageScroll; si el detalle era corto, la mitad inferior
+    // quedaba a merced del color del page y asomaba el lienzo claro durante el
+    // morph. Con fill + scroll interno la superficie oscura cubre siempre toda
+    // la pantalla y el contenido largo sigue siendo navegable.
+    pageScroll: false,
     sections: {
       top: { visible: false },
       mid: { visible: false },
-      bottom: { visible: true, height: "content", slot: "footer", backgroundColor: DARK_BG },
+      bottom: {
+        visible: true,
+        height: "fill",
+        scroll: true,
+        slot: "footer",
+        backgroundColor: DARK_BG,
+      },
     },
   },
   onlyCenter: {
@@ -158,9 +169,24 @@ export function isValidMeasurement(height: number): boolean {
   return Number.isFinite(height) && height > 0;
 }
 
-/** Alturas naturales iniciales (antes de medir), a partir del alto de ventana. */
-export function initialNaturals(H: number): SectionHeights {
-  return { top: H / 3, mid: H / 3, bottom: H / 3 };
+/**
+ * Alturas naturales iniciales (antes de medir), a partir del alto de ventana.
+ *
+ * `fullBottom` arranca con el bottom a pantalla completa: es una hoja inmersiva
+ * y sembrarlo con H/3 hacía que la primera transición la encogiera y volviera a
+ * crecer al medir. El resto de los estados conserva el neutro de un tercio.
+ */
+export function initialNaturals(H: number, state?: LayoutState): SectionHeights {
+  const out = { top: H / 3, mid: H / 3, bottom: H / 3 };
+  if (
+    state &&
+    !state.sections.top?.visible &&
+    !state.sections.mid?.visible &&
+    state.sections.bottom?.visible
+  ) {
+    out.bottom = H;
+  }
+  return out;
 }
 
 /**

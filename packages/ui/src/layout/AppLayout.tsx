@@ -18,6 +18,7 @@ import {
 import Animated, {
   CurvedTransition,
   LinearTransition,
+  interpolateColor,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -149,9 +150,10 @@ export type AppLayoutProps = {
  *  - El scroll de página e interno se resetea al tope SOLO cuando cambia el
  *    nombre de ruta; los cambios de contenido dentro de la misma ruta preservan
  *    la posición.
- *  - El fondo del page toma el color del cuerpo/mid (`selectPageBackground`):
- *    durante los morphs se asoma el color del header (claro), no un corte
- *    oscuro, y no hace falta sobredimensionar el body con colas.
+ *  - El fondo del page toma el color del cuerpo/mid (`selectPageBackground`) y
+ *    se interpola durante la transición: el lienzo no salta a negro antes de que
+ *    el header claro termine de contraerse, y no hace falta sobredimensionar el
+ *    body con colas.
  *
  * Contrato de slots dinámicos: el contenido de una sección `content`/
  * `minFillRest` se monta DOS veces (proxy + visible). Debe ser puro e
@@ -175,11 +177,32 @@ export function AppLayout({
   const revealProgress = useSharedValue(1);
   const revealStyle = useAnimatedStyle(() => ({ opacity: revealProgress.value }));
 
+  // El fondo del page tambien es parte de la transicion. Antes cambiaba de
+  // golpe con el estado destino: al entrar a fullBottom el lienzo claro pasaba
+  // a negro en el primer frame, mientras el header claro todavia se estaba
+  // contrayendo. Ahora interpola entre el color anterior y el nuevo durante la
+  // misma ventana que las alturas.
+  const initialPageBg = selectPageBackground(resolveLayoutState(initialRoute.state));
+  const pageBgFrom = useSharedValue(initialPageBg);
+  const pageBgTo = useSharedValue(initialPageBg);
+  const pageBgProgress = useSharedValue(1);
+  const pageBgTargetRef = useRef(initialPageBg);
+  const pageBgStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      pageBgProgress.value,
+      [0, 1],
+      [pageBgFrom.value, pageBgTo.value],
+    ),
+  }));
+
   const [stack, setStack] = useState<AppRoute[]>([initialRoute]);
   const [prevRoute, setPrevRoute] = useState<AppRoute | null>(null);
+  const prevRouteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasTransition = animateTransitions && prevRoute !== null;
 
-  const initialNaturalsValue = useRef(initialNaturals(H)).current;
+  const initialNaturalsValue = useRef(
+    initialNaturals(H, resolveLayoutState(initialRoute.state)),
+  ).current;
   const [layoutHeights, setLayoutHeights] = useState<SectionHeights>(() =>
     computeSectionTargets(resolveLayoutState(initialRoute.state), initialNaturalsValue, H)
   );
@@ -224,6 +247,7 @@ export function AppLayout({
   useEffect(() => {
     return () => {
       if (revealTimer.current) clearTimeout(revealTimer.current);
+      if (prevRouteTimer.current) clearTimeout(prevRouteTimer.current);
       SECTION_KEYS.forEach((k) => {
         const t = probeTimers.current[k];
         if (t) clearInterval(t);
@@ -293,6 +317,23 @@ export function AppLayout({
     : null;
 
   const pageBg = selectPageBackground(state);
+
+  useLayoutEffect(() => {
+    const next = pageBg;
+    if (!animateTransitions || reduceMotion) {
+      pageBgFrom.value = next;
+      pageBgTo.value = next;
+      pageBgProgress.value = 1;
+      pageBgTargetRef.current = next;
+      return;
+    }
+    if (next === pageBgTargetRef.current) return;
+    pageBgFrom.value = pageBgTargetRef.current;
+    pageBgTo.value = next;
+    pageBgTargetRef.current = next;
+    pageBgProgress.value = 0;
+    pageBgProgress.value = withTiming(1, { duration: LAYOUT_DURATION });
+  }, [animateTransitions, pageBg, reduceMotion, pageBgFrom, pageBgTo, pageBgProgress]);
 
   const topVisible = !!state.sections.top?.visible;
   const midVisible = !!state.sections.mid?.visible;
@@ -437,7 +478,7 @@ export function AppLayout({
     naturalsRef.current = seedNaturals(
       routeSnapshotRef.current,
       currentRoute.name,
-      initialNaturals(HRef.current)
+      initialNaturals(HRef.current, state)
     );
     layoutDebug("seed", {
       route: currentRoute.name,
@@ -461,7 +502,21 @@ export function AppLayout({
     if (revealEnabled && prevRoute) {
       startReveal();
     }
-    setPrevRoute(currentRoute);
+
+    // `prevRoute` no se pisa en el mismo commit: es la ruta saliente que
+    // `renderSection` necesita para mantener su contenido montado mientras el
+    // morph la contrae. Si se reemplaza acá, la sección desaparece en el
+    // siguiente render y la transición queda a medias. Se libera recién al
+    // terminar la ventana de animación.
+    if (prevRouteTimer.current) clearTimeout(prevRouteTimer.current);
+    if (!prevRoute) {
+      setPrevRoute(currentRoute);
+    } else {
+      prevRouteTimer.current = setTimeout(() => {
+        prevRouteTimer.current = null;
+        setPrevRoute(currentRoute);
+      }, reduceMotion ? 0 : LAYOUT_DURATION);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRoute.name]);
 
@@ -543,11 +598,11 @@ export function AppLayout({
 
   return (
     <AppNavigationContext.Provider value={navigationValue}>
-      <View style={[styles.root, { backgroundColor: pageBg }]}>
+      <Animated.View style={[styles.root, pageBgStyle]}>
         <ScrollView
           ref={scrollRef}
           style={styles.pageScroll}
-          contentContainerStyle={[styles.pageContent, { backgroundColor: pageBg }]}
+          contentContainerStyle={styles.pageContent}
           scrollEnabled={!!state.pageScroll && pageCanScroll}
           bounces={false}
           overScrollMode="never"
@@ -583,7 +638,7 @@ export function AppLayout({
             <Button variant="secondary" size="sm" label="← Volver" onPress={back} />
           </View>
         )}
-      </View>
+      </Animated.View>
     </AppNavigationContext.Provider>
   );
 }

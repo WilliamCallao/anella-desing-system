@@ -82,9 +82,29 @@ describe("computeSectionTargets", () => {
     expect(t.bottom).toBe(H - FULLBOTTOM_DIVISOR_H);
   });
 
+  it("fullBottom: la hoja llena la pantalla y scrollea por dentro", () => {
+    const state = layoutStates.fullBottom;
+    expect(state.pageScroll).toBe(false);
+    expect(state.sections.bottom?.height).toBe("fill");
+    expect(state.sections.bottom?.scroll).toBe(true);
+  });
+
   it("fullBottom: nunca deja el bottom negativo", () => {
-    const t = computeSectionTargets(layoutStates.fullBottom, heights(0, 0, 10), H);
+    const contentState: LayoutState = {
+      pageScroll: false,
+      sections: {
+        top: { visible: false },
+        mid: { visible: false },
+        bottom: { visible: true, height: "content", slot: "footer" },
+      },
+    };
+    const t = computeSectionTargets(contentState, heights(0, 0, 10), H);
     expect(t.bottom).toBe(0);
+  });
+
+  it("fullBottom: el neutro inicial del bottom es la ventana, no un tercio", () => {
+    expect(initialNaturals(H, layoutStates.fullBottom).bottom).toBe(H);
+    expect(initialNaturals(H).bottom).toBe(H / 3);
   });
 
   it("top: fillRest descuenta el natural de la sección ancla y la oculta queda en 0", () => {

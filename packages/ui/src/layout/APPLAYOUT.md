@@ -37,7 +37,7 @@ Se importan como `layoutStates` y se referencian por nombre (`LayoutStateName`):
 |---------------|-------------------------------|---------------|---------------------|--------------------------------------------------------------------------------|
 | `stacked`     | top, mid, bottom (1/3 c/u)    | ninguno       | header, body, footer| Tres bloques iguales, sin scroll.                                              |
 | `bottom`      | mid (header), bottom (footer) | de **página** | header, footer      | Header se **desvanece** al scrollear; el footer es la lista que scrollea.     |
-| `fullBottom`  | bottom (footer)               | de **página** | footer              | Solo el body ocupa la pantalla (inmersivo).                                    |
+| `fullBottom`  | bottom (footer)               | **interno**   | footer              | Solo el body ocupa la pantalla (inmersivo); la hoja llena el viewport y scrollea por dentro. |
 | `onlyCenter`  | mid (body)                    | **interno**   | body                | Un solo bloque que llena y scrollea internamente.                              |
 | `top`         | top (header), mid (body)      | **interno**   | header, body        | Header sticky que crece con su contenido; el body scrollea debajo.            |
 
@@ -197,11 +197,13 @@ robustez viene de la estructura:
    cambios intra-ruta (categorías ↔ subcategorías, filtros de búsqueda) preservan
    la posición.
 
-5. **Fondo del page = color del cuerpo/mid.** `selectPageBackground` devuelve el
-   color del `mid` (el header/cuerpo, claro) cuando está visible, y solo cae al
-   color de la última sección visible cuando no hay `mid` (patrón full-bottom,
-   todo hoja). Así, durante los morphs, el hueco que se abre entre el header
-   claro y la hoja asoma el color claro del header y no un corte oscuro. El body
+5. **Fondo del page = color del cuerpo/mid, interpolado.** `selectPageBackground`
+   devuelve el color del `mid` (el header/cuerpo, claro) cuando está visible, y
+   solo cae al color de la última sección visible cuando no hay `mid` (patrón
+   full-bottom, todo hoja). Durante un cambio de estado el fondo **no salta** al
+   color destino: `AppLayout` interpola del color anterior al nuevo con la misma
+   duración que las alturas. Sin esto, entrar a `fullBottom` pintaba el lienzo
+   negro en el primer frame mientras el header claro todavía se contraía. El body
    no se sobredimensiona con colas artificiales (`BODY_TAIL`) ni overscans.
 
 > **Contrato de slots dinámicos:** el contenido de una sección `content`/
