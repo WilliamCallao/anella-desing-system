@@ -211,6 +211,16 @@ robustez viene de la estructura:
    del morph se acorta en proporción a esa parte y es 0 si la cabecera ya salió
    por arriba. Así no se reanima un header que el usuario ya no ve.
 
+7. **Crossfade de contenido.** Con `contentReveal="always"` y transiciones
+   activas, al avanzar el contenido saliente se desvanece en 180 ms y el entrante
+   aparece en 140 ms. Al retroceder, la pantalla que se va cede más rápido (100 ms)
+   y la anterior aparece con más aire (180 ms). Las secciones que siguen visibles
+   en ambas rutas conservan el contenido anterior como capa absoluta mientras
+   entra el nuevo. Al salir de `fullBottom`, su contenido se apaga en el mismo
+   frame: no es un crossfade, la hoja deja de existir como tal. Al entrar a
+   `fullBottom` desde un layout partido, el body saliente también se apaga de
+   inmediato para no superponer dos hojas; el header sí conserva su morph.
+
 > **Contrato de slots dinámicos:** el contenido de una sección `content`/
 > `minFillRest` se monta **dos veces** (proxy + visible). Debe ser puro e
 > idempotente: sin efectos destructivos al montar. Cuando las pantallas

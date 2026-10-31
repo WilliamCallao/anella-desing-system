@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import Animated, {
   CurvedTransition,
+  FadeIn,
   LinearTransition,
   interpolateColor,
   useAnimatedStyle,
@@ -70,6 +71,14 @@ export {
 const LAYOUT_DURATION = 300;
 const REVEAL_DELAY_MS = 380;
 const REVEAL_DURATION_MS = 200;
+// Crossfade de contenido entre rutas: la salida es un poco más lenta que la
+// entrada para que el cambio no se sienta como un corte.
+const CONTENT_FADE_OUT_MS = 180;
+const CONTENT_FADE_IN_MS = 140;
+// Al volver, la pantalla que se va tiene que ceder rápido y la anterior entrar
+// con más aire; si no, ambas se pisan y el retroceso se siente pesado.
+const CONTENT_FADE_OUT_BACK_MS = 100;
+const CONTENT_FADE_IN_BACK_MS = 180;
 
 // Relecturas del proxy de medición. Un descendiente que anima su PROPIO alto en
 // el hilo UI (p. ej. `TransitionView`, que arranca en 0 y crece) hace que el
@@ -83,6 +92,15 @@ const PROBE_MAX_MS = 4000;
 
 const _sanitize = (v: number): number =>
   typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : 0;
+
+function isFullBottomLayout(state: LayoutState | null): boolean {
+  return (
+    !!state &&
+    !state.sections.top?.visible &&
+    !state.sections.mid?.visible &&
+    !!state.sections.bottom?.visible
+  );
+}
 
 export type AppNavigation = {
   navigate: (route: AppRoute) => void;
@@ -174,6 +192,8 @@ export function AppLayout({
   const reduceMotion = useReducedMotion();
   const revealProgress = useSharedValue(1);
   const revealStyle = useAnimatedStyle(() => ({ opacity: revealProgress.value }));
+  const contentOutProgress = useSharedValue(0);
+  const contentOutStyle = useAnimatedStyle(() => ({ opacity: contentOutProgress.value }));
 
   // El fondo del page tambien es parte de la transicion. Antes cambiaba de
   // golpe con el estado destino: al entrar a fullBottom el lienzo claro pasaba
@@ -237,6 +257,7 @@ export function AppLayout({
   // Offset capturado antes de navegar: el render de la ruta nueva puede ocurrir
   // después de resetear el ScrollView, así que no alcanza con leerlo en render.
   const pendingNavigationScrollRef = useRef(0);
+  const navigationDirectionRef = useRef<"forward" | "back">("forward");
   // La duración se decide una sola vez por cambio de ruta: después del primer
   // render el reset de scroll ya dejó el offset en 0 y recalcularla convertiría
   // un salto intencional en una animación completa.
@@ -273,19 +294,20 @@ export function AppLayout({
     setStack((s) => (s[0]?.name === initialRoute.name ? s : [initialRoute]));
   }, [initialRoute.name]);
 
-  const captureScrollForNavigation = useCallback(() => {
+  const captureScrollForNavigation = useCallback((direction: "forward" | "back") => {
     pendingNavigationScrollRef.current = pageScrollYRef.current;
+    navigationDirectionRef.current = direction;
   }, []);
   const navigate = useCallback((route: AppRoute) => {
-    captureScrollForNavigation();
+    captureScrollForNavigation("forward");
     setStack((s) => [...s, route]);
   }, [captureScrollForNavigation]);
   const replace = useCallback((route: AppRoute) => {
-    captureScrollForNavigation();
+    captureScrollForNavigation("forward");
     setStack((s) => [...s.slice(0, -1), route]);
   }, [captureScrollForNavigation]);
   const back = useCallback(() => {
-    captureScrollForNavigation();
+    captureScrollForNavigation("back");
     setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
   }, [captureScrollForNavigation]);
   const canGoBack = stack.length > 1;
@@ -332,6 +354,31 @@ export function AppLayout({
   const prevLayoutState: LayoutState | null = prevRoute
     ? resolveLayoutState(prevRoute.state)
     : null;
+  const routeChanged = !!prevRoute && prevRoute.name !== currentRoute.name;
+  const contentFadeEnabled =
+    routeChanged && animateTransitions && !reduceMotion && !revealEnabled;
+  // Salir de fullBottom no es un crossfade: la hoja deja de existir como tal.
+  // El contenido saliente se apaga en el mismo frame; el destino entra normal.
+  const leavingFullBottom =
+    contentFadeEnabled &&
+    isFullBottomLayout(prevLayoutState) &&
+    !isFullBottomLayout(state);
+  // Entrar a fullBottom desde un layout partido: la hoja anterior no se
+  // desvanece, se apaga enseguida para que no se vean dos bodies superpuestos.
+  const enteringFullBottom =
+    contentFadeEnabled &&
+    !isFullBottomLayout(prevLayoutState) &&
+    isFullBottomLayout(state);
+  const goingBack = navigationDirectionRef.current === "back";
+  const contentFadeOutMs = goingBack ? CONTENT_FADE_OUT_BACK_MS : CONTENT_FADE_OUT_MS;
+  const contentFadeInMs = goingBack ? CONTENT_FADE_IN_BACK_MS : CONTENT_FADE_IN_MS;
+
+  // La capa saliente tiene que nacer visible en el mismo render en que aparece
+  // la ruta nueva; si esperamos al layout effect, el primer frame pinta el
+  // contenido nuevo a opacidad 1 y recién después arranca el fade.
+  if (contentFadeEnabled) {
+    contentOutProgress.value = leavingFullBottom ? 0 : 1;
+  }
 
   // La cabecera solo existe mientras su parte visible no salió por arriba. Si
   // el usuario dejó la página partida scrolleada, no hay nada que colapsar: la
@@ -551,6 +598,13 @@ export function AppLayout({
       startReveal();
     }
 
+    if (contentFadeEnabled && !leavingFullBottom) {
+      contentOutProgress.value = 1;
+      contentOutProgress.value = withTiming(0, { duration: contentFadeOutMs });
+    } else {
+      contentOutProgress.value = 0;
+    }
+
     // `prevRoute` no se pisa en el mismo commit: es la ruta saliente que
     // `renderSection` necesita para mantener su contenido montado mientras el
     // morph la contrae. Si se reemplaza acá, la sección desaparece en el
@@ -606,6 +660,51 @@ export function AppLayout({
       <View style={styles.sectionContent}>{content}</View>
     );
 
+    // En una sección que sigue visible en ambas rutas (p. ej. el bottom de
+    // bottom→fullBottom), el slot cambia de contenido sin desmontarse. Para que
+    // no haya un corte, la ruta nueva entra y la anterior queda como capa
+    // absoluta desvaneciéndose.
+    const hidePreviousBody = enteringFullBottom && k === "bottom";
+    const previousSlot =
+      contentFadeEnabled && !leavingFullBottom && !hidePreviousBody && !usePrevContent
+        ? prevB?.slot
+        : undefined;
+    const previousContent = previousSlot
+      ? prevRoute?.slots?.[previousSlot]
+      : null;
+    const currentLayer = (
+      <Animated.View
+        key={usePrevContent ? `out:${k}` : `in:${currentRoute.name}:${k}`}
+        entering={
+          !usePrevContent && contentFadeEnabled
+            ? FadeIn.duration(contentFadeInMs)
+            : undefined
+        }
+        style={[styles.contentLayer, usePrevContent ? contentOutStyle : undefined]}
+        pointerEvents={usePrevContent ? "none" : "auto"}
+      >
+        {body}
+      </Animated.View>
+    );
+    const previousLayer = previousContent ? (
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.previousLayer, contentOutStyle]}
+      >
+        {prevB?.scroll ? (
+          <ScrollView
+            style={styles.innerScroll}
+            scrollEnabled={false}
+            showsVerticalScrollIndicator={false}
+          >
+            {previousContent}
+          </ScrollView>
+        ) : (
+          <View style={styles.sectionContent}>{previousContent}</View>
+        )}
+      </Animated.View>
+    ) : null;
+
     return (
       <Animated.View
         key={k}
@@ -637,7 +736,10 @@ export function AppLayout({
               <Animated.View style={[styles.reveal, revealStyle]}>{body}</Animated.View>
             </View>
           ) : (
-            body
+            <>
+              {previousLayer}
+              {currentLayer}
+            </>
           )}
         </View>
       </Animated.View>
@@ -727,6 +829,17 @@ const styles = StyleSheet.create({
   // transición se agrega encima (styles.clip) solo cuando hay morph.
   sectionFill: {
     flex: 1,
+  },
+  contentLayer: {
+    flex: 1,
+  },
+  previousLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
   },
   clip: {
     overflow: "hidden",
