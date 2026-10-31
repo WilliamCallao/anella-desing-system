@@ -10,6 +10,7 @@ import { background, radius, space } from "@william-callao/antonella-theme";
 import { DialogHeader } from "./DialogHeader";
 import type { IconName } from "./Icon";
 import { SheetOverlay } from "./SheetOverlay";
+import { useEmbeddedBackHandler } from "./useEmbeddedBackHandler";
 import { useSheetController } from "./useSheetController";
 
 const ANIM_IN_TIMING = 260;
@@ -63,6 +64,11 @@ export function Sheet({
     dragToDismiss: true,
     timings: { inMs: ANIM_IN_TIMING, outMs: ANIM_OUT_TIMING, backdropOpacity: BACKDROP_OPACITY },
   });
+
+  // En modo `embedded` el host modal (expo-router) tiene su propio BackHandler
+  // que cierra el diálogo sin conocer `dismissible`. Este listener se registra
+  // después y bloquea el back cuando el formulario exige cierre explícito.
+  useEmbeddedBackHandler({ embedded, visible, dismissible, onClose });
 
   return (
     <SheetOverlay

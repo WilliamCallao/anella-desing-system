@@ -18,8 +18,14 @@ import { CARD_ERROR, CARD_ROW, CARD_TEXT, SINGLE_LINE_HEIGHT } from "./cardForm"
 export type AppTextInputProps = AppInputProps & {
   type?: "text";
   value: string;
-  /** Opcional: los campos de solo lectura (readOnly u onPress) completados por
-   *  escaneo no necesitan proveer un handler de texto. */
+  /**
+   * Componente único para filas de input de `card-form`:
+   * - editable (default): abre teclado.
+   * - `readOnly`: no abre teclado; combinar con `onPress` (selector) o
+   *   `trailingAction` (escáner).
+   * - `editable={false}`: fila deshabilitada; usar `trailingIcon` (p. ej. lock).
+   * - `error`: pinta label y mensaje en rojo.
+   */
   onChangeText?: (value: string) => void;
   placeholder?: string;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
@@ -39,6 +45,8 @@ export type AppTextInputProps = AppInputProps & {
     onPress: () => void;
     accessibilityLabel?: string;
   };
+  /** Icono decorativo a la derecha (ej. `lock` en un campo bloqueado). */
+  trailingIcon?: IconName;
 };
 
 export function AppTextInput({
@@ -54,6 +62,7 @@ export function AppTextInput({
   editable = true,
   readOnly = false,
   trailingAction,
+  trailingIcon,
   onPress: onPressOverride,
 }: AppTextInputProps) {
   const inputRef = useRef<TextInput>(null);
@@ -106,41 +115,58 @@ export function AppTextInput({
         >
           {label}
         </Text>
-        <TextInput
-          ref={inputRef}
-          style={[
-            styles.value,
-            {
-              fontSize: CARD_TEXT.fontSize,
-              lineHeight: CARD_TEXT.lineHeight,
-              letterSpacing: CARD_TEXT.letterSpacing,
-              fontWeight: texts.value.fontWeight,
-              color: looksInactive ? text.readOnly : text.default,
-            },
-            inputHeight != null && {
-              height: Math.max(inputHeight, SINGLE_LINE_HEIGHT),
-            },
-          ]}
-          value={value}
-          onChangeText={onChangeText}
-          onContentSizeChange={handleContentSizeChange}
-          onSubmitEditing={handleSubmitEditing}
-          placeholder={placeholder}
-          placeholderTextColor={appInputCard.text.placeholder}
-          autoCapitalize={autoCapitalize}
-          keyboardType={keyboardType}
-          maxLength={maxLength}
-          editable={canType}
-          accessibilityLabel={label}
-          accessibilityState={{ disabled: looksInactive }}
-          selectionColor={text.default}
-          underlineColorAndroid="transparent"
-          multiline
-          scrollEnabled={false}
-          textAlignVertical="top"
-          blurOnSubmit
-          submitBehavior="blurAndSubmit"
-        />
+        <View style={styles.inputArea}>
+          <TextInput
+            ref={inputRef}
+            style={[
+              styles.value,
+              {
+                fontSize: CARD_TEXT.fontSize,
+                lineHeight: CARD_TEXT.lineHeight,
+                letterSpacing: CARD_TEXT.letterSpacing,
+                fontWeight: texts.value.fontWeight,
+                color: looksInactive ? text.readOnly : text.default,
+              },
+              inputHeight != null && {
+                height: Math.max(inputHeight, SINGLE_LINE_HEIGHT),
+              },
+            ]}
+            value={value}
+            onChangeText={onChangeText}
+            onContentSizeChange={handleContentSizeChange}
+            onSubmitEditing={handleSubmitEditing}
+            autoCapitalize={autoCapitalize}
+            keyboardType={keyboardType}
+            maxLength={maxLength}
+            editable={canType}
+            accessibilityLabel={label}
+            accessibilityState={{ disabled: looksInactive }}
+            selectionColor={text.default}
+            underlineColorAndroid="transparent"
+            multiline
+            scrollEnabled={false}
+            textAlignVertical="top"
+            blurOnSubmit
+            submitBehavior="blurAndSubmit"
+          />
+          {value === "" && placeholder != null && placeholder !== "" ? (
+            <View
+              style={styles.placeholderOverlay}
+              pointerEvents="none"
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              <Text
+                variant={TextType.Value}
+                color={appInputCard.text.placeholder}
+                numberOfLines={1}
+                style={[CARD_TEXT, styles.placeholder]}
+              >
+                {placeholder}
+              </Text>
+            </View>
+          ) : null}
+        </View>
         {trailingAction ? (
           <Pressable
             onPress={trailingAction.onPress}
@@ -151,6 +177,11 @@ export function AppTextInput({
           >
             <Icon name={trailingAction.icon} size={20} color={text.secondary} />
           </Pressable>
+        ) : null}
+        {trailingIcon ? (
+          <View style={styles.trailingAction}>
+            <Icon name={trailingIcon} size={16} color={text.secondary} />
+          </View>
         ) : null}
       </TouchableOpacity>
       {error ? (
@@ -182,6 +213,24 @@ const styles = StyleSheet.create({
   },
   label: {
     flexShrink: 0,
+  },
+  inputArea: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  placeholderOverlay: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    justifyContent: "center",
+  },
+  placeholder: {
+    fontWeight: "300",
+    textAlign: "right",
+    paddingRight: 2,
+    includeFontPadding: false,
   },
   value: {
     flex: 1,

@@ -11,6 +11,7 @@ import { background, radius, space } from "@william-callao/antonella-theme";
 import { DialogHeader } from "./DialogHeader";
 import type { IconName } from "./Icon";
 import { SheetOverlay } from "./SheetOverlay";
+import { useEmbeddedBackHandler } from "./useEmbeddedBackHandler";
 import { useSheetController } from "./useSheetController";
 
 const ANIM_IN_TIMING = 220;
@@ -62,6 +63,7 @@ export function Modal({
     timings: { inMs: ANIM_IN_TIMING, outMs: ANIM_OUT_TIMING, backdropOpacity: BACKDROP_OPACITY },
   });
 
+  useEmbeddedBackHandler({ embedded, visible, dismissible, onClose });
   const panelStyle = useAnimatedStyle(
     () => ({
       opacity: controller.progress.value,

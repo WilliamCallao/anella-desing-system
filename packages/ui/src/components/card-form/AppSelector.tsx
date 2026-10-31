@@ -131,7 +131,7 @@ export function AppSelector({
           variant={TextType.Value}
           color={disabled ? text.readOnly : selected ? text.default : appInputCard.text.placeholder}
           numberOfLines={1}
-          style={[styles.value, CARD_TEXT]}
+          style={[styles.value, CARD_TEXT, !selected && !disabled ? styles.placeholder : undefined]}
         >
           {selected?.label ?? placeholder}
         </Text>
@@ -211,6 +211,9 @@ const styles = StyleSheet.create({
     paddingRight: 2,
     textAlign: "right",
     overflow: "hidden",
+  },
+  placeholder: {
+    fontWeight: "300",
   },
   option: {
     flexDirection: "row",

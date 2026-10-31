@@ -32,6 +32,7 @@ import {
   Info,
   Leaf,
   LoaderCircle,
+  Lock,
   LogIn,
   LogOut,
   Mail,
@@ -124,6 +125,7 @@ export type IconName =
   | "folder-open"
   | "file"
   | "loader"
+  | "lock"
   | "inbox"
   | "triangle-alert"
   | "eye"
@@ -200,6 +202,7 @@ export const iconMap: Record<IconName, ComponentType<{ size?: number; color?: st
   "folder-open": FolderOpen,
   file: File,
   loader: LoaderCircle,
+  lock: Lock,
   inbox: Inbox,
   "triangle-alert": TriangleAlert,
   eye: Eye,

@@ -5,7 +5,7 @@ import {
   View,
   type ViewStyle,
 } from "react-native";
-import { appButton, border, radius, space, text } from "@william-callao/antonella-theme";
+import { appButton, appInputCard, radius, space, text } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
 import { TrackedPressable } from "../TrackedPressable";
 
@@ -54,11 +54,11 @@ export function AppButton({
         { backgroundColor: background },
         variant === "outline" && {
           borderWidth: 1,
-          borderColor: borderColor ?? border.divider.secondary,
+          borderColor: borderColor ?? appInputCard.border,
         },
         variant === "ghost" && {
-          borderWidth: StyleSheet.hairlineWidth,
-          borderColor: borderColor ?? border.divider.secondary,
+          borderWidth: 1,
+          borderColor: borderColor ?? appInputCard.border,
         },
         style,
         pressed && styles.pressed,

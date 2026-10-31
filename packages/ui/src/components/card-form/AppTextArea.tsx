@@ -74,41 +74,57 @@ export function AppTextArea({
         >
           {label}
         </Text>
-        <TextInput
-          ref={inputRef}
-          style={[
-            styles.value,
-            {
-              fontSize: CARD_TEXT.fontSize,
-              lineHeight: CARD_TEXT.lineHeight,
-              letterSpacing: CARD_TEXT.letterSpacing,
-              fontWeight: texts.value.fontWeight,
-              color: editable ? text.default : text.readOnly,
-            },
-            inputHeight != null && {
-              height: Math.max(inputHeight, SINGLE_LINE_HEIGHT),
-            },
-          ]}
-          value={value}
-          onChangeText={onChangeText}
-          onContentSizeChange={handleContentSizeChange}
-          onSubmitEditing={handleSubmitEditing}
-          placeholder={placeholder}
-          placeholderTextColor={appInputCard.text.placeholder}
-          autoCapitalize={autoCapitalize}
-          keyboardType={keyboardType}
-          maxLength={maxLength}
-          editable={editable}
-          accessibilityLabel={label}
-          accessibilityState={{ disabled: !editable }}
-          selectionColor={text.default}
-          underlineColorAndroid="transparent"
-          multiline
-          scrollEnabled={false}
-          textAlignVertical="top"
-          blurOnSubmit
-          submitBehavior="blurAndSubmit"
-        />
+        <View style={styles.inputArea}>
+          <TextInput
+            ref={inputRef}
+            style={[
+              styles.value,
+              {
+                fontSize: CARD_TEXT.fontSize,
+                lineHeight: CARD_TEXT.lineHeight,
+                letterSpacing: CARD_TEXT.letterSpacing,
+                fontWeight: texts.value.fontWeight,
+                color: editable ? text.default : text.readOnly,
+              },
+              inputHeight != null && {
+                height: Math.max(inputHeight, SINGLE_LINE_HEIGHT),
+              },
+            ]}
+            value={value}
+            onChangeText={onChangeText}
+            onContentSizeChange={handleContentSizeChange}
+            onSubmitEditing={handleSubmitEditing}
+            autoCapitalize={autoCapitalize}
+            keyboardType={keyboardType}
+            maxLength={maxLength}
+            editable={editable}
+            accessibilityLabel={label}
+            accessibilityState={{ disabled: !editable }}
+            selectionColor={text.default}
+            underlineColorAndroid="transparent"
+            multiline
+            scrollEnabled={false}
+            textAlignVertical="top"
+            blurOnSubmit
+            submitBehavior="blurAndSubmit"
+          />
+          {value === "" && placeholder != null && placeholder !== "" ? (
+            <View
+              style={styles.placeholderOverlay}
+              pointerEvents="none"
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              <Text
+                variant={TextType.Value}
+                color={appInputCard.text.placeholder}
+                style={[CARD_TEXT, styles.placeholder]}
+              >
+                {placeholder}
+              </Text>
+            </View>
+          ) : null}
+        </View>
       </TouchableOpacity>
       {error ? (
         <Text
@@ -140,6 +156,22 @@ const styles = StyleSheet.create({
   },
   label: {
     flexShrink: 0,
+  },
+  inputArea: {
+    flex: 1,
+  },
+  placeholderOverlay: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  },
+  placeholder: {
+    fontWeight: "300",
+    textAlign: "left",
+    paddingRight: 2,
+    includeFontPadding: false,
   },
   value: {
     flex: 1,

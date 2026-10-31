@@ -150,9 +150,12 @@ export const appInputCard = {
     // editable se pinta negro (`text.default`), como Contacts. Asi el
     // usuario ve de un vistazo que fila puede tocar.
     value: text.readOnly,
-    // Placeholder de la familia card: el gris mas claro que sigue siendo AA
-    // sobre el fondo del card (#F7F7FA) = 4.60:1.
-    placeholder: "#707076",
+    // Placeholder de la familia card: mas claro que el valor y que el label
+    // para leerse como ejemplo pendiente, no como dato escrito.
+    placeholder: "#A1A1A6",
+    // Texto de un campo de lectura sin dato ("Sin definir"): gris AA sobre el
+    // card (#707076 = 4.60:1), mas oscuro que el placeholder editable.
+    empty: "#707076",
   },
 } as const;
 
