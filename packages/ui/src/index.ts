@@ -14,6 +14,7 @@ export * from "./components/TopBar";
 export * from "./components/StateMessage";
 export * from "./components/DrawerMenuItem";
 export * from "./components/SectionHeader";
+export * from "./components/SelectableTable";
 export * from "./components/ScreenOverlay";
 export * from "./components/BottomSheet";
 export * from "./components/BottomDialog";

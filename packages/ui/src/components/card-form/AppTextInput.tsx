@@ -23,6 +23,8 @@ export type AppTextInputProps = AppInputProps & {
    * - editable (default): abre teclado.
    * - `readOnly`: no abre teclado; combinar con `onPress` (selector) o
    *   `trailingAction` (escáner).
+   * - `selectable`: fila de selección; cualquier toque dispara `onPress` y el
+   *   input no captura texto ni foco.
    * - `editable={false}`: fila deshabilitada; usar `trailingIcon` (p. ej. lock).
    * - `error`: pinta label y mensaje en rojo.
    */
@@ -47,6 +49,11 @@ export type AppTextInputProps = AppInputProps & {
   };
   /** Icono decorativo a la derecha (ej. `lock` en un campo bloqueado). */
   trailingIcon?: IconName;
+  /**
+   * Fila de selección: cualquier toque dispara `onPress` y el input no captura
+   * texto ni foco. Requiere `onPress`.
+   */
+  selectable?: boolean;
 };
 
 export function AppTextInput({
@@ -61,6 +68,7 @@ export function AppTextInput({
   maxLength,
   editable = true,
   readOnly = false,
+  selectable = false,
   trailingAction,
   trailingIcon,
   onPress: onPressOverride,
@@ -68,12 +76,14 @@ export function AppTextInput({
   const inputRef = useRef<TextInput>(null);
   const [inputHeight, setInputHeight] = useState<number | undefined>(undefined);
 
-  const canType = editable && !readOnly;
+  const canType = editable && !readOnly && !selectable;
   // Fila que no se puede usar: o el campo esta deshabilitado, o es de solo
   // lectura sin accion asociada. El label queda negro (nombre legible) y el
   // valor pasa a gris, igual que una fila de solo lectura; nunca se baja la
   // opacidad de toda la fila (label 3.99:1, valor 1.96:1).
-  const looksInactive = !editable || (readOnly && !onPressOverride);
+  const looksInactive =
+    !editable || ((readOnly || selectable) && !onPressOverride);
+  const rowIsAction = selectable || onPressOverride != null;
 
   const focus = () => {
     if (canType) inputRef.current?.focus();
@@ -101,7 +111,12 @@ export function AppTextInput({
         activeOpacity={1}
         // La fila solo enfoca el campo: no es un control propio para lectores de
         // pantalla (el nombre accesible vive en el TextInput).
-        accessible={false}
+        accessible={rowIsAction}
+        accessibilityRole={rowIsAction ? "button" : undefined}
+        accessibilityLabel={
+          rowIsAction ? `${label}: ${value || placeholder || ""}` : undefined
+        }
+        accessibilityState={rowIsAction ? { disabled: looksInactive } : undefined}
       >
         <Text
           variant={TextType.Label}
@@ -115,7 +130,10 @@ export function AppTextInput({
         >
           {label}
         </Text>
-        <View style={styles.inputArea}>
+        <View
+          style={styles.inputArea}
+          pointerEvents={rowIsAction ? "none" : "auto"}
+        >
           <TextInput
             ref={inputRef}
             style={[
@@ -141,6 +159,8 @@ export function AppTextInput({
             editable={canType}
             accessibilityLabel={label}
             accessibilityState={{ disabled: looksInactive }}
+            accessibilityElementsHidden={rowIsAction}
+            importantForAccessibility={rowIsAction ? "no" : "auto"}
             selectionColor={text.default}
             underlineColorAndroid="transparent"
             multiline
