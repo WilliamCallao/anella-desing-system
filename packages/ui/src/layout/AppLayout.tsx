@@ -675,12 +675,26 @@ export function AppLayout({
               layout={animateLayout ? transition : undefined}
               collapsable={false}
             >
-              <Divisor
-                position="bottom"
-                handle={currentRoute.state === "bottom" || showFullBottomDivisor}
-                height={FULLBOTTOM_DIVISOR_H}
-                style={showFullBottomDivisor ? undefined : { transform: [{ translateY: 5 }] }}
-              />
+              {showFullBottomDivisor ? (
+                // FullBottom ya es una superficie oscura de borde a borde: no
+                // hay header claro detrás ni esquinas que insinuar.
+                <View
+                  style={{
+                    height: FULLBOTTOM_DIVISOR_H,
+                    backgroundColor: SECTION_DEFAULT_COLORS.bottom,
+                  }}
+                />
+              ) : (
+                <Divisor
+                  position="bottom"
+                  handle={currentRoute.state === "bottom"}
+                  height={FULLBOTTOM_DIVISOR_H}
+                  // El fondo de la muesca debe ser el page animado, no un claro
+                  // fijo: así el arco cambia de color junto con el header.
+                  baseColor="transparent"
+                  style={{ transform: [{ translateY: 5 }] }}
+                />
+              )}
             </Animated.View>
           )}
           {renderSection("bottom")}
