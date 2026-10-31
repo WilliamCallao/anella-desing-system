@@ -392,8 +392,12 @@ export function AppLayout({
     contentFadeEnabled &&
     !isOnlyCenterLayout(prevLayoutState) &&
     isOnlyCenterLayout(state);
-  const skipContentFadeOut = leavingFullBottom || leavingOnlyCenter;
   const goingBack = navigationDirectionRef.current === "back";
+  // Al retroceder no conservamos contenido saliente. En Android release las
+  // capas anteriores pueden quedar por encima del body restaurado y bloquear
+  // el touch aunque declaren `pointerEvents="none"`; desmontarlas en el mismo
+  // frame evita esa sección "muerta".
+  const skipContentFadeOut = leavingFullBottom || leavingOnlyCenter || goingBack;
   const contentFadeOutMs = goingBack ? CONTENT_FADE_OUT_BACK_MS : CONTENT_FADE_OUT_MS;
   const contentFadeInMs = goingBack ? CONTENT_FADE_IN_BACK_MS : CONTENT_FADE_IN_MS;
 
@@ -651,8 +655,9 @@ export function AppLayout({
     const prevB = prevLayoutState?.sections[k];
     const prevVisible = !!prevB?.visible;
     // La sección se mantiene montada mientras sale (prevVisible) para que el
-    // morph de la transición no recorte su contenido de golpe.
-    if (!cur?.visible && !prevVisible) return null;
+    // morph de la transición no recorte su contenido de golpe. Al retroceder
+    // se desmonta de inmediato: es la capa que bloqueaba el body restaurado.
+    if (!cur?.visible && (!prevVisible || goingBack)) return null;
 
     const usePrevContent = !cur?.visible && prevVisible;
     const behavior = usePrevContent ? prevB : cur;
@@ -693,6 +698,7 @@ export function AppLayout({
     const previousSlot =
       contentFadeEnabled &&
       !skipContentFadeOut &&
+      !goingBack &&
       !skipPreviousCenter &&
       !hidePreviousBody &&
       !usePrevContent
