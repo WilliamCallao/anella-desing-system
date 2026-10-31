@@ -37,7 +37,7 @@ Se importan como `layoutStates` y se referencian por nombre (`LayoutStateName`):
 |---------------|-------------------------------|---------------|---------------------|--------------------------------------------------------------------------------|
 | `stacked`     | top, mid, bottom (1/3 c/u)    | ninguno       | header, body, footer| Tres bloques iguales, sin scroll.                                              |
 | `bottom`      | mid (header), bottom (footer) | de **página** | header, footer      | Header se **desvanece** al scrollear; el footer es la lista que scrollea.     |
-| `fullBottom`  | bottom (footer)               | **interno**   | footer              | Solo el body ocupa la pantalla (inmersivo); la hoja llena el viewport y scrollea por dentro. |
+| `fullBottom`  | bottom (footer)               | de **página** | footer              | Solo el body ocupa la pantalla (inmersivo); la hoja llena el viewport como mínimo y scrollea con la página. |
 | `onlyCenter`  | mid (body)                    | **interno**   | body                | Un solo bloque que llena y scrollea internamente.                              |
 | `top`         | top (header), mid (body)      | **interno**   | header, body        | Header sticky que crece con su contenido; el body scrollea debajo.            |
 
@@ -205,6 +205,11 @@ robustez viene de la estructura:
    duración que las alturas. Sin esto, entrar a `fullBottom` pintaba el lienzo
    negro en el primer frame mientras el header claro todavía se contraía. El body
    no se sobredimensiona con colas artificiales (`BODY_TAIL`) ni overscans.
+
+6. **Entrada a `fullBottom` consciente del scroll.** La página partida puede estar
+   scrolleada; la cabecera visible es `max(0, midNatural - scrollY)`. La ventana
+   del morph se acorta en proporción a esa parte y es 0 si la cabecera ya salió
+   por arriba. Así no se reanima un header que el usuario ya no ve.
 
 > **Contrato de slots dinámicos:** el contenido de una sección `content`/
 > `minFillRest` se monta **dos veces** (proxy + visible). Debe ser puro e

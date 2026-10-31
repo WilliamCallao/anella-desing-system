@@ -118,19 +118,18 @@ export const layoutStates: Record<LayoutStateName, LayoutState> = {
     },
   },
   fullBottom: {
-    // Hoja inmersiva: el bottom llena el viewport y scrollea por dentro. Antes
-    // era `content` + pageScroll; si el detalle era corto, la mitad inferior
+    // Hoja inmersiva: el bottom llena el viewport como mínimo y crece con el
+    // contenido. Antes era `content`: si el detalle era corto, la mitad inferior
     // quedaba a merced del color del page y asomaba el lienzo claro durante el
-    // morph. Con fill + scroll interno la superficie oscura cubre siempre toda
-    // la pantalla y el contenido largo sigue siendo navegable.
-    pageScroll: false,
+    // morph. `minFillRest` sin ancla usa H como piso y conserva el pageScroll
+    // para que un detalle largo siga siendo navegable sin un ScrollView anidado.
+    pageScroll: true,
     sections: {
       top: { visible: false },
       mid: { visible: false },
       bottom: {
         visible: true,
-        height: "fill",
-        scroll: true,
+        height: "minFillRest",
         slot: "footer",
         backgroundColor: DARK_BG,
       },
@@ -233,7 +232,9 @@ export function computeSectionTargets(
     else if (h === "fill") out[k] = H;
     else if (h === "fillRest") out[k] = b.restsOn ? H - naturals[b.restsOn] : 0;
     else if (h === "minFillRest") {
-      const rest = b.restsOn ? H - naturals[b.restsOn] : 0;
+      // Sin ancla, el piso es la ventana completa. Lo usa fullBottom para
+      // cubrir la pantalla aunque el detalle sea corto.
+      const rest = b.restsOn ? H - naturals[b.restsOn] : H;
       out[k] = Math.max(naturals[k], rest);
     } else out[k] = h;
   }
@@ -274,9 +275,37 @@ export function selectPageBackground(
 }
 
 /**
+ * Ventana del morph al entrar a `fullBottom` desde un layout con `mid` visible.
+ *
+ * Si el usuario scrolleó la página, parte del header ya no está en pantalla:
+ * animar los 300 ms completos lo hace reaparecer y volver a colapsar. La
+ * duración se acorta en proporción a la parte visible; si el header ya salió
+ * por arriba, no hay morph (0).
+ */
+export function fullBottomTransitionDuration(
+  prevState: LayoutState | null,
+  currentState: LayoutState,
+  headerHeight: number,
+  scrollY: number,
+  baseDuration: number,
+): number {
+  if (!prevState) return baseDuration;
+  const entersFullBottom =
+    !!prevState.sections.mid?.visible &&
+    !currentState.sections.mid?.visible &&
+    !currentState.sections.top?.visible &&
+    !!currentState.sections.bottom?.visible;
+  if (!entersFullBottom) return baseDuration;
+  if (headerHeight <= 0) return 0;
+  const scrolled = Number.isFinite(scrollY) ? Math.max(0, scrollY) : 0;
+  const visibleHeader = Math.max(0, Math.min(headerHeight, headerHeight - scrolled));
+  return Math.round(baseDuration * (visibleHeader / headerHeight));
+}
+
+/**
  * El scroll de página (e interno) se resetea al tope SOLO cuando cambia el
  * nombre de ruta. Los cambios de contenido dentro de la misma ruta (categorías
- * ↔ subcategorías, filtros de búsqueda) preservan la posición.
+ * → subcategorías, filtros de búsqueda) preservan la posición.
  */
 export function shouldResetScroll(prevRouteName: string | null, nextRouteName: string): boolean {
   return prevRouteName !== nextRouteName;

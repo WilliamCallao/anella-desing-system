@@ -33,6 +33,7 @@ import {
   FULLBOTTOM_DIVISOR_H,
   bottomOverflows,
   computeSectionTargets,
+  fullBottomTransitionDuration,
   initialNaturals,
   isValidMeasurement,
   layoutStates,
@@ -171,9 +172,6 @@ export function AppLayout({
   HRef.current = H;
 
   const reduceMotion = useReducedMotion();
-  const transition = reduceMotion
-    ? LinearTransition.duration(0)
-    : CurvedTransition.duration(LAYOUT_DURATION);
   const revealProgress = useSharedValue(1);
   const revealStyle = useAnimatedStyle(() => ({ opacity: revealProgress.value }));
 
@@ -233,6 +231,19 @@ export function AppLayout({
   const [pageCanScroll, setPageCanScroll] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const innerScrollRef = useRef<ScrollView>(null);
+  // Offset de la página partida. Se usa al entrar a fullBottom para no animar
+  // una cabecera que el usuario ya scrolleó fuera de pantalla.
+  const pageScrollYRef = useRef(0);
+  // Offset capturado antes de navegar: el render de la ruta nueva puede ocurrir
+  // después de resetear el ScrollView, así que no alcanza con leerlo en render.
+  const pendingNavigationScrollRef = useRef(0);
+  // La duración se decide una sola vez por cambio de ruta: después del primer
+  // render el reset de scroll ya dejó el offset en 0 y recalcularla convertiría
+  // un salto intencional en una animación completa.
+  const transitionLatchRef = useRef({
+    route: initialRoute.name,
+    duration: LAYOUT_DURATION,
+  });
 
   // Medición: refs a los proxies por sección + estado de las relecturas.
   const proxyRefs = useRef<Partial<Record<SectionKey, View | null>>>({});
@@ -262,15 +273,21 @@ export function AppLayout({
     setStack((s) => (s[0]?.name === initialRoute.name ? s : [initialRoute]));
   }, [initialRoute.name]);
 
+  const captureScrollForNavigation = useCallback(() => {
+    pendingNavigationScrollRef.current = pageScrollYRef.current;
+  }, []);
   const navigate = useCallback((route: AppRoute) => {
+    captureScrollForNavigation();
     setStack((s) => [...s, route]);
-  }, []);
+  }, [captureScrollForNavigation]);
   const replace = useCallback((route: AppRoute) => {
+    captureScrollForNavigation();
     setStack((s) => [...s.slice(0, -1), route]);
-  }, []);
+  }, [captureScrollForNavigation]);
   const back = useCallback(() => {
+    captureScrollForNavigation();
     setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
-  }, []);
+  }, [captureScrollForNavigation]);
   const canGoBack = stack.length > 1;
   const currentRoute = stack[stack.length - 1];
 
@@ -315,6 +332,35 @@ export function AppLayout({
   const prevLayoutState: LayoutState | null = prevRoute
     ? resolveLayoutState(prevRoute.state)
     : null;
+
+  // La cabecera solo existe mientras su parte visible no salió por arriba. Si
+  // el usuario dejó la página partida scrolleada, no hay nada que colapsar: la
+  // hoja ya está cubriendo esa zona. La ventana del morph se acorta en
+  // proporción a lo que queda visible, y desaparece si la cabecera ya pasó.
+  const transitionDuration = (() => {
+    if (transitionLatchRef.current.route === currentRoute.name) {
+      return transitionLatchRef.current.duration;
+    }
+    const duration =
+      animateTransitions && !reduceMotion && prevRoute
+        ? fullBottomTransitionDuration(
+            prevLayoutState,
+            state,
+            naturalsRef.current.mid,
+            Math.max(pageScrollYRef.current, pendingNavigationScrollRef.current),
+            LAYOUT_DURATION,
+          )
+        : LAYOUT_DURATION;
+    transitionLatchRef.current = { route: currentRoute.name, duration };
+    pendingNavigationScrollRef.current = 0;
+    return duration;
+  })();
+
+  const transition =
+    transitionDuration <= 0
+      ? LinearTransition.duration(0)
+      : CurvedTransition.duration(transitionDuration);
+  const animateLayout = hasTransition && animateTransitions && transitionDuration > 0;
 
   const pageBg = selectPageBackground(state);
 
@@ -400,6 +446,7 @@ export function AppLayout({
         // ancla el scroll de página al tope.
         if (!overflows && bodyOverflowRef.current) {
           scrollRef.current?.scrollTo({ y: 0, animated: false });
+          pageScrollYRef.current = 0;
         }
         bodyOverflowRef.current = overflows;
       }
@@ -466,6 +513,7 @@ export function AppLayout({
     if (reset) {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       innerScrollRef.current?.scrollTo({ y: 0, animated: false });
+      pageScrollYRef.current = 0;
     }
     currentRouteNameRef.current = currentRoute.name;
 
@@ -561,7 +609,7 @@ export function AppLayout({
     return (
       <Animated.View
         key={k}
-        layout={hasTransition && animateTransitions ? transition : undefined}
+        layout={animateLayout ? transition : undefined}
         collapsable={false}
         style={[
           styles.colBlock,
@@ -607,11 +655,15 @@ export function AppLayout({
           bounces={false}
           overScrollMode="never"
           showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={(event) => {
+            pageScrollYRef.current = event.nativeEvent.contentOffset.y;
+          }}
         >
           {renderSection("top")}
           {showTopDivisor && (
             <Animated.View
-              layout={hasTransition && animateTransitions ? transition : undefined}
+              layout={animateLayout ? transition : undefined}
               collapsable={false}
             >
               <Divisor position="top" handle={currentRoute.state === "top"} />
@@ -620,7 +672,7 @@ export function AppLayout({
           {renderSection("mid")}
           {(showBottomDivisor || showFullBottomDivisor) && (
             <Animated.View
-              layout={hasTransition && animateTransitions ? transition : undefined}
+              layout={animateLayout ? transition : undefined}
               collapsable={false}
             >
               <Divisor

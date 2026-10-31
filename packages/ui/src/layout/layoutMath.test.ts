@@ -5,6 +5,7 @@ import {
   bottomOverflows,
   bottomViewport,
   computeSectionTargets,
+  fullBottomTransitionDuration,
   initialNaturals,
   isValidMeasurement,
   layoutStates,
@@ -82,11 +83,14 @@ describe("computeSectionTargets", () => {
     expect(t.bottom).toBe(H - FULLBOTTOM_DIVISOR_H);
   });
 
-  it("fullBottom: la hoja llena la pantalla y scrollea por dentro", () => {
+  it("fullBottom: la hoja llena la pantalla como mínimo y scrollea con el page", () => {
     const state = layoutStates.fullBottom;
-    expect(state.pageScroll).toBe(false);
-    expect(state.sections.bottom?.height).toBe("fill");
-    expect(state.sections.bottom?.scroll).toBe(true);
+    expect(state.pageScroll).toBe(true);
+    expect(state.sections.bottom?.height).toBe("minFillRest");
+    expect(state.sections.bottom?.scroll).not.toBe(true);
+    expect(computeSectionTargets(state, heights(0, 0, 10), H).bottom).toBe(
+      H - FULLBOTTOM_DIVISOR_H,
+    );
   });
 
   it("fullBottom: nunca deja el bottom negativo", () => {
@@ -181,6 +185,35 @@ describe("bottomViewport / bottomOverflows", () => {
   it("detecta overflow solo cuando el contenido supera el viewport visible", () => {
     expect(bottomOverflows(layoutStates.bottom, heights(0, 300, H - 300 + 1), H)).toBe(true);
     expect(bottomOverflows(layoutStates.bottom, heights(0, 300, 10), H)).toBe(false);
+  });
+});
+
+describe("fullBottomTransitionDuration", () => {
+  it("header completamente visible: usa la ventana completa", () => {
+    expect(
+      fullBottomTransitionDuration(layoutStates.bottom, layoutStates.fullBottom, 240, 0, 300),
+    ).toBe(300);
+  });
+
+  it("header a medio scroll: acorta la ventana a la parte visible", () => {
+    expect(
+      fullBottomTransitionDuration(layoutStates.bottom, layoutStates.fullBottom, 240, 120, 300),
+    ).toBe(150);
+  });
+
+  it("header ya fuera de pantalla: no hay morph de cabecera", () => {
+    expect(
+      fullBottomTransitionDuration(layoutStates.bottom, layoutStates.fullBottom, 240, 240, 300),
+    ).toBe(0);
+    expect(
+      fullBottomTransitionDuration(layoutStates.bottom, layoutStates.fullBottom, 240, 500, 300),
+    ).toBe(0);
+  });
+
+  it("otros cambios de estado conservan la ventana completa", () => {
+    expect(
+      fullBottomTransitionDuration(layoutStates.fullBottom, layoutStates.bottom, 240, 120, 300),
+    ).toBe(300);
   });
 });
 
