@@ -1,5 +1,15 @@
 # @william-callao/antonella-ui
 
+## 2.0.5
+
+### Patch Changes
+
+- [#41](https://github.com/WilliamCallao/anella-desing-system/pull/41) [`4cf2ff4`](https://github.com/WilliamCallao/anella-desing-system/commit/4cf2ff46f636932bbdb59549de504b2b1be225ea) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - fix(ui): remonta secciones solo en los cruces Home ↔ secciones
+  
+  - 2.0.4 remontaba todas las rutas, lo que arreglaba las secciones pero rompía Home y degradaba las animaciones.
+  - El remontaje vuelve a limitarse a los cruces Home ↔ secciones.
+  - Las rutas dentro del mismo layout conservan el nodo nativo y sus transiciones de altura.
+
 ## 2.0.4
 
 ### Patch Changes
