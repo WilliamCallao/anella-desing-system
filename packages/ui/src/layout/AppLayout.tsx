@@ -394,11 +394,20 @@ export function AppLayout({
     !isOnlyCenterLayout(prevLayoutState) &&
     isOnlyCenterLayout(state);
   const goingBack = navigationDirectionRef.current === "back";
+  // `AppShell` cambia la ruta por `initialRoute`, sin pasar por `back()` de
+  // AppLayout, así que `goingBack` puede quedar en "forward" aunque el usuario
+  // haya vuelto. El cambio de layout a onlyCenter es la señal confiable de que
+  // se está restaurando Home.
+  const enteringOnlyCenterLayout =
+    !!prevLayoutState &&
+    !isOnlyCenterLayout(prevLayoutState) &&
+    isOnlyCenterLayout(state);
   // Al retroceder no conservamos contenido saliente. En Android release las
   // capas anteriores pueden quedar por encima del body restaurado y bloquear
   // el touch aunque declaren `pointerEvents="none"`; desmontarlas en el mismo
   // frame evita esa sección "muerta".
-  const skipContentFadeOut = leavingFullBottom || leavingOnlyCenter || goingBack;
+  const skipContentFadeOut =
+    leavingFullBottom || leavingOnlyCenter || goingBack || enteringOnlyCenterLayout;
   const contentFadeOutMs = goingBack ? CONTENT_FADE_OUT_BACK_MS : CONTENT_FADE_OUT_MS;
   const contentFadeInMs = goingBack ? CONTENT_FADE_IN_BACK_MS : CONTENT_FADE_IN_MS;
 
@@ -649,9 +658,10 @@ export function AppLayout({
     const prevB = prevLayoutState?.sections[k];
     const prevVisible = !!prevB?.visible;
     // La sección se mantiene montada mientras sale (prevVisible) para que el
-    // morph de la transición no recorte su contenido de golpe. Al retroceder
-    // se desmonta de inmediato: es la capa que bloqueaba el body restaurado.
-    if (!cur?.visible && (!prevVisible || goingBack)) {
+    // morph de la transición no recorte su contenido de golpe. Al volver a
+    // Home se desmonta de inmediato: es la capa que bloqueaba el body.
+    const dropOutgoing = goingBack || enteringOnlyCenterLayout;
+    if (!cur?.visible && (!prevVisible || dropOutgoing)) {
       return null;
     }
 
@@ -703,11 +713,11 @@ export function AppLayout({
     const previousContent = previousSlot
       ? prevRoute?.slots?.[previousSlot]
       : null;
-    // Solo el retorno a Home (onlyCenter) necesita remontar la sección: es el
+    // Solo la entrada a Home (onlyCenter) necesita remontar la sección: es el
     // caso donde el nodo nativo reutilizado dejaba un área táctil obsoleta.
     // En el resto de los retrocesos se conserva el nodo para no pagar un
     // remontaje innecesario.
-    const remountOnBack = goingBack && isOnlyCenterLayout(state);
+    const remountOnBack = enteringOnlyCenterLayout;
     const sectionKey = remountOnBack ? `${k}:${currentRoute.name}` : k;
     const animateSectionLayout =
       animateLayout && previousLayoutHeightsRef.current[k] !== height;
