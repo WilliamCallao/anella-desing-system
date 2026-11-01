@@ -1,20 +1,40 @@
 import React from "react";
 import { StyleSheet, View, type ViewStyle } from "react-native";
 import { radius, background, border, neutrals } from "@william-callao/antonella-theme";
-import type { AppInputElement, AppInputProps } from "./AppInput";
-import { AppReadOnlyField } from "./AppReadOnlyField";
+import type { AppInputElement } from "./AppInput";
 
-export type AppFormCardVariant = "filled" | "outlined";
+export type AppFormCardVariant = "filled" | "outlined" | "readOnly";
 export type AppFormCardTone = "light" | "dark";
 
 export type AppFormCardProps = {
   children: AppInputElement | AppInputElement[];
   labelWidth?: number;
+  /**
+   * `readOnly` convierte el card en una lista de datos: sin superficie, borde
+   * ni padding horizontal, con divisores a sangre. Se declara explícitamente
+   * porque el estilo no debe depender de cómo se compongan los hijos
+   * (wrappers, fragmentos o condicionales).
+   */
   variant?: AppFormCardVariant;
   /** Superficie del grupo. `dark` es para fichas de solo lectura sobre fondo oscuro. */
   tone?: AppFormCardTone;
   style?: ViewStyle;
 };
+
+function collectItems(children: React.ReactNode): AppInputElement[] {
+  const items: AppInputElement[] = [];
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child)) return;
+    if (child.type === React.Fragment) {
+      items.push(
+        ...collectItems((child.props as { children?: React.ReactNode }).children)
+      );
+      return;
+    }
+    items.push(child as AppInputElement);
+  });
+  return items;
+}
 
 export function AppFormCard({
   children,
@@ -23,13 +43,8 @@ export function AppFormCard({
   tone = "light",
   style,
 }: AppFormCardProps) {
-  const items = React.Children.toArray(children)
-    .filter((child) => React.isValidElement<AppInputProps>(child))
-    .map((child) => child as AppInputElement);
-  // Una tarjeta compuesta solo por filas de lectura deja de ser un bloque
-  // relleno: se lee como una lista mecánica, sin fondo y con divisores de borde
-  // a borde. Si hay un input real, conserva el contenedor actual.
-  const readOnly = items.length > 0 && items.every((child) => child.type === AppReadOnlyField);
+  const items = collectItems(children);
+  const readOnly = variant === "readOnly";
 
   return (
     <View

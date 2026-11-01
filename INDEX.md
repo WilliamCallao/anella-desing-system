@@ -39,7 +39,7 @@
 - **Skeleton / SkeletonText / SkeletonCircle / SkeletonCard** — Placeholders de carga (línea, círculo, tarjeta).
 
 ### card-form (formularios con label)
-- **AppFormCard** — Tarjeta contenedora de un formulario con filas separadas por divisores.
+- **AppFormCard** — Tarjeta de formulario con `variant="filled" | "outlined" | "readOnly"`; `readOnly` la convierte explícitamente en lista de datos sin fondo ni borde.
 - **AppInput** — Tipos base (`label`, `labelWidth`) que comparten los campos de formulario.
 - **AppTextInput** — Campo de texto con label dentro de `AppFormCard`.
 - **AppTextArea** — Área de texto con label dentro de `AppFormCard`.
