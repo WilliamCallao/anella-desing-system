@@ -1,5 +1,17 @@
 # @william-callao/antonella-ui
 
+## 2.0.2
+
+### Patch Changes
+
+- [#35](https://github.com/WilliamCallao/anella-desing-system/pull/35) [`8b96616`](https://github.com/WilliamCallao/anella-desing-system/commit/8b96616d2bba2e339d1c3ddc23ecf013b2c8a329) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - fix(ui): optimiza el render y la navegación de AppLayout
+  
+  - Elimina la instrumentación temporal de logs que penalizaba cada render.
+  - Deja de escribir `contentOutProgress` durante el render; la animación se configura solo en el efecto de transición.
+  - Memoiza el contexto de navegación para evitar re-renders innecesarios de las pantallas.
+  - Aplica la transición de layout solo a las secciones cuya altura cambió.
+  - Al volver a Home remonta la sección afectada por el área táctil obsoleta; en el resto de los retrocesos conserva el nodo nativo.
+
 ## 2.0.1
 
 ### Patch Changes
