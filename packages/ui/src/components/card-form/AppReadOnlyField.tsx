@@ -1,9 +1,11 @@
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { appInputCard, danger, text, TextType } from "@william-callao/antonella-theme";
+import { appInputCard, danger, neutrals, text, TextType } from "@william-callao/antonella-theme";
 import { Icon, type IconName } from "../Icon";
 import { Text } from "../text/Text";
 import { CARD_ERROR, CARD_ROW, CARD_TEXT } from "./cardForm";
+
+export type AppReadOnlyFieldTone = "light" | "dark";
 
 export type AppReadOnlyFieldProps = {
   label: string;
@@ -19,6 +21,8 @@ export type AppReadOnlyFieldProps = {
   trailingIcon?: IconName;
   /** Error de validación mostrado debajo de la fila, como en `AppTextInput`. */
   error?: string;
+  /** Superficie sobre la que se pinta la fila. */
+  tone?: AppReadOnlyFieldTone;
   accessibilityHint?: string;
 };
 
@@ -37,22 +41,36 @@ export function AppReadOnlyField({
   disabled = false,
   trailingIcon,
   error,
+  tone = "light",
   accessibilityHint,
 }: AppReadOnlyFieldProps) {
+  const isDark = tone === "dark";
   const hasValue = value != null && value.trim() !== "";
   const displayValue = hasValue ? value : emptyLabel;
   const accessibilityLabel = `${label}: ${displayValue}`;
-  const valueColor = disabled
-    ? text.readOnly
-    : hasValue
-      ? appInputCard.text.value
-      : appInputCard.text.empty;
+  const valueColor = isDark
+    ? hasValue && !disabled
+      ? neutrals.N300
+      : neutrals.N400
+    : disabled
+      ? text.readOnly
+      : hasValue
+        ? appInputCard.text.value
+        : appInputCard.text.empty;
+  const labelColor = error
+    ? isDark
+      ? danger.D400
+      : danger.D700
+    : isDark
+      ? neutrals.N0
+      : appInputCard.text.label;
+  const iconColor = isDark ? neutrals.N400 : text.readOnly;
 
   const content = (
     <>
       <Text
         variant={TextType.Label}
-        color={error ? danger.D700 : appInputCard.text.label}
+        color={labelColor}
         numberOfLines={1}
         style={[styles.label, CARD_TEXT, labelWidth != null && { width: labelWidth }]}
       >
@@ -65,7 +83,7 @@ export function AppReadOnlyField({
       >
         {displayValue}
       </Text>
-      {trailingIcon ? <Icon name={trailingIcon} size={16} color={text.readOnly} /> : null}
+      {trailingIcon ? <Icon name={trailingIcon} size={16} color={iconColor} /> : null}
     </>
   );
 
@@ -78,7 +96,11 @@ export function AppReadOnlyField({
           accessibilityLabel={accessibilityLabel}
           accessibilityHint={accessibilityHint}
           accessibilityState={{ disabled }}
-          style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+          style={({ pressed }) => [
+            styles.row,
+            pressed && styles.rowPressed,
+            pressed && isDark && styles.rowPressedDark,
+          ]}
         >
           {content}
         </Pressable>
@@ -135,6 +157,9 @@ const styles = StyleSheet.create({
   rowPressed: {
     // El fondo del card es el mismo gris: sin esto el tap no da feedback.
     backgroundColor: appInputCard.separator,
+  },
+  rowPressedDark: {
+    backgroundColor: neutrals.N800,
   },
   label: {
     flexShrink: 0,

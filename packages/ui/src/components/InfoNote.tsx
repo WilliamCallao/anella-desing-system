@@ -1,9 +1,11 @@
 import React from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { brand, radius, space, text, TextType } from "@william-callao/antonella-theme";
+import { brand, neutrals, radius, space, text, TextType } from "@william-callao/antonella-theme";
 import { Icon, type IconName } from "./Icon";
-import { Label } from "./Label";
+import { Label, LabelStyle } from "./Label";
 import { Text } from "./text/Text";
+
+export type InfoNoteTone = "light" | "dark";
 
 export type InfoNoteAction = {
   label: string;
@@ -18,6 +20,8 @@ export type InfoNoteProps = {
   icon?: IconName;
   /** Acciones que se muestran debajo de la nota, alineadas a la izquierda. */
   actions?: InfoNoteAction[];
+  /** Superficie sobre la que se pinta la nota. */
+  tone?: InfoNoteTone;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -31,17 +35,21 @@ export function InfoNote({
   message,
   icon = "information-circle",
   actions,
+  tone = "light",
   style,
 }: InfoNoteProps) {
+  const isDark = tone === "dark";
   return (
     <View style={[styles.wrapper, style]}>
-      <View style={styles.note}>
-        <Icon name={icon} size={20} color={brand.M600} />
+      <View style={[styles.note, isDark ? styles.noteDark : undefined]}>
+        <Icon name={icon} size={20} color={isDark ? brand.M300 : brand.M600} />
         <View style={styles.content}>
           {title ? (
-            <Text variant={TextType.BodyMedium}>{title}</Text>
+            <Text variant={TextType.BodyMedium} color={isDark ? neutrals.N0 : undefined}>
+              {title}
+            </Text>
           ) : null}
-          <Text variant={TextType.Caption} color={text.default}>
+          <Text variant={TextType.Caption} color={isDark ? neutrals.N300 : text.default}>
             {message}
           </Text>
         </View>
@@ -55,6 +63,7 @@ export function InfoNote({
               icon={action.icon}
               onPress={action.onPress}
               accessibilityLabel={action.accessibilityLabel}
+              style={isDark ? LabelStyle.DARKNESS : undefined}
             />
           ))}
         </View>
@@ -76,6 +85,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: brand.M200,
     borderRadius: radius.md,
+  },
+  noteDark: {
+    backgroundColor: neutrals.N900,
+    borderColor: neutrals.N700,
   },
   content: {
     flex: 1,

@@ -1,14 +1,17 @@
 import React from "react";
 import { StyleSheet, View, type ViewStyle } from "react-native";
-import { appInputCard, radius, background, border } from "@william-callao/antonella-theme";
+import { radius, background, border, neutrals } from "@william-callao/antonella-theme";
 import type { AppInputElement, AppInputProps } from "./AppInput";
 
 export type AppFormCardVariant = "filled" | "outlined";
+export type AppFormCardTone = "light" | "dark";
 
 export type AppFormCardProps = {
   children: AppInputElement | AppInputElement[];
   labelWidth?: number;
   variant?: AppFormCardVariant;
+  /** Superficie del grupo. `dark` es para fichas de solo lectura sobre fondo oscuro. */
+  tone?: AppFormCardTone;
   style?: ViewStyle;
 };
 
@@ -16,6 +19,7 @@ export function AppFormCard({
   children,
   labelWidth,
   variant = "filled",
+  tone = "light",
   style,
 }: AppFormCardProps) {
   const items = React.Children.toArray(children)
@@ -26,13 +30,16 @@ export function AppFormCard({
     <View
       style={[
         styles.container,
-        variant === "outlined" ? styles.outlined : undefined,
+        variant === "outlined" && tone !== "dark" ? styles.outlined : undefined,
+        tone === "dark" ? styles.dark : undefined,
         style,
       ]}
     >
       {items.map((child, index) => (
         <View key={index} style={styles.row}>
-          {index > 0 ? <View style={styles.divider} /> : null}
+          {index > 0 ? (
+            <View style={[styles.divider, tone === "dark" ? styles.dividerDark : undefined]} />
+          ) : null}
           {React.cloneElement(child, {
             ...(labelWidth != null ? { labelWidth } : {}),
           })}
@@ -53,6 +60,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: border.divider.secondary,
   },
+  dark: {
+    backgroundColor: neutrals.N900,
+    borderWidth: 1,
+    borderColor: neutrals.N800,
+  },
   row: {
     overflow: "hidden",
   },
@@ -63,5 +75,8 @@ const styles = StyleSheet.create({
     right: 14,
     height: 1,
     backgroundColor: border.divider.secondary,
+  },
+  dividerDark: {
+    backgroundColor: neutrals.N800,
   },
 });
