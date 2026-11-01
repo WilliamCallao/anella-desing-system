@@ -8,7 +8,7 @@ import {
   type NativeSyntheticEvent,
   type TextInputContentSizeChangeEventData,
 } from "react-native";
-import { appInput, appInputCard, text, texts, TextType, space } from "@william-callao/antonella-theme";
+import { appInput, appInputCard, brand, text, texts, TextType, space } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
 import type { AppInputProps } from "./AppInput";
 import { CARD_ERROR, CARD_TEXT, SINGLE_LINE_HEIGHT } from "./cardForm";
@@ -100,7 +100,7 @@ export function AppTextArea({
             editable={editable}
             accessibilityLabel={label}
             accessibilityState={{ disabled: !editable }}
-            selectionColor={text.default}
+            selectionColor={brand.M300}
             underlineColorAndroid="transparent"
             multiline
             scrollEnabled={false}

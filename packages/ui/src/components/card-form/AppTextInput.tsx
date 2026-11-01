@@ -9,7 +9,7 @@ import {
   type NativeSyntheticEvent,
   type TextInputContentSizeChangeEventData,
 } from "react-native";
-import { appInput, appInputCard, spacing, text, texts, TextType } from "@william-callao/antonella-theme";
+import { appInput, appInputCard, brand, spacing, text, texts, TextType } from "@william-callao/antonella-theme";
 import { Text } from "../text/Text";
 import { Icon, type IconName } from "../Icon";
 import type { AppInputProps } from "./AppInput";
@@ -161,7 +161,7 @@ export function AppTextInput({
             accessibilityState={{ disabled: looksInactive }}
             accessibilityElementsHidden={rowIsAction}
             importantForAccessibility={rowIsAction ? "no" : "auto"}
-            selectionColor={text.default}
+            selectionColor={brand.M300}
             underlineColorAndroid="transparent"
             multiline
             scrollEnabled={false}
