@@ -9,30 +9,34 @@ const SAMPLE_TREE: TreeNode[] = [
     id: "activo",
     code: "1000",
     name: "Activo",
+    kind: "group",
     children: [
       {
         id: "activo-corriente",
         code: "1100",
         name: "Activo corriente",
+        kind: "group",
         children: [
           {
             id: "activo-caja-bancos",
             code: "1110",
             name: "Caja y bancos",
+            kind: "group",
             children: [
-              { id: "activo-caja", code: "1111", name: "Caja MN", children: [] },
-              { id: "activo-bancos", code: "1112", name: "Bancos", children: [] },
+              { id: "activo-caja", code: "1111", name: "Caja MN", kind: "item", children: [] },
+              { id: "activo-bancos", code: "1112", name: "Bancos", kind: "item", children: [] },
             ],
           },
-          { id: "activo-mercaderias", code: "1120", name: "Inventario de mercaderías", children: [] },
+          { id: "activo-mercaderias", code: "1120", name: "Inventario de mercaderías", kind: "item", children: [] },
         ],
       },
       {
         id: "activo-nocorriente",
         code: "1200",
         name: "Activo no corriente",
+        kind: "group",
         children: [
-          { id: "activo-equipo", code: "1210", name: "Propiedad planta equipo", children: [] },
+          { id: "activo-equipo", code: "1210", name: "Propiedad planta equipo", kind: "item", children: [] },
         ],
       },
     ],
@@ -41,18 +45,20 @@ const SAMPLE_TREE: TreeNode[] = [
     id: "pasivo",
     code: "2000",
     name: "Pasivo",
+    kind: "group",
     children: [
       {
         id: "pasivo-corriente",
         code: "2100",
         name: "Pasivo corriente",
+        kind: "group",
         children: [
-          { id: "pasivo-iva", code: "2110", name: "IVA débito fiscal", children: [] },
+          { id: "pasivo-iva", code: "2110", name: "IVA débito fiscal", kind: "item", children: [] },
         ],
       },
     ],
   },
-  { id: "patrimonio", code: "3000", name: "Patrimonio neto", children: [] },
+  { id: "patrimonio", code: "3000", name: "Patrimonio neto", kind: "group", children: [] },
 ];
 
 function TreeDemo({ mode, variant }: { mode: TreeEditorMode; variant?: TreeEditorVariant }) {
