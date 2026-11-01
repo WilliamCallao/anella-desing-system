@@ -1,5 +1,15 @@
 # @william-callao/antonella-ui
 
+## 2.0.4
+
+### Patch Changes
+
+- [#39](https://github.com/WilliamCallao/anella-desing-system/pull/39) [`573fe13`](https://github.com/WilliamCallao/anella-desing-system/commit/573fe1356a86708c378b0397e7c66a26f99516c2) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - fix(ui): remonta las secciones en cada cambio de ruta
+  
+  - El nodo nativo de una sección se reutilizaba entre pantallas y podía conservar un área táctil obsoleta en Android release.
+  - Ahora cada ruta monta nodos de sección nuevos, cubriendo Home ↔ Cuentas/Almacenes y también la navegación entre secciones.
+  - Se mantiene el fade del contenido; solo se desactiva el morph de altura cuando la sección se remonta.
+
 ## 2.0.3
 
 ### Patch Changes
