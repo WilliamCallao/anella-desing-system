@@ -81,9 +81,9 @@ const CONTENT_FADE_OUT_BACK_MS = 100;
 const CONTENT_FADE_IN_BACK_MS = 180;
 
 // Relecturas del proxy de medición. Un descendiente que anima su PROPIO alto en
-// el hilo UI (p. ej. `TransitionView`, que arranca en 0 y crece) hace que el
-// `onLayout` de JS del proxy quede con la altura de un frame intermedio y no se
-// vuelva a disparar de forma confiable en iOS. Para no medir un alto "capado por
+// el hilo UI y arranca en 0 hace que el `onLayout` de JS del proxy quede con la
+// altura de un frame intermedio y no se vuelva a disparar de forma confiable en
+// iOS. Para no medir un alto "capado por
 // animación", además del onLayout re-leemos con `measure()` hasta que la altura
 // queda estable (dos lecturas iguales) o pasa el tope de tiempo.
 const PROBE_INTERVAL_MS = 150;
@@ -99,6 +99,15 @@ function isFullBottomLayout(state: LayoutState | null): boolean {
     !state.sections.top?.visible &&
     !state.sections.mid?.visible &&
     !!state.sections.bottom?.visible
+  );
+}
+
+function isOnlyCenterLayout(state: LayoutState | null): boolean {
+  return (
+    !!state &&
+    !state.sections.top?.visible &&
+    !!state.sections.mid?.visible &&
+    !state.sections.bottom?.visible
   );
 }
 
@@ -369,6 +378,21 @@ export function AppLayout({
     contentFadeEnabled &&
     !isFullBottomLayout(prevLayoutState) &&
     isFullBottomLayout(state);
+  // El home (onlyCenter) no tiene header ni footer propios. Al pasar a un
+  // layout con secciones, su cuerpo no debe quedar 180 ms encima del header
+  // nuevo: se apaga en el mismo frame y el destino empieza a renderizarse.
+  const leavingOnlyCenter =
+    contentFadeEnabled &&
+    isOnlyCenterLayout(prevLayoutState) &&
+    !isOnlyCenterLayout(state);
+  // Al volver a onlyCenter, el cuerpo destino ocupa el centro completo. El
+  // centro saliente (por ejemplo el header del layout `bottom`) no se conserva
+  // como capa: se apaga en el mismo frame para no quedar encima del body nuevo.
+  const enteringOnlyCenter =
+    contentFadeEnabled &&
+    !isOnlyCenterLayout(prevLayoutState) &&
+    isOnlyCenterLayout(state);
+  const skipContentFadeOut = leavingFullBottom || leavingOnlyCenter;
   const goingBack = navigationDirectionRef.current === "back";
   const contentFadeOutMs = goingBack ? CONTENT_FADE_OUT_BACK_MS : CONTENT_FADE_OUT_MS;
   const contentFadeInMs = goingBack ? CONTENT_FADE_IN_BACK_MS : CONTENT_FADE_IN_MS;
@@ -377,7 +401,7 @@ export function AppLayout({
   // la ruta nueva; si esperamos al layout effect, el primer frame pinta el
   // contenido nuevo a opacidad 1 y recién después arranca el fade.
   if (contentFadeEnabled) {
-    contentOutProgress.value = leavingFullBottom ? 0 : 1;
+    contentOutProgress.value = skipContentFadeOut ? 0 : 1;
   }
 
   // La cabecera solo existe mientras su parte visible no salió por arriba. Si
@@ -598,7 +622,7 @@ export function AppLayout({
       startReveal();
     }
 
-    if (contentFadeEnabled && !leavingFullBottom) {
+    if (contentFadeEnabled && !skipContentFadeOut) {
       contentOutProgress.value = 1;
       contentOutProgress.value = withTiming(0, { duration: contentFadeOutMs });
     } else {
@@ -665,8 +689,13 @@ export function AppLayout({
     // no haya un corte, la ruta nueva entra y la anterior queda como capa
     // absoluta desvaneciéndose.
     const hidePreviousBody = enteringFullBottom && k === "bottom";
+    const skipPreviousCenter = enteringOnlyCenter && k === "mid";
     const previousSlot =
-      contentFadeEnabled && !leavingFullBottom && !hidePreviousBody && !usePrevContent
+      contentFadeEnabled &&
+      !skipContentFadeOut &&
+      !skipPreviousCenter &&
+      !hidePreviousBody &&
+      !usePrevContent
         ? prevB?.slot
         : undefined;
     const previousContent = previousSlot

@@ -186,8 +186,8 @@ robustez viene de la estructura:
 3. **Medición que resiste hijos que animan su alto.** El proxy vive **fuera** del
    wrapper que recorta (`overflow:hidden`) durante las transiciones, así el
    recorte nunca "capa" la altura medida. Además, como un descendiente puede
-   animar su propio alto en el hilo UI (`TransitionView` arranca en 0 y crece),
-   el `onLayout` de JS puede quedar con un frame intermedio y no volver a
+   animar su propio alto en el hilo UI y arrancar en 0, el `onLayout` de JS
+   puede quedar con un frame intermedio y no volver a
    dispararse en iOS; por eso el motor re-lee con `measure()` (cada 150 ms) hasta
    que la altura queda **estable** (dos lecturas iguales) o pasa el tope de 4 s.
    Nunca se mide un alto a medio animar de forma permanente.
@@ -219,7 +219,11 @@ robustez viene de la estructura:
    entra el nuevo. Al salir de `fullBottom`, su contenido se apaga en el mismo
    frame: no es un crossfade, la hoja deja de existir como tal. Al entrar a
    `fullBottom` desde un layout partido, el body saliente también se apaga de
-   inmediato para no superponer dos hojas; el header sí conserva su morph.
+   inmediato para no superponer dos hojas; el header sí conserva su morph. Al
+   salir de `onlyCenter`, su cuerpo se apaga en el mismo frame para que el
+   header y el resto del layout destino aparezcan sin quedar tapados. Al volver
+   a `onlyCenter`, el contenido saliente del centro no se conserva como capa:
+   desaparece en el mismo frame.
 
 > **Contrato de slots dinámicos:** el contenido de una sección `content`/
 > `minFillRest` se monta **dos veces** (proxy + visible). Debe ser puro e

@@ -66,7 +66,7 @@
 - **shellTokens** — Tokens de medidas/colores del `DashboardShell`.
 
 ## @antonella/animations — Animaciones de Reanimated
-- **TransitionView** — Envuelve contenido de altura variable: al cambiar anima la altura (sin saltos) y hace fade in del contenido nuevo (`contentKey` para disparar el fade); sin parpadeos, todo en el UI thread.
+- **FadeIn / useFadeIn** — Fade de entrada hook-driven para contenidos que se montan o remontan en slots del layout; `contentKey` vuelve a lanzar la animación.
 - **entering / exiting** — Presets de animaciones de entrada/salida (`fade`, `fadeInDown`, `slideRight`, `zoom`, …).
 - **staggeredFadeInDown** — Helper para animar listas en cascada (retardo incremental).
 

@@ -47,19 +47,6 @@ export default function Index() {
 
         <Card>
           <View style={styles.cardHeader}>
-            <Icon name="barn" size={24} color={cta1} />
-            <Text variant={TextType.Heading}>Explorador de animaciones</Text>
-          </View>
-          <Text variant={TextType.Caption} color={text.secondary}>
-            Componentes de animación (TransitionView y presets) para transiciones fluidas.
-          </Text>
-          <View style={styles.cta}>
-            <Button label="Explorar animaciones" onPress={() => router.push("/explorer/animaciones")} />
-          </View>
-        </Card>
-
-        <Card>
-          <View style={styles.cardHeader}>
             <Icon name="palette" size={24} color={cta1} />
             <Text variant={TextType.Heading}>Explorador de íconos</Text>
           </View>
