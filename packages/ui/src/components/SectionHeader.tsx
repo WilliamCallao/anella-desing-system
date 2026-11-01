@@ -17,7 +17,7 @@ export enum SectionHeaderStyle {
 const STYLE_LABEL: Record<SectionHeaderStyle, LabelStyle> = {
   [SectionHeaderStyle.DEFAULT]: LabelStyle.DEFAULT,
   [SectionHeaderStyle.LIGHT]: LabelStyle.LIGHT,
-  [SectionHeaderStyle.DARKNESS]: LabelStyle.DARKNESS,
+  [SectionHeaderStyle.DARKNESS]: LabelStyle.DARKNESS_ACTION,
 };
 
 // ── Props ───────────────────────────────────────────────────

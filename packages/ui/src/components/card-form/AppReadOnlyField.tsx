@@ -152,6 +152,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     ...CARD_ROW,
     minHeight: 40,
+    paddingHorizontal: 0,
     paddingVertical: space.space2,
   },
   rowPressed: {
