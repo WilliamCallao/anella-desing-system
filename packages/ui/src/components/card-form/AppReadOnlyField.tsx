@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { appInputCard, danger, neutrals, text, TextType } from "@william-callao/antonella-theme";
+import { appInputCard, danger, neutrals, space, text, TextType } from "@william-callao/antonella-theme";
 import { Icon, type IconName } from "../Icon";
 import { Text } from "../text/Text";
 import { CARD_ERROR, CARD_ROW, CARD_TEXT } from "./cardForm";
@@ -61,15 +61,13 @@ export function AppReadOnlyField({
     ? isDark
       ? danger.D400
       : danger.D700
-    : isDark
-      ? neutrals.N0
-      : appInputCard.text.label;
+    : valueColor;
   const iconColor = isDark ? neutrals.N400 : text.readOnly;
 
   const content = (
     <>
       <Text
-        variant={TextType.Label}
+        variant={TextType.Value}
         color={labelColor}
         numberOfLines={1}
         style={[styles.label, CARD_TEXT, labelWidth != null && { width: labelWidth }]}
@@ -77,9 +75,9 @@ export function AppReadOnlyField({
         {label}
       </Text>
       <Text
-        variant={hasValue ? TextType.Value : TextType.Caption}
+        variant={TextType.Value}
         color={valueColor}
-        style={[styles.value, hasValue ? CARD_TEXT : null]}
+        style={[styles.value, CARD_TEXT]}
       >
         {displayValue}
       </Text>
@@ -153,6 +151,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     ...CARD_ROW,
+    minHeight: 40,
+    paddingVertical: space.space2,
   },
   rowPressed: {
     // El fondo del card es el mismo gris: sin esto el tap no da feedback.
