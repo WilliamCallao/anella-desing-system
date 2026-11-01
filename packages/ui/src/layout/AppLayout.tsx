@@ -720,13 +720,13 @@ export function AppLayout({
     const previousContent = previousSlot
       ? prevRoute?.slots?.[previousSlot]
       : null;
-    // Cada ruta usa nodos de sección nuevos. Reutilizar el nodo nativo entre
-    // pantallas dejaba áreas táctiles obsoletas en Android release, no solo al
-    // volver a Home sino también al reentrar a Cuentas/Almacenes.
-    const sectionKey = `${k}:${currentRoute.name}`;
+    // Solo los cruces Home ↔ secciones remontan el nodo nativo. Reutilizarlo
+    // en esos cruces dejaba áreas táctiles obsoletas en Android release; en
+    // rutas del mismo layout se conserva para no perder la animación.
+    const sectionKey = remountOnLayoutChange ? `${k}:${currentRoute.name}` : k;
     const animateSectionLayout =
       animateLayout &&
-      prevRoute?.name === currentRoute.name &&
+      !remountOnLayoutChange &&
       previousLayoutHeightsRef.current[k] !== height;
     const currentLayer = (
       <Animated.View
@@ -767,7 +767,9 @@ export function AppLayout({
         // con una altura distinta dejaba un área táctil obsoleta en Android:
         // el body se veía bien pero la mitad inferior no recibía toques.
         key={sectionKey}
-        layout={!animateSectionLayout ? undefined : transition}
+        layout={
+          remountOnLayoutChange || !animateSectionLayout ? undefined : transition
+        }
         collapsable={false}
         style={[
           styles.colBlock,
