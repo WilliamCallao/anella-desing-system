@@ -1,5 +1,11 @@
 # @william-callao/antonella-ui
 
+## 2.1.0
+
+### Minor Changes
+
+- [#45](https://github.com/WilliamCallao/anella-desing-system/pull/45) [`3f92864`](https://github.com/WilliamCallao/anella-desing-system/commit/3f928642d32e26aac82ca3bfa4ca75c3b6e99324) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - Agrega `StreamlineIcon`, `BarChart`, `SuccessIllustration` y `PatternIllustration`, y amplía `SearchBar` y `StateMessage`.
+
 ## 2.0.6
 
 ### Patch Changes
