@@ -69,5 +69,8 @@ export * from "./components/text";
 export * from "./components/card-form";
 export * from "./layout";
 export * from "./components/camera";
+export * from "./illustrations";
+export * from "./charts";
+export * from "./icons";
 export { AppIcon } from "./AppIcons";
 export { LayoutColumnSize, LayoutRowSize } from "@william-callao/antonella-theme";
