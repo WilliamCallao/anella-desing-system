@@ -406,9 +406,14 @@ export function AppLayout({
     !!prevLayoutState &&
     !isOnlyCenterLayout(prevLayoutState) &&
     isOnlyCenterLayout(state);
-  // Cualquier cruce entre Home y un layout de secciones necesita nodos nuevos:
-  // el contenedor de la sección se reutilizaba con un área táctil vieja.
-  const remountOnLayoutChange = leavingOnlyCenterLayout || enteringOnlyCenterLayout;
+  // El remontaje se necesita al restaurar Home, donde el nodo nativo reutilizado
+  // conservaba un área táctil vieja. Al salir de Home no se remonta: eso permite
+  // que Cuentas/Almacenes sigan animando el morph de altura.
+  const remountSection = enteringOnlyCenterLayout;
+  // Al salir de Home tampoco conservamos su capa saliente, porque podía quedar
+  // por encima del body destino y bloquear el touch en Android release.
+  const dropOutgoing =
+    goingBack || leavingOnlyCenterLayout || enteringOnlyCenterLayout;
   // Al retroceder no conservamos contenido saliente. En Android release las
   // capas anteriores pueden quedar por encima del body restaurado y bloquear
   // el touch aunque declaren `pointerEvents="none"`; desmontarlas en el mismo
@@ -667,7 +672,6 @@ export function AppLayout({
     // La sección se mantiene montada mientras sale (prevVisible) para que el
     // morph de la transición no recorte su contenido de golpe. Al volver a
     // Home se desmonta de inmediato: es la capa que bloqueaba el body.
-    const dropOutgoing = goingBack || remountOnLayoutChange;
     if (!cur?.visible && (!prevVisible || dropOutgoing)) {
       return null;
     }
@@ -720,13 +724,12 @@ export function AppLayout({
     const previousContent = previousSlot
       ? prevRoute?.slots?.[previousSlot]
       : null;
-    // Solo los cruces Home ↔ secciones remontan el nodo nativo. Reutilizarlo
-    // en esos cruces dejaba áreas táctiles obsoletas en Android release; en
-    // rutas del mismo layout se conserva para no perder la animación.
-    const sectionKey = remountOnLayoutChange ? `${k}:${currentRoute.name}` : k;
+    // Solo al restaurar Home se remonta el nodo nativo. Al entrar a una sección
+    // desde Home se conserva el nodo para no perder la animación de altura.
+    const sectionKey = remountSection ? `${k}:${currentRoute.name}` : k;
     const animateSectionLayout =
       animateLayout &&
-      !remountOnLayoutChange &&
+      !remountSection &&
       previousLayoutHeightsRef.current[k] !== height;
     const currentLayer = (
       <Animated.View
@@ -767,9 +770,7 @@ export function AppLayout({
         // con una altura distinta dejaba un área táctil obsoleta en Android:
         // el body se veía bien pero la mitad inferior no recibía toques.
         key={sectionKey}
-        layout={
-          remountOnLayoutChange || !animateSectionLayout ? undefined : transition
-        }
+        layout={remountSection || !animateSectionLayout ? undefined : transition}
         collapsable={false}
         style={[
           styles.colBlock,
