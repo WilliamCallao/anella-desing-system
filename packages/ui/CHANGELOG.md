@@ -1,5 +1,15 @@
 # @william-callao/antonella-ui
 
+## 2.0.6
+
+### Patch Changes
+
+- [#43](https://github.com/WilliamCallao/anella-desing-system/pull/43) [`e2ab6ce`](https://github.com/WilliamCallao/anella-desing-system/commit/e2ab6ceed0707571be837b76011435c95bc8499a) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - fix(ui): restaura la transición de Home a Cuentas/Almacenes
+  
+  - El remontaje de sección se limita a la restauración de Home.
+  - Al salir de Home se conserva el nodo nativo y vuelve el morph de altura de la transición.
+  - Las capas salientes se siguen descartando para evitar bloqueos táctiles.
+
 ## 2.0.5
 
 ### Patch Changes
