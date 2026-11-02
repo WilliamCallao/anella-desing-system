@@ -398,10 +398,17 @@ export function AppLayout({
   // AppLayout, así que `goingBack` puede quedar en "forward" aunque el usuario
   // haya vuelto. El cambio de layout a onlyCenter es la señal confiable de que
   // se está restaurando Home.
+  const leavingOnlyCenterLayout =
+    !!prevLayoutState &&
+    isOnlyCenterLayout(prevLayoutState) &&
+    !isOnlyCenterLayout(state);
   const enteringOnlyCenterLayout =
     !!prevLayoutState &&
     !isOnlyCenterLayout(prevLayoutState) &&
     isOnlyCenterLayout(state);
+  // Cualquier cruce entre Home y un layout de secciones necesita nodos nuevos:
+  // el contenedor de la sección se reutilizaba con un área táctil vieja.
+  const remountOnLayoutChange = leavingOnlyCenterLayout || enteringOnlyCenterLayout;
   // Al retroceder no conservamos contenido saliente. En Android release las
   // capas anteriores pueden quedar por encima del body restaurado y bloquear
   // el touch aunque declaren `pointerEvents="none"`; desmontarlas en el mismo
@@ -660,7 +667,7 @@ export function AppLayout({
     // La sección se mantiene montada mientras sale (prevVisible) para que el
     // morph de la transición no recorte su contenido de golpe. Al volver a
     // Home se desmonta de inmediato: es la capa que bloqueaba el body.
-    const dropOutgoing = goingBack || enteringOnlyCenterLayout;
+    const dropOutgoing = goingBack || remountOnLayoutChange;
     if (!cur?.visible && (!prevVisible || dropOutgoing)) {
       return null;
     }
@@ -713,14 +720,14 @@ export function AppLayout({
     const previousContent = previousSlot
       ? prevRoute?.slots?.[previousSlot]
       : null;
-    // Solo la entrada a Home (onlyCenter) necesita remontar la sección: es el
-    // caso donde el nodo nativo reutilizado dejaba un área táctil obsoleta.
-    // En el resto de los retrocesos se conserva el nodo para no pagar un
-    // remontaje innecesario.
-    const remountOnBack = enteringOnlyCenterLayout;
-    const sectionKey = remountOnBack ? `${k}:${currentRoute.name}` : k;
+    // Cada ruta usa nodos de sección nuevos. Reutilizar el nodo nativo entre
+    // pantallas dejaba áreas táctiles obsoletas en Android release, no solo al
+    // volver a Home sino también al reentrar a Cuentas/Almacenes.
+    const sectionKey = `${k}:${currentRoute.name}`;
     const animateSectionLayout =
-      animateLayout && previousLayoutHeightsRef.current[k] !== height;
+      animateLayout &&
+      prevRoute?.name === currentRoute.name &&
+      previousLayoutHeightsRef.current[k] !== height;
     const currentLayer = (
       <Animated.View
         key={usePrevContent ? `out:${k}` : `in:${currentRoute.name}:${k}`}
@@ -760,7 +767,7 @@ export function AppLayout({
         // con una altura distinta dejaba un área táctil obsoleta en Android:
         // el body se veía bien pero la mitad inferior no recibía toques.
         key={sectionKey}
-        layout={remountOnBack || !animateSectionLayout ? undefined : transition}
+        layout={!animateSectionLayout ? undefined : transition}
         collapsable={false}
         style={[
           styles.colBlock,
