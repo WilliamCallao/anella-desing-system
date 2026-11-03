@@ -1,5 +1,19 @@
 # @william-callao/antonella-ui
 
+## 2.1.3
+
+### Patch Changes
+
+- [#51](https://github.com/WilliamCallao/anella-desing-system/pull/51) [`c2cb25b`](https://github.com/WilliamCallao/anella-desing-system/commit/c2cb25bb44c387374bd8ff1dc41e8827f9bd91c1) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - revert(ui): vuelve el motor de AppLayout a la versión de 2.0.6
+  
+  - Restaura `AppLayout`, `layoutMath`, sus tests y `APPLAYOUT.md` al estado de
+    `31e723e` (2.0.6), el último punto con navegación estable y la transición de
+    Home a Cuentas/Almacenes.
+  - Se retiran el remontaje por firma estructural y la capa fantasma de 2.1.1 /
+    2.1.2.
+  - No toca el resto del paquete: se conservan las ilustraciones, gráficos e
+    iconos agregados en 2.1.0.
+
 ## 2.1.2
 
 ### Patch Changes
