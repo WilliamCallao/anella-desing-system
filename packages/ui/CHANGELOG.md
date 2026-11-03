@@ -1,5 +1,20 @@
 # @william-callao/antonella-ui
 
+## 2.1.4
+
+### Patch Changes
+
+- [#53](https://github.com/WilliamCallao/anella-desing-system/pull/53) [`b726e30`](https://github.com/WilliamCallao/anella-desing-system/commit/b726e30dd70d480c07855ebe4beb1c905fd97709) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - revert(ui): vuelve AppLayout al commit que centralizó la transición Home → sección
+  
+  - Restaura `AppLayout` al estado de `b881a49` ("afina transiciones
+    onlyCenter"), el punto que acompaña a `2094cb5` de la app ("centraliza
+    transiciones en AppLayout"), donde la transición de Home a Plan de
+    Cuentas/Almacenes quedó a cargo del motor.
+  - Se retiran los fixes posteriores de remontaje/retroceso (2.0.1 a 2.0.6), el
+    remontaje por firma estructural (2.1.1) y la capa fantasma (2.1.2).
+  - No se toca el resto del paquete: se conservan las ilustraciones, gráficos e
+    iconos de 2.1.0.
+
 ## 2.1.3
 
 ### Patch Changes
