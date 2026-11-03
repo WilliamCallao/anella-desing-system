@@ -11,7 +11,9 @@ import {
   layoutStates,
   resolveLayoutState,
   seedNaturals,
+  sectionSignature,
   selectPageBackground,
+  shouldRemountSection,
   shouldResetScroll,
   writeNaturals,
   type LayoutState,
@@ -225,6 +227,79 @@ describe("shouldResetScroll", () => {
 
   it("NO resetea cuando el nombre de ruta es el mismo (cambio de contenido intra-ruta)", () => {
     expect(shouldResetScroll("catalogo", "catalogo")).toBe(false);
+  });
+});
+
+describe("sectionSignature / shouldRemountSection (contrato de nodo nativo)", () => {
+  it("misma firma → conserva el nodo (permite morph de altura)", () => {
+    expect(shouldRemountSection(layoutStates.bottom, layoutStates.bottom, "mid")).toBe(false);
+    expect(shouldRemountSection(layoutStates.bottom, layoutStates.bottom, "bottom")).toBe(false);
+    expect(shouldRemountSection(layoutStates.onlyCenter, layoutStates.onlyCenter, "mid")).toBe(false);
+  });
+
+  it("Home (onlyCenter) → Cuentas/Almacenes (bottom) remonta mid y bottom", () => {
+    expect(shouldRemountSection(layoutStates.onlyCenter, layoutStates.bottom, "mid")).toBe(true);
+    expect(shouldRemountSection(layoutStates.onlyCenter, layoutStates.bottom, "bottom")).toBe(true);
+    // top queda oculto en ambos: no hay nodo que remontar.
+    expect(shouldRemountSection(layoutStates.onlyCenter, layoutStates.bottom, "top")).toBe(false);
+  });
+
+  it("bottom ↔ fullBottom remonta bottom (cambia el ancla del alto)", () => {
+    expect(shouldRemountSection(layoutStates.bottom, layoutStates.fullBottom, "bottom")).toBe(true);
+    expect(shouldRemountSection(layoutStates.fullBottom, layoutStates.bottom, "bottom")).toBe(true);
+    expect(shouldRemountSection(layoutStates.bottom, layoutStates.fullBottom, "mid")).toBe(true);
+  });
+
+  it("una sección oculta no tiene forma: hidden es estable entre layouts", () => {
+    const custom: LayoutState = {
+      sections: {
+        top: { visible: false },
+        mid: { visible: true, height: "content" },
+        bottom: { visible: false },
+      },
+    };
+    expect(sectionSignature(custom, "top")).toBe("hidden");
+    expect(sectionSignature(layoutStates.onlyCenter, "top")).toBe("hidden");
+  });
+
+  it("dos estados con la misma forma pero distinto nombre conservan el nodo", () => {
+    const a: LayoutState = {
+      sections: {
+        top: { visible: false },
+        mid: { visible: true, height: "minFillRest", slot: "body" },
+        bottom: { visible: false },
+      },
+    };
+    const b: LayoutState = {
+      sections: {
+        top: { visible: false },
+        mid: { visible: true, height: "minFillRest", slot: "body" },
+        bottom: { visible: false },
+      },
+    };
+    expect(shouldRemountSection(a, b, "mid")).toBe(false);
+  });
+
+  it("sin ruta previa siempre remonta (primer montaje)", () => {
+    expect(shouldRemountSection(null, layoutStates.onlyCenter, "mid")).toBe(true);
+  });
+
+  it("la firma distingue scroll y slot, no solo el tipo de alto", () => {
+    const internalScroll: LayoutState = {
+      sections: {
+        top: { visible: false },
+        mid: { visible: true, height: "content", scroll: true, slot: "body" },
+        bottom: { visible: false },
+      },
+    };
+    const flow: LayoutState = {
+      sections: {
+        top: { visible: false },
+        mid: { visible: true, height: "content", slot: "header" },
+        bottom: { visible: false },
+      },
+    };
+    expect(shouldRemountSection(internalScroll, flow, "mid")).toBe(true);
   });
 });
 
