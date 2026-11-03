@@ -4,7 +4,6 @@ import React, {
   useContext,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -235,10 +234,6 @@ export function AppLayout({
     computeSectionTargets(resolveLayoutState(initialRoute.state), initialNaturalsValue, H)
   );
   const appliedRef = useRef(layoutHeights);
-  const previousLayoutHeightsRef = useRef(layoutHeights);
-  useLayoutEffect(() => {
-    previousLayoutHeightsRef.current = layoutHeights;
-  }, [layoutHeights]);
 
   // Alto natural (medido) de cada sección. El snapshot por ruta permite repintar
   // una ruta ya visitada con su alto correcto en el primer frame.
@@ -352,10 +347,14 @@ export function AppLayout({
     return () => sub.remove();
   }, [canGoBack, back]);
 
-  const navigationValue = useMemo<AppNavigation>(
-    () => ({ navigate, back, canGoBack, currentRoute, stack, replace }),
-    [navigate, back, canGoBack, currentRoute, stack, replace]
-  );
+  const navigationValue: AppNavigation = {
+    navigate,
+    back,
+    canGoBack,
+    currentRoute,
+    stack,
+    replace,
+  };
 
   const state: LayoutState = resolveLayoutState(currentRoute.state);
   const slots = currentRoute.slots ?? {};
@@ -393,35 +392,17 @@ export function AppLayout({
     contentFadeEnabled &&
     !isOnlyCenterLayout(prevLayoutState) &&
     isOnlyCenterLayout(state);
+  const skipContentFadeOut = leavingFullBottom || leavingOnlyCenter;
   const goingBack = navigationDirectionRef.current === "back";
-  // `AppShell` cambia la ruta por `initialRoute`, sin pasar por `back()` de
-  // AppLayout, así que `goingBack` puede quedar en "forward" aunque el usuario
-  // haya vuelto. El cambio de layout a onlyCenter es la señal confiable de que
-  // se está restaurando Home.
-  const leavingOnlyCenterLayout =
-    !!prevLayoutState &&
-    isOnlyCenterLayout(prevLayoutState) &&
-    !isOnlyCenterLayout(state);
-  const enteringOnlyCenterLayout =
-    !!prevLayoutState &&
-    !isOnlyCenterLayout(prevLayoutState) &&
-    isOnlyCenterLayout(state);
-  // El remontaje se necesita al restaurar Home, donde el nodo nativo reutilizado
-  // conservaba un área táctil vieja. Al salir de Home no se remonta: eso permite
-  // que Cuentas/Almacenes sigan animando el morph de altura.
-  const remountSection = enteringOnlyCenterLayout;
-  // Al salir de Home tampoco conservamos su capa saliente, porque podía quedar
-  // por encima del body destino y bloquear el touch en Android release.
-  const dropOutgoing =
-    goingBack || leavingOnlyCenterLayout || enteringOnlyCenterLayout;
-  // Al retroceder no conservamos contenido saliente. En Android release las
-  // capas anteriores pueden quedar por encima del body restaurado y bloquear
-  // el touch aunque declaren `pointerEvents="none"`; desmontarlas en el mismo
-  // frame evita esa sección "muerta".
-  const skipContentFadeOut =
-    leavingFullBottom || leavingOnlyCenter || goingBack || enteringOnlyCenterLayout;
   const contentFadeOutMs = goingBack ? CONTENT_FADE_OUT_BACK_MS : CONTENT_FADE_OUT_MS;
   const contentFadeInMs = goingBack ? CONTENT_FADE_IN_BACK_MS : CONTENT_FADE_IN_MS;
+
+  // La capa saliente tiene que nacer visible en el mismo render en que aparece
+  // la ruta nueva; si esperamos al layout effect, el primer frame pinta el
+  // contenido nuevo a opacidad 1 y recién después arranca el fade.
+  if (contentFadeEnabled) {
+    contentOutProgress.value = skipContentFadeOut ? 0 : 1;
+  }
 
   // La cabecera solo existe mientras su parte visible no salió por arriba. Si
   // el usuario dejó la página partida scrolleada, no hay nada que colapsar: la
@@ -598,7 +579,7 @@ export function AppLayout({
     // Reset de scroll SOLO al cambiar de ruta: la instancia del ScrollView se
     // reutiliza entre rutas, y sin esto la ruta nueva se pintaba en el offset de
     // la anterior (parpadeo con la página scrolleada). Dentro de la misma ruta
-    // (categorías → subcategorías, filtros) la posición se preserva.
+    // (categorías ↔ subcategorías, filtros) la posición se preserva.
     const reset = shouldResetScroll(currentRouteNameRef.current, currentRoute.name);
     if (reset) {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
@@ -670,11 +651,8 @@ export function AppLayout({
     const prevB = prevLayoutState?.sections[k];
     const prevVisible = !!prevB?.visible;
     // La sección se mantiene montada mientras sale (prevVisible) para que el
-    // morph de la transición no recorte su contenido de golpe. Al volver a
-    // Home se desmonta de inmediato: es la capa que bloqueaba el body.
-    if (!cur?.visible && (!prevVisible || dropOutgoing)) {
-      return null;
-    }
+    // morph de la transición no recorte su contenido de golpe.
+    if (!cur?.visible && !prevVisible) return null;
 
     const usePrevContent = !cur?.visible && prevVisible;
     const behavior = usePrevContent ? prevB : cur;
@@ -715,7 +693,6 @@ export function AppLayout({
     const previousSlot =
       contentFadeEnabled &&
       !skipContentFadeOut &&
-      !goingBack &&
       !skipPreviousCenter &&
       !hidePreviousBody &&
       !usePrevContent
@@ -724,13 +701,6 @@ export function AppLayout({
     const previousContent = previousSlot
       ? prevRoute?.slots?.[previousSlot]
       : null;
-    // Solo al restaurar Home se remonta el nodo nativo. Al entrar a una sección
-    // desde Home se conserva el nodo para no perder la animación de altura.
-    const sectionKey = remountSection ? `${k}:${currentRoute.name}` : k;
-    const animateSectionLayout =
-      animateLayout &&
-      !remountSection &&
-      previousLayoutHeightsRef.current[k] !== height;
     const currentLayer = (
       <Animated.View
         key={usePrevContent ? `out:${k}` : `in:${currentRoute.name}:${k}`}
@@ -766,11 +736,8 @@ export function AppLayout({
 
     return (
       <Animated.View
-        // Al volver, remontamos la sección completa. Reutilizar el nodo nativo
-        // con una altura distinta dejaba un área táctil obsoleta en Android:
-        // el body se veía bien pero la mitad inferior no recibía toques.
-        key={sectionKey}
-        layout={remountSection || !animateSectionLayout ? undefined : transition}
+        key={k}
+        layout={animateLayout ? transition : undefined}
         collapsable={false}
         style={[
           styles.colBlock,
