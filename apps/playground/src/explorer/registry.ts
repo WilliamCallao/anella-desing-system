@@ -2,6 +2,8 @@ import { arbol } from "./categories/arbol";
 import { botones } from "./categories/botones";
 import { bottomBars } from "./categories/bottom-bars";
 import { camara } from "./categories/camara";
+import { ilustraciones } from "./categories/ilustraciones";
+import { graficos } from "./categories/graficos";
 import { checklists } from "./categories/checklists";
 import { colores } from "./categories/colores";
 import { composingOrb } from "./categories/composing-orb";
@@ -30,7 +32,7 @@ import type { ComponentCategory, SectionMeta, SectionWithCategories } from "./ty
 
 export type { ComponentCategory, ComponentEntry, VariantDemo, SectionMeta, SectionWithCategories } from "./types";
 
-export const componentCategories = [formularios, inputs, botones, dialogos, checklists, filtros, arbol, other, tipografia, bottomBars, composingOrb, drawerMenu, drawerMenuItem, topBar, searchBar, sectionHeader, actionCard, shortcutCard, stackDetails, layout, sheetLayout, mainLayout, mainLayoutApp, iconos, toast, camara];
+export const componentCategories = [formularios, inputs, botones, dialogos, checklists, filtros, arbol, other, tipografia, bottomBars, composingOrb, drawerMenu, drawerMenuItem, topBar, searchBar, sectionHeader, actionCard, shortcutCard, stackDetails, layout, sheetLayout, mainLayout, mainLayoutApp, iconos, toast, camara, ilustraciones, graficos];
 
 export const sectionCategories: ComponentCategory[] = [colores, semanticTokens];
 
@@ -76,6 +78,20 @@ export const sections: SectionMeta[] = [
     icon: "palette",
     order: 6,
     items: ["colores", "semanticTokens"],
+  },
+  {
+    key: "ilustraciones",
+    title: "Ilustraciones",
+    icon: "palette",
+    order: 7,
+    items: ["ilustraciones"],
+  },
+  {
+    key: "graficos",
+    title: "Gráficos",
+    icon: "bar-chart",
+    order: 8,
+    items: ["graficos"],
   },
 ];
 
