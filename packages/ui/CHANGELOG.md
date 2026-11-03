@@ -1,5 +1,21 @@
 # @william-callao/antonella-ui
 
+## 2.1.2
+
+### Patch Changes
+
+- [#49](https://github.com/WilliamCallao/anella-desing-system/pull/49) [`88d3d4c`](https://github.com/WilliamCallao/anella-desing-system/commit/88d3d4c151742e6d71a29b581d02dec3fdfaf484) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - fix(ui): recupera el morph de transición con una capa fantasma no interactiva
+  
+  - Los cruces de forma (Home → Cuentas/Almacenes, sección → detalle `fullBottom`
+    y vueltas) vuelven a animar la banda clara y el borde de la hoja.
+  - El morph se dibuja en un overlay absoluto con `pointerEvents="none"` que se
+    desmonta al terminar; el layout destino ya está montado en su geometría final
+    y es el que recibe los toques.
+  - Se mantiene el remontaje por firma estructural: la animación ya no puede
+    dejar un área táctil obsoleta en Android release.
+  - Al volver a Home, una cortina del color del page oculta y revela el contenido
+    nuevo debajo del borde que crece.
+
 ## 2.1.1
 
 ### Patch Changes
