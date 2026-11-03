@@ -305,48 +305,10 @@ export function fullBottomTransitionDuration(
 /**
  * El scroll de página (e interno) se resetea al tope SOLO cuando cambia el
  * nombre de ruta. Los cambios de contenido dentro de la misma ruta (categorías
- * → subcategorías, filtros) preservan la posición.
+ * → subcategorías, filtros de búsqueda) preservan la posición.
  */
 export function shouldResetScroll(prevRouteName: string | null, nextRouteName: string): boolean {
   return prevRouteName !== nextRouteName;
-}
-
-/**
- * Firma estructural de una sección: qué forma tiene su contenedor nativo.
- *
- * Es la clave de remontaje del motor. Una sección puede reutilizar su nodo
- * nativo (y animar su alto) solo mientras su contrato de layout no cambie. Si
- * cambia la visibilidad, el tipo de alto, el scroll o el ancla, el nodo viejo
- * conserva en Android release un área táctil obsoleta: el contenido se ve bien
- * pero los toques caen en la geometría anterior. Remontar por firma (y no por
- * dirección de navegación ni por "es Home") cubre todos los cruces:
- *
- *  - Home (`onlyCenter`) → Cuentas/Almacenes (`bottom`).
- *  - `bottom` → detalle `fullBottom` y de vuelta.
- *  - Cualquier preset/custom que cambie la forma de una sección.
- *
- * Las rutas que comparten la misma firma conservan el nodo y sus transiciones
- * de altura (p. ej. mediciones dentro de la misma ruta).
- */
-export function sectionSignature(state: LayoutState, k: SectionKey): string {
-  const s = state.sections[k];
-  if (!s?.visible) return "hidden";
-  return [
-    s.height ?? "content",
-    s.scroll ? "scroll" : "flow",
-    s.slot ?? "-",
-    s.restsOn ?? "-",
-  ].join("|");
-}
-
-/** ¿La sección necesita un nodo nativo nuevo entre dos estados de layout? */
-export function shouldRemountSection(
-  prev: LayoutState | null,
-  next: LayoutState,
-  k: SectionKey,
-): boolean {
-  if (!prev) return true;
-  return sectionSignature(prev, k) !== sectionSignature(next, k);
 }
 
 /**

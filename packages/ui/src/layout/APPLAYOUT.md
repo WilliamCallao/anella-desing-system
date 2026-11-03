@@ -225,28 +225,6 @@ robustez viene de la estructura:
    a `onlyCenter`, el contenido saliente del centro no se conserva como capa:
    desaparece en el mismo frame.
 
-8. **Remontaje por firma estructural, no por dirección.** Cada sección se
-   identifica con `sectionSignature(state, k)` (visibilidad + tipo de alto +
-   scroll + slot + ancla). Si la firma cambia entre la ruta saliente y la
-   entrante, el nodo nativo se remonta y **no** se le aplica la transición de
-   altura; si se reutilizara con otra forma, en Android release conservaría un
-   área táctil obsoleta (el contenido se ve bien pero los toques caen en la
-   geometría anterior). Si la firma no cambia, el nodo se conserva y puede
-   animar su alto (mediciones intra-ruta, rutas que comparten preset). La
-   decisión no depende de `goingBack` ni de "es Home": los cruces
-   `onlyCenter → bottom`, `bottom → fullBottom` y sus vueltas quedan cubiertos
-   por la firma.
-
-9. **Morph de superficies en una capa no interactiva.** En un cruce de forma el
-   layout destino se monta de inmediato en su geometría final (y es el que
-   recibe los toques), mientras el morph —la banda clara del `mid`
-   contrayéndose/expandiéndose y, al volver a Home, una cortina del color del
-   page— se dibuja en un overlay absoluto con `pointerEvents="none"` que se
-   desmonta al terminar. Así se conserva la transición de pantallas que tenía
-   el motor sin volver a exponer un hit-rect obsoleto. El overlay nunca contiene
-   nodos interactivos; su contenido es el slot `mid` de la ruta destino y sigue
-   el mismo contrato de pureza que el proxy de medición.
-
 > **Contrato de slots dinámicos:** el contenido de una sección `content`/
 > `minFillRest` se monta **dos veces** (proxy + visible). Debe ser puro e
 > idempotente: sin efectos destructivos al montar. Cuando las pantallas

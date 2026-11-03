@@ -21,11 +21,9 @@ import Animated, {
   FadeIn,
   LinearTransition,
   interpolateColor,
-  runOnJS,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withDelay,
   withTiming,
 } from "react-native-reanimated";
 import { Button } from "../components/Button";
@@ -42,10 +40,8 @@ import {
   isValidMeasurement,
   layoutStates,
   resolveLayoutState,
-  sectionSignature,
   seedNaturals,
   selectPageBackground,
-  shouldRemountSection,
   shouldResetScroll,
   writeNaturals,
   type AppRoute,
@@ -113,91 +109,6 @@ function isOnlyCenterLayout(state: LayoutState | null): boolean {
     !state.sections.top?.visible &&
     !!state.sections.mid?.visible &&
     !state.sections.bottom?.visible
-  );
-}
-
-type GhostConfig = {
-  id: number;
-  duration: number;
-  fromBoundary: number;
-  toBoundary: number;
-  showCurtain: boolean;
-  lightColor: string;
-  curtainColor: string;
-  content: React.ReactNode;
-  contentHeight: number;
-};
-
-/**
- * Capa fantasma del morph entre layouts de distinta forma.
- *
- * Anima SOLO superficies (la banda clara del `mid` y, cuando el destino no
- * tiene hoja, una cortina del color del page) por encima del layout destino,
- * que ya está montado en su geometría final y recibe los toques. La capa no es
- * interactiva (`pointerEvents="none"`) y se desmonta al terminar: aunque el
- * morph deje geometría vieja en el hilo UI, no hay ningún nodo táctil que pueda
- * quedar bloqueando la pantalla.
- */
-function MorphGhost({
-  config,
-  onDone,
-}: {
-  config: GhostConfig;
-  onDone: (id: number) => void;
-}) {
-  const { id, duration, fromBoundary, toBoundary } = config;
-  const progress = useSharedValue(0);
-  const opacity = useSharedValue(1);
-
-  useEffect(() => {
-    progress.value = 0;
-    opacity.value = 1;
-    progress.value = withTiming(1, { duration });
-    const fadeStart = Math.round(duration * 0.7);
-    const fadeDuration = Math.max(1, duration - fadeStart);
-    opacity.value = withDelay(
-      fadeStart,
-      withTiming(0, { duration: fadeDuration }, (finished) => {
-        if (finished) runOnJS(onDone)(id);
-      })
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  const rootStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-  const lightStyle = useAnimatedStyle(() => ({
-    height: fromBoundary + (toBoundary - fromBoundary) * progress.value,
-  }));
-  const curtainStyle = useAnimatedStyle(() => ({
-    top: fromBoundary + (toBoundary - fromBoundary) * progress.value,
-  }));
-
-  return (
-    <Animated.View
-      pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-      style={[styles.ghost, rootStyle]}
-    >
-      <Animated.View
-        style={[styles.ghostLight, { backgroundColor: config.lightColor }, lightStyle]}
-      >
-        {config.content ? (
-          <View style={{ height: config.contentHeight, width: "100%" }}>
-            {config.content}
-          </View>
-        ) : null}
-      </Animated.View>
-      {config.showCurtain ? (
-        <Animated.View
-          style={[
-            styles.ghostCurtain,
-            { backgroundColor: config.curtainColor },
-            curtainStyle,
-          ]}
-        />
-      ) : null}
-    </Animated.View>
   );
 }
 
@@ -316,14 +227,6 @@ export function AppLayout({
   const [prevRoute, setPrevRoute] = useState<AppRoute | null>(null);
   const prevRouteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasTransition = animateTransitions && prevRoute !== null;
-
-  // Morph de superficies entre layouts de distinta forma. La capa es
-  // descartable y no interactiva; ver `MorphGhost`.
-  const [ghost, setGhost] = useState<GhostConfig | null>(null);
-  const ghostIdRef = useRef(0);
-  const handleGhostDone = useCallback((id: number) => {
-    setGhost((g) => (g && g.id === id ? null : g));
-  }, []);
 
   const initialNaturalsValue = useRef(
     initialNaturals(H, resolveLayoutState(initialRoute.state)),
@@ -503,11 +406,10 @@ export function AppLayout({
     !!prevLayoutState &&
     !isOnlyCenterLayout(prevLayoutState) &&
     isOnlyCenterLayout(state);
-  // El remontaje NO depende de la dirección de navegación (que en la app la
-  // maneja AppShell y deja `goingBack` en "forward"): depende de la firma
-  // estructural de cada sección. Reutilizar un nodo nativo cuyo contrato de
-  // layout cambió deja en Android release un área táctil obsoleta. Ver
-  // `shouldRemountSection` en `layoutMath.ts`.
+  // El remontaje se necesita al restaurar Home, donde el nodo nativo reutilizado
+  // conservaba un área táctil vieja. Al salir de Home no se remonta: eso permite
+  // que Cuentas/Almacenes sigan animando el morph de altura.
+  const remountSection = enteringOnlyCenterLayout;
   // Al salir de Home tampoco conservamos su capa saliente, porque podía quedar
   // por encima del body destino y bloquear el touch en Android release.
   const dropOutgoing =
@@ -549,15 +451,6 @@ export function AppLayout({
       ? LinearTransition.duration(0)
       : CurvedTransition.duration(transitionDuration);
   const animateLayout = hasTransition && animateTransitions && transitionDuration > 0;
-  // Un cruce de forma (Home ↔ sección, sección ↔ detalle) se anima con el
-  // fantasma de superficies, no con layout transitions de los nodos reales.
-  // Los divisores tampoco deben animar su posición en ese cruce.
-  const structuralLayoutChange =
-    !!prevLayoutState &&
-    SECTION_KEYS.some(
-      (k) => sectionSignature(prevLayoutState, k) !== sectionSignature(state, k)
-    );
-  const animateDecorativeLayout = animateLayout && !structuralLayoutChange;
 
   const pageBg = selectPageBackground(state);
 
@@ -733,54 +626,7 @@ export function AppLayout({
     });
     bodyOverflowRef.current = false;
 
-    const previousApplied = appliedRef.current;
     const targets = computeTargets(state);
-
-    // Morph de superficies (Home → sección, sección → detalle y vueltas).
-    // El layout destino ya se monta en su geometría final; este overlay solo
-    // dibuja la banda clara (y una cortina del page cuando el destino no tiene
-    // hoja) animándose entre ambas formas. Nunca recibe toques, así que no
-    // puede reintroducir el hit-rect obsoleto.
-    const ghostPrevMid = !!prevLayoutState?.sections.mid?.visible;
-    const ghostNextMid = !!state.sections.mid?.visible;
-    const ghostNextBottom = !!state.sections.bottom?.visible;
-    const ghostShapeChanged =
-      !!prevLayoutState &&
-      (sectionSignature(prevLayoutState, "mid") !== sectionSignature(state, "mid") ||
-        sectionSignature(prevLayoutState, "bottom") !== sectionSignature(state, "bottom"));
-    const canGhost =
-      !!prevRoute &&
-      !!prevLayoutState &&
-      animateTransitions &&
-      !reduceMotion &&
-      transitionDuration > 0 &&
-      !prevLayoutState.sections.top?.visible &&
-      !state.sections.top?.visible &&
-      ghostShapeChanged &&
-      (ghostPrevMid || ghostNextMid);
-    if (canGhost && prevLayoutState) {
-      const fromBoundary = ghostPrevMid ? previousApplied.mid : 0;
-      const toBoundary = ghostNextMid ? targets.mid : 0;
-      const midSlot = state.sections.mid?.slot;
-      setGhost({
-        id: ++ghostIdRef.current,
-        duration: transitionDuration,
-        fromBoundary,
-        toBoundary,
-        // Si el destino no tiene hoja (p. ej. volver a Home), una cortina del
-        // color del page oculta el contenido nuevo por debajo del borde y lo
-        // revela a medida que la banda clara crece. Si el destino sí tiene
-        // hoja, se deja ver: es el mismo fondo que tenía la animación real.
-        showCurtain: !ghostNextBottom,
-        lightColor: ghostNextMid
-          ? state.sections.mid?.backgroundColor ?? SECTION_DEFAULT_COLORS.mid
-          : prevLayoutState.sections.mid?.backgroundColor ?? SECTION_DEFAULT_COLORS.mid,
-        curtainColor: pageBg,
-        content: ghostNextMid && midSlot ? slots[midSlot] ?? null : null,
-        contentHeight: ghostNextMid ? targets.mid : 0,
-      });
-    }
-
     applyTargets(targets);
     const overflows = !!state.pageScroll && bottomOverflows(state, naturalsRef.current, HRef.current);
     setPageCanScroll(overflows);
@@ -878,15 +724,12 @@ export function AppLayout({
     const previousContent = previousSlot
       ? prevRoute?.slots?.[previousSlot]
       : null;
-    // La clave incluye la firma estructural: el nodo se remonta exactamente
-    // cuando cambia la forma de la sección (Home → Cuentas/Almacenes,
-    // bottom → fullBottom, etc.) y se conserva mientras la firma no cambie,
-    // habilitando el morph de altura en cambios intra-layout (mediciones).
-    const structuralChange = shouldRemountSection(prevLayoutState, state, k);
-    const sectionKey = `${k}:${sectionSignature(state, k)}`;
+    // Solo al restaurar Home se remonta el nodo nativo. Al entrar a una sección
+    // desde Home se conserva el nodo para no perder la animación de altura.
+    const sectionKey = remountSection ? `${k}:${currentRoute.name}` : k;
     const animateSectionLayout =
       animateLayout &&
-      !structuralChange &&
+      !remountSection &&
       previousLayoutHeightsRef.current[k] !== height;
     const currentLayer = (
       <Animated.View
@@ -923,11 +766,11 @@ export function AppLayout({
 
     return (
       <Animated.View
-        // El nodo se remonta cuando cambia su firma estructural. Reutilizarlo
-        // con otra forma dejaba un área táctil obsoleta en Android release:
+        // Al volver, remontamos la sección completa. Reutilizar el nodo nativo
+        // con una altura distinta dejaba un área táctil obsoleta en Android:
         // el body se veía bien pero la mitad inferior no recibía toques.
         key={sectionKey}
-        layout={animateSectionLayout ? transition : undefined}
+        layout={remountSection || !animateSectionLayout ? undefined : transition}
         collapsable={false}
         style={[
           styles.colBlock,
@@ -984,7 +827,7 @@ export function AppLayout({
           {renderSection("top")}
           {showTopDivisor && (
             <Animated.View
-              layout={animateDecorativeLayout ? transition : undefined}
+              layout={animateLayout ? transition : undefined}
               collapsable={false}
             >
               <Divisor position="top" handle={currentRoute.state === "top"} />
@@ -993,7 +836,7 @@ export function AppLayout({
           {renderSection("mid")}
           {(showBottomDivisor || showFullBottomDivisor) && (
             <Animated.View
-              layout={animateDecorativeLayout ? transition : undefined}
+              layout={animateLayout ? transition : undefined}
               collapsable={false}
             >
               {showFullBottomDivisor ? (
@@ -1020,9 +863,6 @@ export function AppLayout({
           )}
           {renderSection("bottom")}
         </ScrollView>
-        {ghost ? (
-          <MorphGhost key={ghost.id} config={ghost} onDone={handleGhostDone} />
-        ) : null}
         {showBackButton && canGoBack && (
           <View style={styles.backBar} pointerEvents="box-none">
             <Button variant="secondary" size="sm" label="← Volver" onPress={back} />
@@ -1042,29 +882,6 @@ const styles = StyleSheet.create({
   },
   pageContent: {
     flexGrow: 1,
-  },
-  // Overlay del morph de superficies: por encima del contenido, descartable y
-  // no interactivo (el hit-test siempre pertenece al layout destino).
-  ghost: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 50,
-  },
-  ghostLight: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    overflow: "hidden",
-  },
-  ghostCurtain: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
   },
   colBlock: {
     width: "100%",
