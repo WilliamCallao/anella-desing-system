@@ -40,8 +40,10 @@ import {
   isValidMeasurement,
   layoutStates,
   resolveLayoutState,
+  sectionSignature,
   seedNaturals,
   selectPageBackground,
+  shouldRemountSection,
   shouldResetScroll,
   writeNaturals,
   type AppRoute,
@@ -406,10 +408,11 @@ export function AppLayout({
     !!prevLayoutState &&
     !isOnlyCenterLayout(prevLayoutState) &&
     isOnlyCenterLayout(state);
-  // El remontaje se necesita al restaurar Home, donde el nodo nativo reutilizado
-  // conservaba un área táctil vieja. Al salir de Home no se remonta: eso permite
-  // que Cuentas/Almacenes sigan animando el morph de altura.
-  const remountSection = enteringOnlyCenterLayout;
+  // El remontaje NO depende de la dirección de navegación (que en la app la
+  // maneja AppShell y deja `goingBack` en "forward"): depende de la firma
+  // estructural de cada sección. Reutilizar un nodo nativo cuyo contrato de
+  // layout cambió deja en Android release un área táctil obsoleta. Ver
+  // `shouldRemountSection` en `layoutMath.ts`.
   // Al salir de Home tampoco conservamos su capa saliente, porque podía quedar
   // por encima del body destino y bloquear el touch en Android release.
   const dropOutgoing =
@@ -724,12 +727,15 @@ export function AppLayout({
     const previousContent = previousSlot
       ? prevRoute?.slots?.[previousSlot]
       : null;
-    // Solo al restaurar Home se remonta el nodo nativo. Al entrar a una sección
-    // desde Home se conserva el nodo para no perder la animación de altura.
-    const sectionKey = remountSection ? `${k}:${currentRoute.name}` : k;
+    // La clave incluye la firma estructural: el nodo se remonta exactamente
+    // cuando cambia la forma de la sección (Home → Cuentas/Almacenes,
+    // bottom → fullBottom, etc.) y se conserva mientras la firma no cambie,
+    // habilitando el morph de altura en cambios intra-layout (mediciones).
+    const structuralChange = shouldRemountSection(prevLayoutState, state, k);
+    const sectionKey = `${k}:${sectionSignature(state, k)}`;
     const animateSectionLayout =
       animateLayout &&
-      !remountSection &&
+      !structuralChange &&
       previousLayoutHeightsRef.current[k] !== height;
     const currentLayer = (
       <Animated.View
@@ -766,11 +772,11 @@ export function AppLayout({
 
     return (
       <Animated.View
-        // Al volver, remontamos la sección completa. Reutilizar el nodo nativo
-        // con una altura distinta dejaba un área táctil obsoleta en Android:
+        // El nodo se remonta cuando cambia su firma estructural. Reutilizarlo
+        // con otra forma dejaba un área táctil obsoleta en Android release:
         // el body se veía bien pero la mitad inferior no recibía toques.
         key={sectionKey}
-        layout={remountSection || !animateSectionLayout ? undefined : transition}
+        layout={animateSectionLayout ? transition : undefined}
         collapsable={false}
         style={[
           styles.colBlock,

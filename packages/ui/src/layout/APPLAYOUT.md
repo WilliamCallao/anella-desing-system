@@ -225,6 +225,18 @@ robustez viene de la estructura:
    a `onlyCenter`, el contenido saliente del centro no se conserva como capa:
    desaparece en el mismo frame.
 
+8. **Remontaje por firma estructural, no por dirección.** Cada sección se
+   identifica con `sectionSignature(state, k)` (visibilidad + tipo de alto +
+   scroll + slot + ancla). Si la firma cambia entre la ruta saliente y la
+   entrante, el nodo nativo se remonta y **no** se le aplica la transición de
+   altura; si se reutilizara con otra forma, en Android release conservaría un
+   área táctil obsoleta (el contenido se ve bien pero los toques caen en la
+   geometría anterior). Si la firma no cambia, el nodo se conserva y puede
+   animar su alto (mediciones intra-ruta, rutas que comparten preset). La
+   decisión no depende de `goingBack` ni de "es Home": los cruces
+   `onlyCenter → bottom`, `bottom → fullBottom` y sus vueltas quedan cubiertos
+   por la firma.
+
 > **Contrato de slots dinámicos:** el contenido de una sección `content`/
 > `minFillRest` se monta **dos veces** (proxy + visible). Debe ser puro e
 > idempotente: sin efectos destructivos al montar. Cuando las pantallas
