@@ -1,5 +1,20 @@
 # @william-callao/antonella-ui
 
+## 2.1.1
+
+### Patch Changes
+
+- [#47](https://github.com/WilliamCallao/anella-desing-system/pull/47) [`1989ffd`](https://github.com/WilliamCallao/anella-desing-system/commit/1989ffdedd853921c48c8897b96f6fdcb7137f0c) Thanks [@WilliamCallao](https://github.com/WilliamCallao)! - fix(ui): remonta secciones por firma estructural y restaura el touch
+  
+  - El nodo nativo de una sección se remonta cuando cambia su firma de layout
+    (visibilidad, tipo de alto, scroll, slot y ancla), no según la dirección de
+    navegación ni por ser Home.
+  - Corrige el área táctil obsoleta en Android release al entrar a Plan de
+    cuentas/Almacenes desde Home y al volver de un detalle `fullBottom`: el
+    contenido se veía bien pero los toques caían en la geometría anterior.
+  - Cuando la firma no cambia, el nodo se conserva y sigue animando su altura
+    (mediciones intra-ruta y rutas que comparten preset).
+
 ## 2.1.0
 
 ### Minor Changes
